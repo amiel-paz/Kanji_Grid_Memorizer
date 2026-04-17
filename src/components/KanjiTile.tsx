@@ -1,4 +1,5 @@
 import { assertKanjiCode, BASE8_COLORS, type KanjiCode } from '../domain/encoding/palette';
+import { validateTileOpacity } from './kanjiTileValidation';
 
 interface KanjiTileProps {
   code: KanjiCode;
@@ -12,12 +13,6 @@ const sizeClassByName = {
   md: 'h-24 w-24',
   lg: 'h-32 w-32',
 };
-
-export function validateTileOpacity(opacity: number): void {
-  if (!Number.isFinite(opacity) || opacity < 0 || opacity > 1) {
-    throw new Error('Tile opacity must be a number between 0 and 1.');
-  }
-}
 
 export function KanjiTile({ code, opacity, label = 'kanji color code', size = 'md' }: KanjiTileProps) {
   assertKanjiCode(code);
