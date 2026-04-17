@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { KanjiTile, validateTileOpacity } from '../src/components/KanjiTile';
+import { KanjiTile } from '../src/components/KanjiTile';
+import { validateTileOpacity } from '../src/components/kanjiTileValidation';
 
 describe('KanjiTile', () => {
   it('renders a 2x2 color code with an accessible label', () => {
