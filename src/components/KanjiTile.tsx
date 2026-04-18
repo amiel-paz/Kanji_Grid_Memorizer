@@ -21,7 +21,7 @@ export function KanjiTile({ code, opacity, label = 'kanji color code', size = 'm
   return (
     <div
       aria-label={label}
-      className={`${sizeClassByName[size]} grid grid-cols-2 overflow-hidden rounded border border-gray-300 bg-white`}
+      className={`${sizeClassByName[size]} grid grid-cols-2 overflow-hidden rounded-md border border-gray-300 bg-white`}
       role="img"
       style={{ opacity }}
     >
