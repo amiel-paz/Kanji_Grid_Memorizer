@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { assertKanjiCode, BASE8_COLORS, type KanjiCode } from '../domain/encoding/palette';
+import { getKanjiCodeCells, type KanjiCode } from '../domain/encoding/palette';
 import { validateTileOpacity } from './kanjiTileValidation';
 
 interface KanjiCueCardProps {
@@ -10,8 +10,8 @@ interface KanjiCueCardProps {
 }
 
 export function KanjiCueCard({ kanji, code, opacity, label }: KanjiCueCardProps) {
-  assertKanjiCode(code);
   validateTileOpacity(opacity);
+  const cells = getKanjiCodeCells(code);
 
   return (
     <div
@@ -21,8 +21,8 @@ export function KanjiCueCard({ kanji, code, opacity, label }: KanjiCueCardProps)
       style={{ '--cue-opacity': opacity } as CSSProperties}
     >
       <div aria-hidden="true" className="kanji-cue-grid">
-        {code.map((digit, index) => (
-          <div key={`${digit}-${index}`} style={{ backgroundColor: BASE8_COLORS[digit] }} />
+        {cells.map((cell) => (
+          <div key={cell.position} style={{ backgroundColor: cell.color }} />
         ))}
       </div>
       <div aria-hidden="true" className="kanji-cue-center">

@@ -1,4 +1,4 @@
-import { assertKanjiCode, BASE8_COLORS, type KanjiCode } from '../domain/encoding/palette';
+import { getKanjiCodeCells, type KanjiCode } from '../domain/encoding/palette';
 import { validateTileOpacity } from './kanjiTileValidation';
 
 interface KanjiTileProps {
@@ -15,8 +15,8 @@ const sizeClassByName = {
 };
 
 export function KanjiTile({ code, opacity, label = 'kanji color code', size = 'md' }: KanjiTileProps) {
-  assertKanjiCode(code);
   validateTileOpacity(opacity);
+  const cells = getKanjiCodeCells(code);
 
   return (
     <div
@@ -25,11 +25,11 @@ export function KanjiTile({ code, opacity, label = 'kanji color code', size = 'm
       role="img"
       style={{ opacity }}
     >
-      {code.map((digit, index) => (
+      {cells.map((cell) => (
         <div
           aria-hidden="true"
-          key={`${digit}-${index}`}
-          style={{ backgroundColor: BASE8_COLORS[digit] }}
+          key={cell.position}
+          style={{ backgroundColor: cell.color }}
         />
       ))}
     </div>

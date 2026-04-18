@@ -1,5 +1,5 @@
 import type { AssignmentVersion } from '../content/types';
-import type { KanjiCode } from './palette';
+import { createKanjiCode, type KanjiCode } from './palette';
 
 export interface CodeAssignmentInput {
   canonicalIndex: number;
@@ -21,11 +21,11 @@ export const base8IndexAssignment: CodeAssignmentStrategy = {
     // TODO: Replace this with the canonical assignment algorithm once Joyo import exists.
     // This starter keeps assignments deterministic by encoding canonicalIndex in base 8.
     const normalized = input.canonicalIndex % 4096;
-    return [
+    return createKanjiCode([
       Math.floor(normalized / 512) % 8,
       Math.floor(normalized / 64) % 8,
       Math.floor(normalized / 8) % 8,
       normalized % 8,
-    ] as KanjiCode;
+    ]);
   },
 };
