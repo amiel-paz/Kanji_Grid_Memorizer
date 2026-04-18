@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mockKanji } from '../src/data/mockKanji';
 import { getDrillById } from '../src/domain/drills/configs';
-import { createSession, getCueOpacity, recordAnswer } from '../src/domain/session/session';
+import { createSession, getCueOpacity, recordReviewGrade } from '../src/domain/session/session';
 
 describe('session cue opacity', () => {
   it('dims the cue along the review ladder after correct answers without changing kanji data', () => {
@@ -13,10 +13,10 @@ describe('session cue opacity', () => {
     }
 
     const session = createSession(mockKanji, drill);
-    const firstCorrect = recordAnswer(session, entry.kanji, true);
-    const secondCorrect = recordAnswer(firstCorrect, entry.kanji, true);
-    const thirdCorrect = recordAnswer(secondCorrect, entry.kanji, true);
-    const extraCorrect = recordAnswer(thirdCorrect, entry.kanji, true);
+    const firstCorrect = recordReviewGrade(session, entry.kanji, 'good');
+    const secondCorrect = recordReviewGrade(firstCorrect, entry.kanji, 'good');
+    const thirdCorrect = recordReviewGrade(secondCorrect, entry.kanji, 'good');
+    const extraCorrect = recordReviewGrade(thirdCorrect, entry.kanji, 'good');
 
     expect(getCueOpacity(session, entry.kanji)).toBe(1);
     expect(getCueOpacity(firstCorrect, entry.kanji)).toBe(0.66);
@@ -35,8 +35,12 @@ describe('session cue opacity', () => {
     }
 
     const session = createSession(mockKanji, drill);
-    const dimmedSession = recordAnswer(recordAnswer(session, entry.kanji, true), entry.kanji, true);
-    const missedSession = recordAnswer(dimmedSession, entry.kanji, false);
+    const dimmedSession = recordReviewGrade(
+      recordReviewGrade(session, entry.kanji, 'good'),
+      entry.kanji,
+      'good',
+    );
+    const missedSession = recordReviewGrade(dimmedSession, entry.kanji, 'again');
 
     expect(getCueOpacity(dimmedSession, entry.kanji)).toBe(0.33);
     expect(getCueOpacity(missedSession, entry.kanji)).toBe(0.66);

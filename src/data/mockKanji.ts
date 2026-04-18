@@ -1,5 +1,5 @@
 import { currentAssignmentVersion } from '../domain/encoding/assignment';
-import type { KanjiEntry } from '../domain/types';
+import type { KanjiEntry } from '../domain/content/types';
 
 export const mockKanji: KanjiEntry[] = [
   {

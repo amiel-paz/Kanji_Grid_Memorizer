@@ -3,7 +3,8 @@ import { DrillModePicker } from '../components/DrillModePicker';
 import { KanjiCueCard } from '../components/KanjiCueCard';
 import { mockKanji } from '../data/mockKanji';
 import { getDrillById, STARTER_DRILLS } from '../domain/drills/configs';
-import { createSession, getCueOpacity, recordAnswer } from '../domain/session/session';
+import type { DrillMode, ReviewGrade } from '../domain/drills/types';
+import { createSession, getCueOpacity, recordReviewGrade } from '../domain/session/session';
 
 export function StudyPage() {
   const [drillId, setDrillId] = useState(STARTER_DRILLS[0]?.id ?? 'learn');
@@ -32,8 +33,8 @@ export function StudyPage() {
     setReadingsRevealed(nextDrill.mode === 'learn');
   }
 
-  function handleReviewAnswer(wasCorrect: boolean) {
-    setSession((current) => recordAnswer(current, activeKanji, wasCorrect));
+  function handleReviewAnswer(reviewGrade: ReviewGrade) {
+    setSession((current) => recordReviewGrade(current, activeKanji, reviewGrade));
     setReadingsRevealed(false);
   }
 
@@ -94,14 +95,14 @@ export function StudyPage() {
                 <button
                   className="btn btn-secondary"
                   type="button"
-                  onClick={() => handleReviewAnswer(false)}
+                  onClick={() => handleReviewAnswer('again')}
                 >
                   Again
                 </button>
                 <button
                   className="btn btn-primary"
                   type="button"
-                  onClick={() => handleReviewAnswer(true)}
+                  onClick={() => handleReviewAnswer('good')}
                 >
                   Good
                 </button>
@@ -124,7 +125,7 @@ export function StudyPage() {
   );
 }
 
-function descriptionForMode(mode: string): string {
+function descriptionForMode(mode: DrillMode): string {
   switch (mode) {
     case 'learn':
       return 'Show kanji, full cue, readings, and meanings.';

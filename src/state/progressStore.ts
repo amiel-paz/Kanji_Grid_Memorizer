@@ -1,4 +1,4 @@
-import type { UserProgress } from '../domain/types';
+import type { UserProgress } from '../domain/progress/types';
 import { createLocalStore } from '../lib/localStore';
 
 export const progressStore = createLocalStore<Record<string, UserProgress>>(

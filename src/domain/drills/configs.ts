@@ -1,4 +1,4 @@
-import type { DrillConfig } from '../types';
+import type { DrillConfig } from './types';
 
 export const STARTER_DRILLS: DrillConfig[] = [
   {

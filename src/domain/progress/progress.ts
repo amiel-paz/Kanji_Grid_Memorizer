@@ -1,10 +1,10 @@
-import type { UserProgress } from '../types';
+import type { UserProgress } from './types';
 
 export function createInitialProgress(kanji: string): UserProgress {
   return {
     kanji,
     seenCount: 0,
-    correctCount: 0,
+    goodCount: 0,
     confidence: 'new',
   };
 }

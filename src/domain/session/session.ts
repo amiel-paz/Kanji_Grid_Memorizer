@@ -1,8 +1,8 @@
-import type { DrillConfig, KanjiEntry, SessionState } from '../types';
+import type { KanjiEntry } from '../content/types';
+import type { DrillConfig, ReviewGrade } from '../drills/types';
+import { CUE_OPACITY_LADDER, type CueOpacity, type SessionState } from './types';
 
-const CUE_OPACITY_STEPS = [1, 0.66, 0.33, 0] as const;
-
-export function createSession(entries: KanjiEntry[], drillConfig: DrillConfig): SessionState {
+export function createSession(entries: readonly KanjiEntry[], drillConfig: DrillConfig): SessionState {
   const selected = entries.slice(0, drillConfig.deckSize);
   const active = selected[0];
 
@@ -21,7 +21,7 @@ export function createSession(entries: KanjiEntry[], drillConfig: DrillConfig): 
         {
           kanji: entry.kanji,
           attempts: 0,
-          correct: 0,
+          goodCount: 0,
           cueOpacity: initialOpacityForDrill(drillConfig),
         },
       ]),
@@ -29,7 +29,7 @@ export function createSession(entries: KanjiEntry[], drillConfig: DrillConfig): 
   };
 }
 
-export function initialOpacityForDrill(drillConfig: DrillConfig): number {
+export function initialOpacityForDrill(drillConfig: DrillConfig): CueOpacity {
   if (drillConfig.cuePolicy === 'hidden') {
     return 0;
   }
@@ -37,7 +37,7 @@ export function initialOpacityForDrill(drillConfig: DrillConfig): number {
   return 1;
 }
 
-export function getCueOpacity(session: SessionState, kanji: string): number {
+export function getCueOpacity(session: SessionState, kanji: string): CueOpacity {
   const itemState = session.itemStateByKanji[kanji];
 
   if (!itemState) {
@@ -47,7 +47,11 @@ export function getCueOpacity(session: SessionState, kanji: string): number {
   return itemState.cueOpacity;
 }
 
-export function recordAnswer(session: SessionState, kanji: string, wasCorrect: boolean): SessionState {
+export function recordReviewGrade(
+  session: SessionState,
+  kanji: string,
+  reviewGrade: ReviewGrade,
+): SessionState {
   const itemState = session.itemStateByKanji[kanji];
 
   if (!itemState) {
@@ -55,7 +59,8 @@ export function recordAnswer(session: SessionState, kanji: string, wasCorrect: b
   }
 
   // TODO: Replace this toy transition with the real "Random 10; dim on success" queue.
-  const nextOpacity = nextCueOpacity(itemState.cueOpacity, wasCorrect);
+  const isGoodReview = reviewGrade === 'good';
+  const nextOpacity = nextCueOpacity(itemState.cueOpacity, isGoodReview);
 
   return {
     ...session,
@@ -64,19 +69,19 @@ export function recordAnswer(session: SessionState, kanji: string, wasCorrect: b
       [kanji]: {
         ...itemState,
         attempts: itemState.attempts + 1,
-        correct: itemState.correct + (wasCorrect ? 1 : 0),
+        goodCount: itemState.goodCount + (isGoodReview ? 1 : 0),
         cueOpacity: nextOpacity,
       },
     },
   };
 }
 
-function nextCueOpacity(currentOpacity: number, wasCorrect: boolean): number {
-  const currentIndex = CUE_OPACITY_STEPS.findIndex((step) => step === currentOpacity);
+function nextCueOpacity(currentOpacity: CueOpacity, isGoodReview: boolean): CueOpacity {
+  const currentIndex = CUE_OPACITY_LADDER.findIndex((step) => step === currentOpacity);
   const safeIndex = currentIndex === -1 ? 0 : currentIndex;
-  const nextIndex = wasCorrect
-    ? Math.min(CUE_OPACITY_STEPS.length - 1, safeIndex + 1)
+  const nextIndex = isGoodReview
+    ? Math.min(CUE_OPACITY_LADDER.length - 1, safeIndex + 1)
     : Math.max(0, safeIndex - 1);
 
-  return CUE_OPACITY_STEPS[nextIndex] ?? 0;
+  return CUE_OPACITY_LADDER[nextIndex] ?? 0;
 }
