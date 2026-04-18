@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { DrillModePicker } from '../components/DrillModePicker';
-import { KanjiTile } from '../components/KanjiTile';
+import { KanjiCueCard } from '../components/KanjiCueCard';
 import { mockKanji } from '../data/mockKanji';
 import { getDrillById, STARTER_DRILLS } from '../domain/drills/configs';
 import { createSession, getCueOpacity, recordAnswer } from '../domain/session/session';
@@ -29,13 +29,11 @@ export function StudyPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-8">
-      <header className="flex flex-col gap-3">
-        <p className="text-sm font-semibold uppercase tracking-wide text-gray-500">
-          Kanji Grid Memorizer
-        </p>
-        <h1 className="text-3xl font-bold text-gray-950">Stable color codes, fading cues.</h1>
-        <p className="max-w-2xl text-gray-700">
+    <main className="app-page">
+      <header className="page-header">
+        <p className="eyebrow">Kanji Grid Memorizer</p>
+        <h1 className="page-title">Stable color codes, fading cues.</h1>
+        <p className="body-copy">
           This shell demonstrates the central rule: kanji records store code digits, while cue
           opacity comes from the current drill session.
         </p>
@@ -43,20 +41,21 @@ export function StudyPage() {
 
       <DrillModePicker drills={STARTER_DRILLS} selectedId={drillId} onSelect={handleDrillChange} />
 
-      <section className="grid gap-6 rounded border border-gray-200 bg-white p-6 md:grid-cols-[auto_1fr]">
-        <KanjiTile code={activeEntry.code} opacity={opacity} size="lg" />
+      <section className="surface-panel grid gap-6 md:grid-cols-[minmax(16rem,20rem)_1fr]">
+        <div className="flex flex-col gap-3">
+          <KanjiCueCard
+            kanji={activeEntry.kanji}
+            code={activeEntry.code}
+            opacity={opacity}
+            label={`${activeEntry.kanji} review card with faded color cue`}
+          />
+          <p className="fine-print">Cue opacity: {Math.round(opacity * 100)}%</p>
+        </div>
 
         <div className="flex flex-col gap-4">
           <div>
-            <div className="text-7xl leading-none text-gray-950">{activeEntry.kanji}</div>
-            <p className="mt-2 text-sm text-gray-600">
-              Code opacity for this session: {opacity.toFixed(2)}
-            </p>
-          </div>
-
-          <div>
             <h2 className="text-lg font-semibold text-gray-950">{drill.label}</h2>
-            <p className="text-gray-700">{descriptionForMode(drill.mode)}</p>
+            <p className="body-copy">{descriptionForMode(drill.mode)}</p>
           </div>
 
           {showReadings ? (
@@ -75,25 +74,25 @@ export function StudyPage() {
               </div>
             </dl>
           ) : (
-            <p className="text-sm text-gray-600">
+            <p className="fine-print">
               TODO: Add answer choices and real interaction for this drill mode.
             </p>
           )}
 
           <div className="flex flex-wrap gap-3">
             <button
-              className="rounded bg-gray-950 px-4 py-2 text-white"
-              type="button"
-              onClick={() => setSession((current) => recordAnswer(current, activeEntry.kanji, true))}
-            >
-              Mock correct
-            </button>
-            <button
-              className="rounded border border-gray-300 px-4 py-2 text-gray-900"
+              className="btn btn-secondary"
               type="button"
               onClick={() => setSession((current) => recordAnswer(current, activeEntry.kanji, false))}
             >
-              Mock miss
+              Again
+            </button>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => setSession((current) => recordAnswer(current, activeEntry.kanji, true))}
+            >
+              Good
             </button>
           </div>
         </div>
