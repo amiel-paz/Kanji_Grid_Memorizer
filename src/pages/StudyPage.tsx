@@ -9,6 +9,7 @@ export function StudyPage() {
   const [drillId, setDrillId] = useState(STARTER_DRILLS[0]?.id ?? 'learn');
   const drill = getDrillById(drillId);
   const [session, setSession] = useState(() => createSession(mockKanji, drill));
+  const [readingsRevealed, setReadingsRevealed] = useState(drill.mode === 'learn');
 
   const activeEntry = useMemo(
     () => mockKanji.find((entry) => entry.kanji === session.activeKanji) ?? mockKanji[0],
@@ -19,13 +20,21 @@ export function StudyPage() {
     return <main className="p-8">No kanji data available.</main>;
   }
 
-  const opacity = getCueOpacity(session, activeEntry.kanji);
-  const showReadings = drill.mode === 'learn';
+  const activeKanji = activeEntry.kanji;
+  const opacity = getCueOpacity(session, activeKanji);
+  const isReviewMode = drill.mode !== 'learn';
+  const showReadings = !isReviewMode || readingsRevealed;
 
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
     setDrillId(nextDrillId);
     setSession(createSession(mockKanji, nextDrill));
+    setReadingsRevealed(nextDrill.mode === 'learn');
+  }
+
+  function handleReviewAnswer(wasCorrect: boolean) {
+    setSession((current) => recordAnswer(current, activeKanji, wasCorrect));
+    setReadingsRevealed(false);
   }
 
   return (
@@ -44,10 +53,10 @@ export function StudyPage() {
       <section className="surface-panel grid gap-6 md:grid-cols-[minmax(16rem,20rem)_1fr]">
         <div className="flex flex-col gap-3">
           <KanjiCueCard
-            kanji={activeEntry.kanji}
+            kanji={activeKanji}
             code={activeEntry.code}
             opacity={opacity}
-            label={`${activeEntry.kanji} review card with faded color cue`}
+            label={`${activeKanji} review card with faded color cue`}
           />
           <p className="fine-print">Cue opacity: {Math.round(opacity * 100)}%</p>
         </div>
@@ -75,26 +84,40 @@ export function StudyPage() {
             </dl>
           ) : (
             <p className="fine-print">
-              TODO: Add answer choices and real interaction for this drill mode.
+              Recall the readings from memory, then reveal them before choosing how it went.
             </p>
           )}
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              className="btn btn-secondary"
-              type="button"
-              onClick={() => setSession((current) => recordAnswer(current, activeEntry.kanji, false))}
-            >
-              Again
-            </button>
-            <button
-              className="btn btn-primary"
-              type="button"
-              onClick={() => setSession((current) => recordAnswer(current, activeEntry.kanji, true))}
-            >
-              Good
-            </button>
-          </div>
+          {isReviewMode ? (
+            readingsRevealed ? (
+              <div className="flex flex-wrap gap-3">
+                <button
+                  className="btn btn-secondary"
+                  type="button"
+                  onClick={() => handleReviewAnswer(false)}
+                >
+                  Again
+                </button>
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  onClick={() => handleReviewAnswer(true)}
+                >
+                  Good
+                </button>
+              </div>
+            ) : (
+              <div>
+                <button
+                  className="btn btn-primary"
+                  type="button"
+                  onClick={() => setReadingsRevealed(true)}
+                >
+                  Reveal readings
+                </button>
+              </div>
+            )
+          ) : null}
         </div>
       </section>
     </main>

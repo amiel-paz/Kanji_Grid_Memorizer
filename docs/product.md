@@ -40,7 +40,7 @@ reveal at any moment.
 ## Review Direction
 
 Review should feel close to a lightweight Anki-style loop: show one kanji card, answer from memory,
-then choose `Again` or `Good`.
+reveal meanings plus all known on and kun readings, then choose `Again` or `Good`.
 
 The most useful drills are faded recall and blind recall. Grid-to-kanji matching drills are not a
 product target for now.
@@ -67,6 +67,7 @@ presented as a finished drill loop.
 - OCR
 - handwriting recognition
 - generated mnemonics
+- canonical kanji dataset selection
 
 ## Product Questions To Preserve
 
@@ -74,5 +75,6 @@ presented as a finished drill loop.
 - How should a miss change the next cue level?
 - When does a kanji graduate from cue-supported practice to blind recall?
 - How should assignment versions be communicated if source data changes?
+- Which standard kanji dataset should supply Joyo and Jinmeiyo readings?
 
 TODO: Define the first real learning workflow once the scaffold feels comfortable to modify.
