@@ -11,7 +11,7 @@ Stable content only:
 - kanji
 - canonical index
 - source set
-- code digits
+- code digits, ordered top-left, top-right, bottom-left, bottom-right
 - meanings
 - onyomi
 - kunyomi
