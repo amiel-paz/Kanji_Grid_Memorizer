@@ -1,4 +1,4 @@
-import type { DrillConfig } from '../domain/types';
+import type { DrillConfig } from '../domain/drills/types';
 
 interface DrillModePickerProps {
   drills: DrillConfig[];

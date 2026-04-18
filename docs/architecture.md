@@ -11,6 +11,8 @@ current success streak, queue position, or session-specific learning state.
 Stable content should be safe to load from a future canonical source file without carrying
 personal study history along with it.
 
+Content types live in `src/domain/content/types.ts`.
+
 ## Session Behavior
 
 `SessionState` tracks ephemeral state for the current drill run. For example, a "Random 10; dim on
@@ -19,10 +21,14 @@ success" session can lower cue opacity after a correct answer without mutating t
 Session code can be simple at first. It should still make the ownership boundary obvious: a drill
 may decide what happens next, but it does not rewrite the deck.
 
+Session types live in `src/domain/session/types.ts`.
+
 ## Persistent Progress
 
 `UserProgress` is the long-lived learner record. It can eventually summarize outcomes across
 sessions, but it should stay smaller than a scheduler until the app has a real learning loop.
+
+Progress types live in `src/domain/progress/types.ts`.
 
 ## Rendering
 
@@ -44,6 +50,7 @@ opacity.
 ## Module Boundaries
 
 - `domain/encoding`: base-8 code assignment and palette rules
+- `domain/content`: stable kanji records and assignment version contracts
 - `domain/drills`: drill mode configuration and placeholders for queues
 - `domain/session`: ephemeral per-run state and cue opacity behavior
 - `domain/progress`: persistent learner progress types

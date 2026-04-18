@@ -1,4 +1,4 @@
-import type { AssignmentVersion } from '../types';
+import type { AssignmentVersion } from '../content/types';
 import type { KanjiCode } from './palette';
 
 export interface CodeAssignmentInput {
