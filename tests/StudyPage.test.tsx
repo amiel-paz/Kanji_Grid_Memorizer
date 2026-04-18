@@ -6,10 +6,6 @@ describe('StudyPage', () => {
   it('reveals readings before review grading actions', () => {
     render(<StudyPage />);
 
-    fireEvent.change(screen.getByLabelText('Drill mode'), {
-      target: { value: 'faded-recall' },
-    });
-
     expect(screen.getByRole('button', { name: 'Reveal readings' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Again' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Good' })).not.toBeInTheDocument();
