@@ -37,11 +37,19 @@ a stroke-coloring exercise.
 The differentiating idea is the stable visual codebook. Drill logic decides how much of that cue to
 reveal at any moment.
 
+## Review Direction
+
+Review should feel close to a lightweight Anki-style loop: show one kanji card, answer from memory,
+then choose `Again` or `Good`.
+
+The most useful drills are faded recall and blind recall. Grid-to-kanji matching drills are not a
+product target for now.
+
 ## Version 1 Scope
 
 - local web app
 - mock kanji data
-- starter drill modes represented in code
+- learn, faded recall, and blind recall modes represented in code
 - simple session-state-driven cue opacity
 - small tests around the core idea
 

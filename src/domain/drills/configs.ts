@@ -9,20 +9,6 @@ export const STARTER_DRILLS: DrillConfig[] = [
     cuePolicy: 'full',
   },
   {
-    id: 'recognize-from-grid',
-    label: 'Recognize from grid',
-    mode: 'recognize-from-grid',
-    deckSize: 5,
-    cuePolicy: 'full',
-  },
-  {
-    id: 'match-grid-to-kanji',
-    label: 'Match grid to kanji',
-    mode: 'match-grid-to-kanji',
-    deckSize: 5,
-    cuePolicy: 'full',
-  },
-  {
     id: 'faded-recall',
     label: 'Faded recall',
     mode: 'faded-recall',

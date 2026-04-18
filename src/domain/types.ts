@@ -35,8 +35,6 @@ export interface UserProgress {
 
 export type DrillMode =
   | 'learn'
-  | 'recognize-from-grid'
-  | 'match-grid-to-kanji'
   | 'faded-recall'
   | 'blind-recall';
 

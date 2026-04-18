@@ -1,13 +1,11 @@
 # Drills
 
-The scaffold represents five starting drill modes. They are product targets, not all finished
-interactions.
+The scaffold represents three starting drill modes. They are product targets, not all finished
+interactions. Recall drills are the useful path; grid-to-kanji matching drills are out of scope.
 
 1. Learn: show kanji, full cue, readings, and meanings.
-2. Recognize from grid: show grid, pick the matching kanji.
-3. Match grid to kanji: show kanji, pick the matching grid.
-4. Faded recall: show kanji with cue strength controlled by session state.
-5. Blind recall: show kanji without cue support.
+2. Faded recall: show kanji with cue strength controlled by session state.
+3. Blind recall: show kanji without cue support.
 
 ## Cue Policy
 
@@ -36,7 +34,7 @@ a real answer queue, or persist results into learner progress.
 ## Interaction Boundary
 
 The study screen can include mock controls while domain behavior is being proven. Those controls
-should stay visibly temporary until a worktree owns real answer choices and queue progression.
+should stay visibly temporary until a worktree owns the `Again` and `Good` review flow.
 
-TODO: Implement real answer handling and queue selection. The current code only demonstrates
-opacity transitions.
+TODO: Implement real answer handling and queue selection for faded and blind recall. The current
+code only demonstrates opacity transitions.

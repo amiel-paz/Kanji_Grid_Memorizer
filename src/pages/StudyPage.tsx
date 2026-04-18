@@ -105,10 +105,6 @@ function descriptionForMode(mode: string): string {
   switch (mode) {
     case 'learn':
       return 'Show kanji, full cue, readings, and meanings.';
-    case 'recognize-from-grid':
-      return 'TODO: Show the grid and ask the learner to pick the matching kanji.';
-    case 'match-grid-to-kanji':
-      return 'TODO: Show the kanji and ask the learner to pick the matching grid.';
     case 'faded-recall':
       return 'Show the kanji with cue opacity controlled by session performance.';
     case 'blind-recall':
