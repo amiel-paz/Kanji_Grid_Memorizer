@@ -26,8 +26,8 @@ This example shapes the architecture:
 - each starts at opacity `1.0`
 - show the kanji card first without readings
 - reveal meanings plus all known on and kun readings before grading
-- correct answers reduce opacity for later appearances
-- misses may raise opacity again
+- correct answers reduce opacity along the `100% -> 66% -> 33% -> 0%` ladder
+- misses may raise opacity one ladder step again
 - this behavior belongs in session/drill logic
 
 The current code demonstrates opacity transitions only. It does not yet choose a random set, manage

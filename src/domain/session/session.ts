@@ -1,7 +1,6 @@
 import type { DrillConfig, KanjiEntry, SessionState } from '../types';
 
-const MIN_DIMMED_OPACITY = 0.2;
-const OPACITY_STEP = 0.25;
+const CUE_OPACITY_STEPS = [1, 0.66, 0.33, 0] as const;
 
 export function createSession(entries: KanjiEntry[], drillConfig: DrillConfig): SessionState {
   const selected = entries.slice(0, drillConfig.deckSize);
@@ -56,9 +55,7 @@ export function recordAnswer(session: SessionState, kanji: string, wasCorrect: b
   }
 
   // TODO: Replace this toy transition with the real "Random 10; dim on success" queue.
-  const nextOpacity = wasCorrect
-    ? Math.max(MIN_DIMMED_OPACITY, itemState.cueOpacity - OPACITY_STEP)
-    : Math.min(1, itemState.cueOpacity + OPACITY_STEP);
+  const nextOpacity = nextCueOpacity(itemState.cueOpacity, wasCorrect);
 
   return {
     ...session,
@@ -72,4 +69,14 @@ export function recordAnswer(session: SessionState, kanji: string, wasCorrect: b
       },
     },
   };
+}
+
+function nextCueOpacity(currentOpacity: number, wasCorrect: boolean): number {
+  const currentIndex = CUE_OPACITY_STEPS.findIndex((step) => step === currentOpacity);
+  const safeIndex = currentIndex === -1 ? 0 : currentIndex;
+  const nextIndex = wasCorrect
+    ? Math.min(CUE_OPACITY_STEPS.length - 1, safeIndex + 1)
+    : Math.max(0, safeIndex - 1);
+
+  return CUE_OPACITY_STEPS[nextIndex] ?? 0;
 }
