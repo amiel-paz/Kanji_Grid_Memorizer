@@ -2,13 +2,6 @@ import type { DrillConfig } from '../types';
 
 export const STARTER_DRILLS: DrillConfig[] = [
   {
-    id: 'learn',
-    label: 'Learn',
-    mode: 'learn',
-    deckSize: 5,
-    cuePolicy: 'full',
-  },
-  {
     id: 'faded-recall',
     label: 'Faded recall',
     mode: 'faded-recall',
@@ -21,6 +14,13 @@ export const STARTER_DRILLS: DrillConfig[] = [
     mode: 'blind-recall',
     deckSize: 5,
     cuePolicy: 'hidden',
+  },
+  {
+    id: 'learn',
+    label: 'Learn',
+    mode: 'learn',
+    deckSize: 5,
+    cuePolicy: 'full',
   },
 ];
 
