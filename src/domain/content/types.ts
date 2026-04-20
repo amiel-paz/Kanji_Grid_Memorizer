@@ -5,6 +5,8 @@ export type SourceSet = 'mock-joyo' | 'joyo' | 'jinmeiyo';
 export interface AssignmentVersion {
   readonly id: string;
   readonly sourceSets: readonly SourceSet[];
+  readonly strategyId: string;
+  readonly codeSpaceSize: number;
   readonly description: string;
 }
 

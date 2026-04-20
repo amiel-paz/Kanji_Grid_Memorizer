@@ -26,8 +26,9 @@ Owned by `src/domain/content/types.ts`.
 Assignments need an explicit version so future deck expansion does not silently reshuffle old
 mappings.
 
-For now, `mock-v0` is development scaffolding. Production assignments should wait for a canonical,
-versioned source pipeline.
+For now, `placeholder-v1` is development scaffolding. It records the placeholder strategy id and
+the 4096-code space size, then assigns codes by wrapping `canonicalIndex` into four base-8 digits.
+Production assignments should wait for a canonical, versioned source pipeline.
 
 TODO: Decide how assignment versions map to imported source files and release notes.
 
