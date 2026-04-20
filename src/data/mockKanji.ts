@@ -1,11 +1,11 @@
 import { currentAssignmentVersion } from '../domain/encoding/assignment';
-import type { KanjiEntry } from '../domain/content/types';
+import { SOURCE_SET_IDS, type KanjiEntry } from '../domain/content/types';
 
 export const mockKanji: KanjiEntry[] = [
   {
     kanji: '日',
     canonicalIndex: 1,
-    sourceSet: 'mock-joyo',
+    sourceSet: SOURCE_SET_IDS.MOCK_JOYO,
     assignmentVersionId: currentAssignmentVersion.id,
     code: [0, 0, 0, 1],
     meanings: ['sun', 'day'],
@@ -17,7 +17,7 @@ export const mockKanji: KanjiEntry[] = [
   {
     kanji: '月',
     canonicalIndex: 2,
-    sourceSet: 'mock-joyo',
+    sourceSet: SOURCE_SET_IDS.MOCK_JOYO,
     assignmentVersionId: currentAssignmentVersion.id,
     code: [0, 0, 0, 2],
     meanings: ['moon', 'month'],
@@ -29,7 +29,7 @@ export const mockKanji: KanjiEntry[] = [
   {
     kanji: '火',
     canonicalIndex: 3,
-    sourceSet: 'mock-joyo',
+    sourceSet: SOURCE_SET_IDS.MOCK_JOYO,
     assignmentVersionId: currentAssignmentVersion.id,
     code: [0, 0, 0, 3],
     meanings: ['fire'],
@@ -41,7 +41,7 @@ export const mockKanji: KanjiEntry[] = [
   {
     kanji: '水',
     canonicalIndex: 4,
-    sourceSet: 'mock-joyo',
+    sourceSet: SOURCE_SET_IDS.MOCK_JOYO,
     assignmentVersionId: currentAssignmentVersion.id,
     code: [0, 0, 0, 4],
     meanings: ['water'],
@@ -53,7 +53,7 @@ export const mockKanji: KanjiEntry[] = [
   {
     kanji: '木',
     canonicalIndex: 5,
-    sourceSet: 'mock-joyo',
+    sourceSet: SOURCE_SET_IDS.MOCK_JOYO,
     assignmentVersionId: currentAssignmentVersion.id,
     code: [0, 0, 0, 5],
     meanings: ['tree', 'wood'],

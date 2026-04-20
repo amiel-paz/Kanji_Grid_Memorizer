@@ -13,6 +13,12 @@ personal study history along with it.
 
 Content types live in `src/domain/content/types.ts`.
 
+Source-set ownership also lives with stable content. `mock-joyo` is development fixture data only,
+while `joyo` and `jinmeiyo` are reserved for future canonical imports with explicit provenance and
+version mapping. Mock entries may be useful and realistic, but they should not become the canonical
+deck by accident. Future canonical imports should apply Joyo-first ownership before adding
+Jinmeiyo, so name-use expansion cannot reclassify common-use entries silently.
+
 ## Session Behavior
 
 `SessionState` tracks ephemeral state for the current drill run. For example, a "Random 10; dim on
@@ -50,7 +56,7 @@ opacity.
 ## Module Boundaries
 
 - `domain/encoding`: base-8 code assignment and palette rules
-- `domain/content`: stable kanji records and assignment version contracts
+- `domain/content`: stable kanji records, source-set ownership, and assignment version contracts
 - `domain/drills`: drill mode configuration and placeholders for queues
 - `domain/session`: ephemeral per-run state and cue opacity behavior
 - `domain/progress`: persistent learner progress types

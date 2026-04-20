@@ -1,4 +1,5 @@
 import type { AssignmentVersion } from '../content/types';
+import { SOURCE_SET_IDS } from '../content/types';
 import { CODE_DIGITS, createKanjiCode, KANJI_CODE_LENGTH, type KanjiCode } from './palette';
 
 export interface CodeAssignmentInput {
@@ -16,7 +17,7 @@ export const KANJI_CODE_SPACE_SIZE = CODE_DIGITS.length ** KANJI_CODE_LENGTH;
 
 export const currentAssignmentVersion: AssignmentVersion = {
   id: 'placeholder-v1',
-  sourceSets: ['mock-joyo'],
+  sourceSets: [SOURCE_SET_IDS.MOCK_JOYO],
   strategyId: PLACEHOLDER_ASSIGNMENT_STRATEGY_ID,
   codeSpaceSize: KANJI_CODE_SPACE_SIZE,
   description:
