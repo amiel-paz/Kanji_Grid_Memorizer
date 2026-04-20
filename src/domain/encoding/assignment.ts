@@ -11,9 +11,11 @@ export interface CodeAssignmentStrategy {
   assignCode(input: CodeAssignmentInput): KanjiCode;
 }
 
-export const PLACEHOLDER_ASSIGNMENT_STRATEGY_ID = 'base8-index-wrap-v1';
+export const PLACEHOLDER_ASSIGNMENT_STRATEGY_ID = 'base8-stable-permutation-v1';
 
 export const KANJI_CODE_SPACE_SIZE = CODE_DIGITS.length ** KANJI_CODE_LENGTH;
+const PLACEHOLDER_PERMUTATION_MULTIPLIER = 2417;
+const PLACEHOLDER_PERMUTATION_OFFSET = 1729;
 
 export const currentAssignmentVersion: AssignmentVersion = {
   id: 'placeholder-v1',
@@ -21,7 +23,7 @@ export const currentAssignmentVersion: AssignmentVersion = {
   strategyId: PLACEHOLDER_ASSIGNMENT_STRATEGY_ID,
   codeSpaceSize: KANJI_CODE_SPACE_SIZE,
   description:
-    'Placeholder deterministic assignment for local scaffold data. Encodes canonicalIndex modulo the four-digit base-8 code space; not a canonical Joyo/Jinmeiyo import.',
+    'Placeholder deterministic assignment for local scaffold data. Maps canonicalIndex through a fixed permutation of the four-digit base-8 code space; not a canonical Joyo/Jinmeiyo import.',
 };
 
 function assertSupportedAssignmentVersion(assignmentVersion: AssignmentVersion): void {
@@ -41,17 +43,25 @@ function normalizeCanonicalIndex(canonicalIndex: number): number {
   return ((canonicalIndex % KANJI_CODE_SPACE_SIZE) + KANJI_CODE_SPACE_SIZE) % KANJI_CODE_SPACE_SIZE;
 }
 
+function permuteNormalizedIndex(normalizedIndex: number): number {
+  return (
+    (normalizedIndex * PLACEHOLDER_PERMUTATION_MULTIPLIER + PLACEHOLDER_PERMUTATION_OFFSET) %
+    KANJI_CODE_SPACE_SIZE
+  );
+}
+
 export const base8IndexAssignment: CodeAssignmentStrategy = {
   assignCode(input) {
     assertSupportedAssignmentVersion(input.assignmentVersion);
 
     const normalized = normalizeCanonicalIndex(input.canonicalIndex);
+    const assigned = permuteNormalizedIndex(normalized);
 
     return createKanjiCode([
-      Math.floor(normalized / 512) % 8,
-      Math.floor(normalized / 64) % 8,
-      Math.floor(normalized / 8) % 8,
-      normalized % 8,
+      Math.floor(assigned / 512) % 8,
+      Math.floor(assigned / 64) % 8,
+      Math.floor(assigned / 8) % 8,
+      assigned % 8,
     ]);
   },
 };

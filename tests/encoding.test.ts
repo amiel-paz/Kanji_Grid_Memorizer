@@ -75,7 +75,7 @@ describe('base-8 code assignment', () => {
     expect(CANONICAL_SOURCE_SET_PRIORITY).toEqual([SOURCE_SET_IDS.JOYO, SOURCE_SET_IDS.JINMEIYO]);
   });
 
-  it('deterministically derives digits from canonical index', () => {
+  it('deterministically derives varied digits from canonical index', () => {
     const firstAssignment = base8IndexAssignment.assignCode({
       canonicalIndex: 65,
       assignmentVersion: currentAssignmentVersion,
@@ -85,31 +85,48 @@ describe('base-8 code assignment', () => {
       assignmentVersion: currentAssignmentVersion,
     });
 
-    expect(firstAssignment).toEqual([0, 1, 0, 1]);
+    expect(firstAssignment).toEqual([6, 1, 6, 2]);
     expect(secondAssignment).toEqual(firstAssignment);
   });
 
-  it('wraps canonical indexes at the four-digit base-8 boundary', () => {
+  it('maps the full placeholder code space as a stable permutation', () => {
+    const assignedCodes = new Set<string>();
+
+    for (let canonicalIndex = 0; canonicalIndex < KANJI_CODE_SPACE_SIZE; canonicalIndex += 1) {
+      assignedCodes.add(
+        formatKanjiCode(
+          base8IndexAssignment.assignCode({
+            canonicalIndex,
+            assignmentVersion: currentAssignmentVersion,
+          }),
+        ),
+      );
+    }
+
+    expect(assignedCodes.size).toBe(KANJI_CODE_SPACE_SIZE);
+  });
+
+  it('wraps canonical indexes through the stable four-digit permutation', () => {
     expect(
       base8IndexAssignment.assignCode({
         canonicalIndex: 4095,
         assignmentVersion: currentAssignmentVersion,
       }),
-    ).toEqual([7, 7, 7, 7]);
+    ).toEqual([6, 5, 2, 0]);
 
     expect(
       base8IndexAssignment.assignCode({
         canonicalIndex: 4096,
         assignmentVersion: currentAssignmentVersion,
       }),
-    ).toEqual([0, 0, 0, 0]);
+    ).toEqual([3, 3, 0, 1]);
 
     expect(
       base8IndexAssignment.assignCode({
         canonicalIndex: 4097,
         assignmentVersion: currentAssignmentVersion,
       }),
-    ).toEqual([0, 0, 0, 1]);
+    ).toEqual([0, 0, 6, 2]);
   });
 
   it('normalizes negative indexes before validating code digits', () => {
@@ -118,7 +135,7 @@ describe('base-8 code assignment', () => {
         canonicalIndex: -1,
         assignmentVersion: currentAssignmentVersion,
       }),
-    ).toEqual([7, 7, 7, 7]);
+    ).toEqual([6, 5, 2, 0]);
   });
 
   it('rejects unsupported versions before assignment', () => {

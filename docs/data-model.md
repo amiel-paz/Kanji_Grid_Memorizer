@@ -51,8 +51,10 @@ Assignments need an explicit version so future deck expansion does not silently 
 mappings.
 
 For now, `placeholder-v1` is development scaffolding. It records the placeholder strategy id and
-the 4096-code space size, then assigns codes by wrapping `canonicalIndex` into four base-8 digits.
-Production assignments should wait for a canonical, versioned source pipeline.
+the 4096-code space size, then assigns codes by mapping `canonicalIndex` through a fixed
+permutation of the four-digit base-8 code space. This keeps the demo grids visually varied while
+remaining deterministic placeholder data. Production assignments should wait for a canonical,
+versioned source pipeline.
 
 The active placeholder assignment version only owns `mock-joyo`. Future production assignment
 versions should explicitly name the canonical source-set versions they were built from so Joyo and
