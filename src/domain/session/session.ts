@@ -61,9 +61,11 @@ export function recordReviewGrade(
   // TODO: Replace this toy transition with the real "Random 10; dim on success" queue.
   const isGoodReview = reviewGrade === 'good';
   const nextOpacity = nextCueOpacity(itemState.cueOpacity, isGoodReview);
+  const nextActiveKanji = nextSelectedKanji(session.selectedKanji, kanji);
 
   return {
     ...session,
+    activeKanji: nextActiveKanji,
     itemStateByKanji: {
       ...session.itemStateByKanji,
       [kanji]: {
@@ -74,6 +76,16 @@ export function recordReviewGrade(
       },
     },
   };
+}
+
+function nextSelectedKanji(selectedKanji: readonly string[], currentKanji: string): string {
+  const currentIndex = selectedKanji.indexOf(currentKanji);
+
+  if (currentIndex === -1) {
+    throw new Error(`Kanji is not part of this session: ${currentKanji}`);
+  }
+
+  return selectedKanji[(currentIndex + 1) % selectedKanji.length] ?? currentKanji;
 }
 
 function nextCueOpacity(currentOpacity: CueOpacity, isGoodReview: boolean): CueOpacity {

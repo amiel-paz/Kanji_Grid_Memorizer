@@ -26,6 +26,18 @@ describe('session cue opacity', () => {
     expect(entry).not.toHaveProperty('opacity');
   });
 
+  it('selects ten mock entries and advances after each review answer', () => {
+    const drill = getDrillById('faded-recall');
+    const session = createSession(mockKanji, drill);
+
+    expect(session.selectedKanji).toHaveLength(10);
+    expect(session.activeKanji).toBe(mockKanji[0]?.kanji);
+
+    const nextSession = recordReviewGrade(session, session.activeKanji, 'good');
+
+    expect(nextSession.activeKanji).toBe(mockKanji[1]?.kanji);
+  });
+
   it('raises the cue one review ladder step after a miss', () => {
     const drill = getDrillById('faded-recall');
     const entry = mockKanji[0];

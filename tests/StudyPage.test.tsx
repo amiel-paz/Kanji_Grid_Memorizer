@@ -16,5 +16,10 @@ describe('StudyPage', () => {
     expect(screen.getByText('ニチ, ジツ')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Again' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Good' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reveal readings' }));
+
+    expect(screen.getByText('ゲツ, ガツ')).toBeInTheDocument();
   });
 });
