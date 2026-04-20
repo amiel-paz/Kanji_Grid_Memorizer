@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { base8IndexAssignment, currentAssignmentVersion } from '../src/domain/encoding/assignment';
+import {
+  base8IndexAssignment,
+  currentAssignmentVersion,
+  KANJI_CODE_SPACE_SIZE,
+  PLACEHOLDER_ASSIGNMENT_STRATEGY_ID,
+} from '../src/domain/encoding/assignment';
 import {
   assertKanjiCode,
   BASE8_COLORS,
@@ -38,12 +43,81 @@ describe('base-8 code assignment', () => {
     ]);
   });
 
+  it('publishes explicit placeholder assignment version metadata', () => {
+    expect(currentAssignmentVersion).toMatchObject({
+      id: 'placeholder-v1',
+      sourceSets: ['mock-joyo'],
+      strategyId: PLACEHOLDER_ASSIGNMENT_STRATEGY_ID,
+      codeSpaceSize: 4096,
+    });
+    expect(currentAssignmentVersion.description).toContain('Placeholder deterministic assignment');
+    expect(KANJI_CODE_SPACE_SIZE).toBe(4096);
+  });
+
   it('deterministically derives digits from canonical index', () => {
+    const firstAssignment = base8IndexAssignment.assignCode({
+      canonicalIndex: 65,
+      assignmentVersion: currentAssignmentVersion,
+    });
+    const secondAssignment = base8IndexAssignment.assignCode({
+      canonicalIndex: 65,
+      assignmentVersion: currentAssignmentVersion,
+    });
+
+    expect(firstAssignment).toEqual([0, 1, 0, 1]);
+    expect(secondAssignment).toEqual(firstAssignment);
+  });
+
+  it('wraps canonical indexes at the four-digit base-8 boundary', () => {
     expect(
       base8IndexAssignment.assignCode({
-        canonicalIndex: 65,
+        canonicalIndex: 4095,
         assignmentVersion: currentAssignmentVersion,
       }),
-    ).toEqual([0, 1, 0, 1]);
+    ).toEqual([7, 7, 7, 7]);
+
+    expect(
+      base8IndexAssignment.assignCode({
+        canonicalIndex: 4096,
+        assignmentVersion: currentAssignmentVersion,
+      }),
+    ).toEqual([0, 0, 0, 0]);
+
+    expect(
+      base8IndexAssignment.assignCode({
+        canonicalIndex: 4097,
+        assignmentVersion: currentAssignmentVersion,
+      }),
+    ).toEqual([0, 0, 0, 1]);
+  });
+
+  it('normalizes negative indexes before validating code digits', () => {
+    expect(
+      base8IndexAssignment.assignCode({
+        canonicalIndex: -1,
+        assignmentVersion: currentAssignmentVersion,
+      }),
+    ).toEqual([7, 7, 7, 7]);
+  });
+
+  it('rejects unsupported versions before assignment', () => {
+    expect(() =>
+      base8IndexAssignment.assignCode({
+        canonicalIndex: 1,
+        assignmentVersion: {
+          ...currentAssignmentVersion,
+          strategyId: 'future-canonical-v1',
+        },
+      }),
+    ).toThrow('Unsupported kanji code assignment version.');
+  });
+
+  it('rejects non-integer canonical indexes', () => {
+    expect(() =>
+      base8IndexAssignment.assignCode({
+        canonicalIndex: 1.5,
+        assignmentVersion: currentAssignmentVersion,
+      }),
+    ).toThrow('canonicalIndex must be an integer for placeholder code assignment.');
   });
 });
