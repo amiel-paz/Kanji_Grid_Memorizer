@@ -19,6 +19,30 @@ Stable content only:
 
 Opacity does not belong here.
 
+## SourceSet
+
+Owned by `src/domain/content/types.ts`.
+
+Source sets describe who owns the kanji facts that a deck entry came from. They are content
+provenance, not assignment algorithms and not learner progress.
+
+Current source-set IDs:
+
+- `mock-joyo`: handwritten development fixture data. It is shaped like a tiny Joyo-like deck so the
+  app has useful local content, but it is not canonical Joyo data.
+- `joyo`: future canonical Joyo data. This is the first real source-set target, but it should only
+  be used after a versioned canonical import decision exists.
+- `jinmeiyo`: future canonical Jinmeiyo data. This should be added later as a separate source-set
+  owner with its own provenance instead of being folded invisibly into Joyo.
+
+Canonical source-set priority is Joyo, then Jinmeiyo. If a future import has to choose one owner for
+a character or variant relationship that appears to touch both lists, classify it as Joyo and keep
+Jinmeiyo supplemental. That keeps common-use kanji ownership stable before name-use expansion.
+
+TODO: Define the canonical import manifest contract that maps imported Joyo/Jinmeiyo files to
+source-set versions before either source set is populated. The manifest should document how exact
+duplicates, variants, and source-list overlaps are resolved under the Joyo-first priority rule.
+
 ## AssignmentVersion
 
 Owned by `src/domain/content/types.ts`.
@@ -30,7 +54,12 @@ For now, `placeholder-v1` is development scaffolding. It records the placeholder
 the 4096-code space size, then assigns codes by wrapping `canonicalIndex` into four base-8 digits.
 Production assignments should wait for a canonical, versioned source pipeline.
 
-TODO: Decide how assignment versions map to imported source files and release notes.
+The active placeholder assignment version only owns `mock-joyo`. Future production assignment
+versions should explicitly name the canonical source-set versions they were built from so Joyo and
+Jinmeiyo expansion cannot silently change established code mappings.
+
+TODO: Decide how assignment versions map to imported source files, canonical source-set version IDs,
+and release notes.
 
 ## UserProgress
 

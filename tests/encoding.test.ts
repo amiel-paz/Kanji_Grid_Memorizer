@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CANONICAL_SOURCE_SET_PRIORITY,
+  SOURCE_SET_DEFINITIONS,
+  SOURCE_SET_IDS,
+} from '../src/domain/content/types';
+import {
   base8IndexAssignment,
   currentAssignmentVersion,
   KANJI_CODE_SPACE_SIZE,
@@ -46,12 +51,28 @@ describe('base-8 code assignment', () => {
   it('publishes explicit placeholder assignment version metadata', () => {
     expect(currentAssignmentVersion).toMatchObject({
       id: 'placeholder-v1',
-      sourceSets: ['mock-joyo'],
+      sourceSets: [SOURCE_SET_IDS.MOCK_JOYO],
       strategyId: PLACEHOLDER_ASSIGNMENT_STRATEGY_ID,
       codeSpaceSize: 4096,
     });
     expect(currentAssignmentVersion.description).toContain('Placeholder deterministic assignment');
     expect(KANJI_CODE_SPACE_SIZE).toBe(4096);
+  });
+
+  it('keeps mock and future canonical source ownership explicit', () => {
+    expect(SOURCE_SET_DEFINITIONS[SOURCE_SET_IDS.MOCK_JOYO]).toMatchObject({
+      ownership: 'development-fixture',
+    });
+    expect(SOURCE_SET_DEFINITIONS[SOURCE_SET_IDS.MOCK_JOYO].description).toContain(
+      'not canonical Joyo data',
+    );
+    expect(SOURCE_SET_DEFINITIONS[SOURCE_SET_IDS.JOYO]).toMatchObject({
+      ownership: 'future-canonical-import',
+    });
+    expect(SOURCE_SET_DEFINITIONS[SOURCE_SET_IDS.JINMEIYO]).toMatchObject({
+      ownership: 'future-canonical-import',
+    });
+    expect(CANONICAL_SOURCE_SET_PRIORITY).toEqual([SOURCE_SET_IDS.JOYO, SOURCE_SET_IDS.JINMEIYO]);
   });
 
   it('deterministically derives digits from canonical index', () => {
