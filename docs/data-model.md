@@ -98,6 +98,7 @@ Owned by `src/domain/session/types.ts`.
 Ephemeral run-specific state:
 
 - selected kanji
+- active queue order for the current run
 - active item
 - per-kanji attempts and `good` count for this run
 - per-kanji session opacity
@@ -107,4 +108,7 @@ Session cue opacity is narrowed to the review ladder: `100%`, `66%`, `33%`, and 
 This is intentionally disposable. A finished session may inform `UserProgress`, but the next
 session should be able to compute its own cue state from the drill and progress inputs.
 
-TODO: Replace the toy queue behavior with a simple weighted queue when the first real drill is implemented.
+The starter review loop keeps queue movement inside session state. Answering or advancing rotates
+the active kanji to the back of the current run queue without mutating stable content.
+
+TODO: Replace the starter rotation queue with a simple weighted queue when the first real drill is implemented.

@@ -4,7 +4,12 @@ import { KanjiCueCard } from '../components/KanjiCueCard';
 import { mockKanji } from '../data/mockKanji';
 import { getDrillById, STARTER_DRILLS } from '../domain/drills/configs';
 import type { DrillMode, ReviewGrade } from '../domain/drills/types';
-import { advanceSessionItem, createSession, getCueOpacity, recordReviewGrade } from '../domain/session/session';
+import {
+  advanceSessionItem,
+  answerSessionReview,
+  createSession,
+  getCueOpacity,
+} from '../domain/session/session';
 
 export function StudyPage() {
   const [drillId, setDrillId] = useState(STARTER_DRILLS[0]?.id ?? 'learn');
@@ -35,7 +40,6 @@ export function StudyPage() {
   const modePresentation = getModePresentation({
     drillMode: drill.mode,
     cueOpacity: opacity,
-    readingsRevealed,
   });
 
   function handleDrillChange(nextDrillId: string) {
@@ -46,7 +50,7 @@ export function StudyPage() {
   }
 
   function handleReviewAnswer(reviewGrade: ReviewGrade) {
-    setSession((current) => recordReviewGrade(current, activeKanji, reviewGrade));
+    setSession((current) => answerSessionReview(current, reviewGrade, activeKanji).session);
     setReadingsRevealed(false);
   }
 
@@ -140,13 +144,11 @@ export function StudyPage() {
           </div>
 
           <div className="study-stage-details">
-            <section aria-labelledby="study-prompt-title" className="study-panel-block">
-              <div className="section-heading">
-                <h3 className="section-title" id="study-prompt-title">
-                  {modePresentation.promptTitle}
-                </h3>
-                <p className="fine-print">{modePresentation.promptBody}</p>
-              </div>
+            <section aria-labelledby="study-actions-title" className="study-panel-block">
+              <h3 className="sr-only" id="study-actions-title">
+                Study controls
+              </h3>
+
               {showReadings ? (
                 <dl className="study-detail-list">
                   <div>
@@ -165,12 +167,6 @@ export function StudyPage() {
               ) : (
                 <p className="fine-print">{modePresentation.hiddenReadingsCopy}</p>
               )}
-            </section>
-
-            <section aria-labelledby="study-actions-title" className="study-panel-block">
-              <h3 className="sr-only" id="study-actions-title">
-                Study controls
-              </h3>
 
               {isReviewMode ? (
                 readingsRevealed ? (
@@ -228,18 +224,14 @@ export function StudyPage() {
 function getModePresentation({
   drillMode,
   cueOpacity,
-  readingsRevealed,
 }: {
   drillMode: DrillMode;
   cueOpacity: number;
-  readingsRevealed: boolean;
 }) {
   switch (drillMode) {
     case 'learn':
       return {
         stageDescription: 'Keep the full code cue, readings, and meanings in view while you get oriented to each kanji.',
-        promptTitle: 'Study the full card',
-        promptBody: 'Learn mode is for building recognition, so the answer fields stay visible from the start.',
         hiddenReadingsCopy: '',
         revealActionLabel: '',
         preRevealActionCopy: '',
@@ -253,8 +245,6 @@ function getModePresentation({
       return {
         stageDescription:
           'Recall first, then reveal the answer. Session state lowers the cue after each good review.',
-        promptTitle: readingsRevealed ? 'Check the answer before grading' : 'Recall with a fading cue',
-        promptBody: `The cue is currently at ${Math.round(cueOpacity * 100)}%, so use the color grid as a light prompt rather than the answer.`,
         hiddenReadingsCopy: 'Try to say the meanings and readings before you reveal them. Good lowers the cue one step; Again raises it one step.',
         revealActionLabel: 'Reveal readings and meanings',
         preRevealActionCopy: 'Reveal only after you have committed to an answer in your head.',
@@ -267,8 +257,6 @@ function getModePresentation({
     case 'blind-recall':
       return {
         stageDescription: 'The kanji stays on screen, but the color cue remains hidden so the shell reads like a true recall pass.',
-        promptTitle: readingsRevealed ? 'Check the answer before grading' : 'Recall without cue support',
-        promptBody: 'Blind recall hides the cue entirely. Try to retrieve the readings and meanings from the kanji alone.',
         hiddenReadingsCopy: 'No cue is shown in this drill. Reveal the answer only after you have tried to recall it unaided.',
         revealActionLabel: 'Reveal readings and meanings',
         preRevealActionCopy: 'This mode keeps cue support off even after grading so the shell stays intentionally blind.',
@@ -281,8 +269,6 @@ function getModePresentation({
     default:
       return {
         stageDescription: 'TODO: Define this drill mode.',
-        promptTitle: 'Study prompt',
-        promptBody: '',
         hiddenReadingsCopy: '',
         revealActionLabel: 'Reveal readings',
         preRevealActionCopy: '',

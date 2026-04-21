@@ -1,7 +1,7 @@
 import type { KanjiEntry } from '../content/types';
 import { getDrillById } from '../drills/configs';
 import type { DrillConfig, ReviewGrade } from '../drills/types';
-import { CUE_OPACITY_LADDER, type CueOpacity, type SessionState } from './types';
+import { CUE_OPACITY_LADDER, type CueOpacity, type SessionAnswerResult, type SessionState } from './types';
 
 export function createSession(entries: readonly KanjiEntry[], drillConfig: DrillConfig): SessionState {
   const selected = entries.slice(0, drillConfig.deckSize);
@@ -15,6 +15,7 @@ export function createSession(entries: readonly KanjiEntry[], drillConfig: Drill
     id: crypto.randomUUID(),
     drillConfigId: drillConfig.id,
     selectedKanji: selected.map((entry) => entry.kanji),
+    queue: selected.map((entry) => entry.kanji),
     activeKanji: active.kanji,
     itemStateByKanji: Object.fromEntries(
       selected.map((entry) => [
@@ -48,24 +49,28 @@ export function getCueOpacity(session: SessionState, kanji: string): CueOpacity 
   return itemState.cueOpacity;
 }
 
-export function recordReviewGrade(
+export function answerSessionReview(
   session: SessionState,
-  kanji: string,
   reviewGrade: ReviewGrade,
-): SessionState {
+  kanji: string = session.activeKanji,
+): SessionAnswerResult {
+  assertActiveKanji(session, kanji);
+
   const itemState = session.itemStateByKanji[kanji];
 
   if (!itemState) {
     throw new Error(`Kanji is not part of this session: ${kanji}`);
   }
 
-  // TODO: Replace this toy transition with the real "Random 10; dim on success" queue.
   const isGoodReview = reviewGrade === 'good';
   const nextOpacity = nextCueOpacity(session, itemState.cueOpacity, isGoodReview);
-  const nextActiveKanji = nextSelectedKanji(session.selectedKanji, kanji);
+  const queueBefore = session.queue;
+  const queueAfter = advanceQueue(queueBefore);
+  const nextActiveKanji = queueAfter[0] ?? kanji;
 
-  return {
+  const nextSession = {
     ...session,
+    queue: queueAfter,
     activeKanji: nextActiveKanji,
     itemStateByKanji: {
       ...session.itemStateByKanji,
@@ -77,23 +82,56 @@ export function recordReviewGrade(
       },
     },
   };
-}
 
-export function advanceSessionItem(session: SessionState, kanji: string = session.activeKanji): SessionState {
   return {
-    ...session,
-    activeKanji: nextSelectedKanji(session.selectedKanji, kanji),
+    session: nextSession,
+    event: {
+      type: 'review-answer',
+      kanji,
+      reviewGrade,
+      previousCueOpacity: itemState.cueOpacity,
+      nextCueOpacity: nextOpacity,
+      queueBefore,
+      queueAfter,
+      nextActiveKanji,
+    },
   };
 }
 
-function nextSelectedKanji(selectedKanji: readonly string[], currentKanji: string): string {
-  const currentIndex = selectedKanji.indexOf(currentKanji);
+export function recordReviewGrade(
+  session: SessionState,
+  kanji: string,
+  reviewGrade: ReviewGrade,
+): SessionState {
+  return answerSessionReview(session, reviewGrade, kanji).session;
+}
 
-  if (currentIndex === -1) {
-    throw new Error(`Kanji is not part of this session: ${currentKanji}`);
+export function advanceSessionItem(session: SessionState, kanji: string = session.activeKanji): SessionState {
+  assertActiveKanji(session, kanji);
+
+  const nextQueue = advanceQueue(session.queue);
+
+  return {
+    ...session,
+    queue: nextQueue,
+    activeKanji: nextQueue[0] ?? kanji,
+  };
+}
+
+function assertActiveKanji(session: SessionState, kanji: string) {
+  if (kanji !== session.activeKanji) {
+    throw new Error(`Only the active kanji can be advanced or answered: ${kanji}`);
+  }
+}
+
+function advanceQueue(queue: readonly string[]): readonly string[] {
+  const [activeKanji, ...remainingKanji] = queue;
+
+  if (!activeKanji) {
+    return queue;
   }
 
-  return selectedKanji[(currentIndex + 1) % selectedKanji.length] ?? currentKanji;
+  return [...remainingKanji, activeKanji];
 }
 
 function nextCueOpacity(
