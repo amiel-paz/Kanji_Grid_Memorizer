@@ -46,6 +46,7 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 21 | `work/v1-readme-runbook` | Make the project easy to resume. | README has setup, scripts, architecture, and next-task suggestions. |
 | 22 | `work/v1-final-audit` | Review scope creep and remove accidental false completeness. | Clean v1 scaffold that still leaves real learning work to the project owner. |
 | 23 | `work/data-canonical-joyo-jinmeiyo-import` | Replace fixture-only deck ownership with a versioned canonical source pipeline. | Import real Joyo and Jinmeiyo data under explicit provenance, keep Joyo-first ownership, define the union manifest, and materialize stable `KanjiEntry` records without adding learner progress or scheduling behavior. |
+| 24 | `work/api-boundary-review` | Revisit whether the app needs REST or another backend boundary. | Decision doc only: current local-first posture, triggers for REST/API work, candidate resources, and boundaries to preserve. No backend implementation. |
 
 ## Long-Term Study Loop Notes
 
@@ -126,3 +127,7 @@ Good candidates to combine:
 Keep worktrees separate when they change a different contract or introduce a behavior that deserves
 its own tests and review, such as randomized session selection, persistence boundaries, progress
 modeling, or a future canonical import pipeline.
+
+Do not add REST, GraphQL, RPC, or backend service work as part of the v1 scaffold unless a later
+decision worktree says the product needs it. The planned `work/api-boundary-review` worktree should
+revisit that question after local progress, persistence, and the first review loop are concrete.
