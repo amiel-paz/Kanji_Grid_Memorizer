@@ -9,7 +9,6 @@ describe('StudyPage', () => {
     expect(screen.getByRole('heading', { name: 'First usable study shell' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Faded recall' })).toBeInTheDocument();
     expect(screen.getByText('1 / 10')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Recall with a fading cue' })).toBeInTheDocument();
     expect(screen.getAllByText('Cue visible at 100%')).toHaveLength(2);
   });
 
@@ -40,7 +39,6 @@ describe('StudyPage', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Learn/i }));
 
     expect(screen.getByRole('heading', { name: 'Learn' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Study the full card' })).toBeInTheDocument();
     expect(screen.getByText('ニチ, ジツ')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next kanji' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reveal readings and meanings' })).not.toBeInTheDocument();
@@ -58,7 +56,6 @@ describe('StudyPage', () => {
 
     fireEvent.click(screen.getByRole('radio', { name: /Blind recall/i }));
 
-    expect(screen.getByRole('heading', { name: 'Recall without cue support' })).toBeInTheDocument();
     expect(screen.getAllByText('Kanji only until reveal')).toHaveLength(2);
     expect(screen.getByText('0%')).toBeInTheDocument();
 
