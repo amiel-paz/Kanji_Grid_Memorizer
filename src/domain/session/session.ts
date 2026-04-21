@@ -1,4 +1,5 @@
 import type { KanjiEntry } from '../content/types';
+import { getDrillById } from '../drills/configs';
 import type { DrillConfig, ReviewGrade } from '../drills/types';
 import { CUE_OPACITY_LADDER, type CueOpacity, type SessionState } from './types';
 
@@ -60,7 +61,7 @@ export function recordReviewGrade(
 
   // TODO: Replace this toy transition with the real "Random 10; dim on success" queue.
   const isGoodReview = reviewGrade === 'good';
-  const nextOpacity = nextCueOpacity(itemState.cueOpacity, isGoodReview);
+  const nextOpacity = nextCueOpacity(session, itemState.cueOpacity, isGoodReview);
   const nextActiveKanji = nextSelectedKanji(session.selectedKanji, kanji);
 
   return {
@@ -78,6 +79,13 @@ export function recordReviewGrade(
   };
 }
 
+export function advanceSessionItem(session: SessionState, kanji: string = session.activeKanji): SessionState {
+  return {
+    ...session,
+    activeKanji: nextSelectedKanji(session.selectedKanji, kanji),
+  };
+}
+
 function nextSelectedKanji(selectedKanji: readonly string[], currentKanji: string): string {
   const currentIndex = selectedKanji.indexOf(currentKanji);
 
@@ -88,7 +96,21 @@ function nextSelectedKanji(selectedKanji: readonly string[], currentKanji: strin
   return selectedKanji[(currentIndex + 1) % selectedKanji.length] ?? currentKanji;
 }
 
-function nextCueOpacity(currentOpacity: CueOpacity, isGoodReview: boolean): CueOpacity {
+function nextCueOpacity(
+  session: SessionState,
+  currentOpacity: CueOpacity,
+  isGoodReview: boolean,
+): CueOpacity {
+  const drill = getDrillById(session.drillConfigId);
+
+  if (drill.cuePolicy === 'hidden') {
+    return 0;
+  }
+
+  if (drill.cuePolicy === 'full') {
+    return 1;
+  }
+
   const currentIndex = CUE_OPACITY_LADDER.findIndex((step) => step === currentOpacity);
   const safeIndex = currentIndex === -1 ? 0 : currentIndex;
   const nextIndex = isGoodReview

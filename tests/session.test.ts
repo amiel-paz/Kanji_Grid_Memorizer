@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { mockKanji } from '../src/data/mockKanji';
 import { getDrillById } from '../src/domain/drills/configs';
-import { createSession, getCueOpacity, recordReviewGrade } from '../src/domain/session/session';
+import {
+  advanceSessionItem,
+  createSession,
+  getCueOpacity,
+  recordReviewGrade,
+} from '../src/domain/session/session';
 
 describe('session cue opacity', () => {
   it('dims the cue along the review ladder after correct answers without changing kanji data', () => {
@@ -38,6 +43,23 @@ describe('session cue opacity', () => {
     expect(nextSession.activeKanji).toBe(mockKanji[1]?.kanji);
   });
 
+  it('can advance learn mode without changing cue opacity or review counts', () => {
+    const drill = getDrillById('learn');
+    const entry = mockKanji[0];
+
+    if (!entry) {
+      throw new Error('Expected mock kanji data.');
+    }
+
+    const session = createSession(mockKanji, drill);
+    const nextSession = advanceSessionItem(session);
+
+    expect(nextSession.activeKanji).toBe(mockKanji[1]?.kanji);
+    expect(getCueOpacity(nextSession, entry.kanji)).toBe(1);
+    expect(nextSession.itemStateByKanji[entry.kanji]?.attempts).toBe(0);
+    expect(nextSession.itemStateByKanji[entry.kanji]?.goodCount).toBe(0);
+  });
+
   it('raises the cue one review ladder step after a miss', () => {
     const drill = getDrillById('faded-recall');
     const entry = mockKanji[0];
@@ -58,7 +80,7 @@ describe('session cue opacity', () => {
     expect(getCueOpacity(missedSession, entry.kanji)).toBe(0.66);
   });
 
-  it('keeps blind recall cues hidden at session start', () => {
+  it('keeps blind recall cues hidden throughout review grading', () => {
     const drill = getDrillById('blind-recall');
     const entry = mockKanji[0];
 
@@ -67,7 +89,11 @@ describe('session cue opacity', () => {
     }
 
     const session = createSession(mockKanji, drill);
+    const missedSession = recordReviewGrade(session, entry.kanji, 'again');
+    const goodSession = recordReviewGrade(session, entry.kanji, 'good');
 
     expect(getCueOpacity(session, entry.kanji)).toBe(0);
+    expect(getCueOpacity(missedSession, entry.kanji)).toBe(0);
+    expect(getCueOpacity(goodSession, entry.kanji)).toBe(0);
   });
 });
