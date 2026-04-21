@@ -28,6 +28,7 @@ export function KanjiCueCard({ kanji, code, opacity, label }: KanjiCueCardProps)
       <div aria-hidden="true" className="kanji-cue-center">
         {kanji}
       </div>
+      <div className="sr-only">Code digits {code.join(' ')}</div>
     </div>
   );
 }

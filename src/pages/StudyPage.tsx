@@ -25,6 +25,7 @@ export function StudyPage() {
   const opacity = getCueOpacity(session, activeKanji);
   const isReviewMode = drill.mode !== 'learn';
   const showReadings = !isReviewMode || readingsRevealed;
+  const activeIndex = session.selectedKanji.indexOf(activeKanji);
 
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
@@ -42,85 +43,138 @@ export function StudyPage() {
     <main className="app-page">
       <header className="page-header">
         <p className="eyebrow">Kanji Grid Memorizer</p>
-        <h1 className="page-title">Stable color codes, fading cues.</h1>
+        <h1 className="page-title">First usable study shell</h1>
         <p className="body-copy">
-          This shell demonstrates the central rule: kanji records store code digits, while cue
-          opacity comes from the current drill session.
+          Study one kanji at a time, choose a drill, and reveal help only when you need it.
         </p>
       </header>
 
-      <DrillModePicker drills={STARTER_DRILLS} selectedId={drillId} onSelect={handleDrillChange} />
-
-      <section className="surface-panel grid gap-6 md:grid-cols-[minmax(16rem,20rem)_1fr]">
-        <div className="flex flex-col gap-3">
-          <KanjiCueCard
-            kanji={activeKanji}
-            code={activeEntry.code}
-            opacity={opacity}
-            label={`${activeKanji} review card with faded color cue`}
+      <div className="study-shell">
+        <aside className="study-sidebar">
+          <DrillModePicker
+            drills={STARTER_DRILLS}
+            selectedId={drillId}
+            onSelect={handleDrillChange}
           />
-          <p className="fine-print">Cue opacity: {Math.round(opacity * 100)}%</p>
-        </div>
 
-        <div className="flex flex-col gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-950">{drill.label}</h2>
-            <p className="body-copy">{descriptionForMode(drill.mode)}</p>
+          <section aria-labelledby="session-overview-title" className="surface-panel study-overview">
+            <div className="section-heading">
+              <p className="section-kicker">Current item</p>
+              <h2 className="section-title" id="session-overview-title">
+                {activeKanji} is ready to study
+              </h2>
+            </div>
+            <div className="study-overview-row" aria-live="polite">
+              <span>Drill</span>
+              <strong>{drill.label}</strong>
+            </div>
+            <div className="study-overview-row">
+              <span>Session position</span>
+              <strong>
+                {activeIndex + 1} / {session.selectedKanji.length}
+              </strong>
+            </div>
+            <div className="study-overview-row">
+              <span>Cue opacity</span>
+              <strong>{Math.round(opacity * 100)}%</strong>
+            </div>
+            <div className="study-overview-row">
+              <span>Fixture source</span>
+              <strong>{activeEntry.sourceSet}</strong>
+            </div>
+          </section>
+        </aside>
+
+        <section className="surface-panel study-stage" aria-labelledby="study-stage-title">
+          <div className="study-stage-card">
+            <div className="section-heading">
+              <p className="section-kicker">Study surface</p>
+              <h2 className="section-title" id="study-stage-title">
+                {drill.label}
+              </h2>
+              <p className="body-copy">{descriptionForMode(drill.mode)}</p>
+            </div>
+
+            <KanjiCueCard
+              kanji={activeKanji}
+              code={activeEntry.code}
+              opacity={opacity}
+              label={`${activeKanji} review card with faded color cue`}
+            />
           </div>
 
-          {showReadings ? (
-            <dl className="grid gap-2 text-sm">
-              <div>
-                <dt className="font-semibold text-gray-700">Meanings</dt>
-                <dd>{activeEntry.meanings.join(', ')}</dd>
+          <div className="study-stage-details">
+            <section aria-labelledby="study-prompt-title" className="study-panel-block">
+              <div className="section-heading">
+                <h3 className="section-title" id="study-prompt-title">
+                  Try to recall the readings first
+                </h3>
               </div>
-              <div>
-                <dt className="font-semibold text-gray-700">Onyomi</dt>
-                <dd>{activeEntry.onyomi.join(', ')}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-gray-700">Kunyomi</dt>
-                <dd>{activeEntry.kunyomi.join(', ')}</dd>
-              </div>
-            </dl>
-          ) : (
-            <p className="fine-print">
-              Recall the readings from memory, then reveal them before choosing how it went.
-            </p>
-          )}
+              {showReadings ? (
+                <dl className="study-detail-list">
+                  <div>
+                    <dt>Meanings</dt>
+                    <dd>{activeEntry.meanings.join(', ')}</dd>
+                  </div>
+                  <div>
+                    <dt>Onyomi</dt>
+                    <dd>{activeEntry.onyomi.join(', ')}</dd>
+                  </div>
+                  <div>
+                    <dt>Kunyomi</dt>
+                    <dd>{activeEntry.kunyomi.join(', ')}</dd>
+                  </div>
+                </dl>
+              ) : (
+                <p className="fine-print">
+                  Recall the readings from memory, then reveal them before choosing how it went.
+                </p>
+              )}
+            </section>
 
-          {isReviewMode ? (
-            readingsRevealed ? (
-              <div className="flex flex-wrap gap-3">
-                <button
-                  className="btn btn-secondary"
-                  type="button"
-                  onClick={() => handleReviewAnswer('again')}
-                >
-                  Again
-                </button>
-                <button
-                  className="btn btn-primary"
-                  type="button"
-                  onClick={() => handleReviewAnswer('good')}
-                >
-                  Good
-                </button>
-              </div>
-            ) : (
-              <div>
-                <button
-                  className="btn btn-primary"
-                  type="button"
-                  onClick={() => setReadingsRevealed(true)}
-                >
-                  Reveal readings
-                </button>
-              </div>
-            )
-          ) : null}
-        </div>
-      </section>
+            <section aria-labelledby="study-actions-title" className="study-panel-block">
+              <h3 className="sr-only" id="study-actions-title">
+                Study controls
+              </h3>
+
+              {isReviewMode ? (
+                readingsRevealed ? (
+                  <div className="study-action-row">
+                    <button
+                      className="btn btn-secondary"
+                      type="button"
+                      onClick={() => handleReviewAnswer('again')}
+                    >
+                      Again
+                    </button>
+                    <button
+                      className="btn btn-primary"
+                      type="button"
+                      onClick={() => handleReviewAnswer('good')}
+                    >
+                      Good
+                    </button>
+                  </div>
+                ) : (
+                  <div className="study-action-row">
+                    <button
+                      className="btn btn-primary"
+                      type="button"
+                      onClick={() => setReadingsRevealed(true)}
+                    >
+                      Reveal readings
+                    </button>
+                  </div>
+                )
+              ) : (
+                <p className="fine-print">
+                  Learn mode keeps readings visible and does not introduce review grading yet.
+                </p>
+              )}
+            </section>
+          </div>
+        </section>
+      </div>
     </main>
   );
 }
