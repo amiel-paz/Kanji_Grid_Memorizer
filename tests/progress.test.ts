@@ -39,6 +39,23 @@ describe('progress helpers', () => {
     });
   });
 
+  it('keeps the previous timestamp when a seen event omits a new one', () => {
+    const learning = {
+      ...createInitialProgress('力'),
+      seenCount: 1,
+      goodCount: 1,
+      lastSeenAt: '2026-04-20T01:00:00.000Z',
+      confidence: 'learning' as const,
+    };
+
+    expect(recordSeen(learning)).toMatchObject({
+      seenCount: 2,
+      goodCount: 1,
+      lastSeenAt: '2026-04-20T01:00:00.000Z',
+      confidence: 'learning',
+    });
+  });
+
   it('counts every review as seen and increments goodCount only for good answers', () => {
     const initial = createInitialProgress('力');
 
@@ -118,6 +135,30 @@ describe('progress helpers', () => {
       seenCount: 2,
       goodCount: 1,
       confidence: 'learning',
+    });
+  });
+
+  it('keeps familiar confidence on a good review that does not complete a new fade step', () => {
+    const familiar = {
+      ...createInitialProgress('力'),
+      seenCount: 4,
+      goodCount: 3,
+      confidence: 'familiar' as const,
+    };
+
+    expect(
+      applyReviewOutcome(familiar, {
+        kanji: '力',
+        reviewGrade: 'good',
+        previousCueOpacity: 0,
+        nextCueOpacity: 0,
+        reviewedAt: '2026-04-20T00:17:00.000Z',
+      }),
+    ).toMatchObject({
+      seenCount: 5,
+      goodCount: 4,
+      lastSeenAt: '2026-04-20T00:17:00.000Z',
+      confidence: 'familiar',
     });
   });
 

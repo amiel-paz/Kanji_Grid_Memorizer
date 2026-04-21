@@ -26,6 +26,12 @@ function createDeterministicRandom(values: readonly number[]) {
 }
 
 describe('session cue opacity', () => {
+  it('rejects creating a session when no entries are available', () => {
+    expect(() => createSession([], getDrillById('learn'))).toThrow(
+      'Cannot create a study session without kanji entries.',
+    );
+  });
+
   it('creates a session with a randomized 10-kanji selection, an explicit queue, and drill-based initial opacity', () => {
     const fadedRecall = getDrillById('faded-recall');
     const blindRecall = getDrillById('blind-recall');
@@ -146,6 +152,24 @@ describe('session cue opacity', () => {
     expect(getCueOpacity(missedSession, entry.kanji)).toBe(0.66);
   });
 
+  it('keeps full-cue drills at 100% even if a review grade is recorded', () => {
+    const drill = getDrillById('learn');
+    const entry = mockKanji[0];
+
+    if (!entry) {
+      throw new Error('Expected mock kanji data.');
+    }
+
+    const session = createSession([entry], drill);
+    const reviewedSession = recordReviewGrade(session, entry.kanji, 'good');
+
+    expect(getCueOpacity(reviewedSession, entry.kanji)).toBe(1);
+    expect(reviewedSession.itemStateByKanji[entry.kanji]).toMatchObject({
+      attempts: 1,
+      goodCount: 1,
+    });
+  });
+
   it('keeps blind recall cues hidden throughout review grading', () => {
     const drill = getDrillById('blind-recall');
     const session = createSession(mockKanji, drill, {
@@ -178,5 +202,11 @@ describe('session cue opacity', () => {
     expect(() => answerSessionReview(session, 'good', nextKanji)).toThrow(
       /Only the active kanji can be advanced or answered/,
     );
+  });
+
+  it('rejects cue lookups for kanji outside the current session', () => {
+    const session = createSession(mockKanji.slice(0, 2), getDrillById('faded-recall'));
+
+    expect(() => getCueOpacity(session, '力')).toThrow('Kanji is not part of this session: 力');
   });
 });
