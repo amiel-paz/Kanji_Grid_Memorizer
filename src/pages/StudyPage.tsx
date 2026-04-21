@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { DrillModePicker } from '../components/DrillModePicker';
 import { KanjiCueCard } from '../components/KanjiCueCard';
 import { mockKanji } from '../data/mockKanji';
@@ -11,6 +11,7 @@ import {
   createSession,
   getCueOpacity,
 } from '../domain/session/session';
+import { loadProgressRecords, syncReviewEventToProgressStore } from '../state/progressStore';
 
 interface StudyPageProps {
   readonly sessionOptions?: CreateSessionOptions;
@@ -21,6 +22,7 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
   const drill = getDrillById(drillId);
   const [session, setSession] = useState(() => createSession(mockKanji, drill, sessionOptions));
   const [readingsRevealed, setReadingsRevealed] = useState(drill.mode === 'learn');
+  const progressByKanjiRef = useRef(loadProgressRecords());
 
   const activeEntry = useMemo(
     () => mockKanji.find((entry) => entry.kanji === session.activeKanji) ?? mockKanji[0],
@@ -55,7 +57,13 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
   }
 
   function handleReviewAnswer(reviewGrade: ReviewGrade) {
-    setSession((current) => answerSessionReview(current, reviewGrade, activeKanji).session);
+    const { session: nextSession, event } = answerSessionReview(session, reviewGrade, activeKanji);
+    progressByKanjiRef.current = syncReviewEventToProgressStore(
+      progressByKanjiRef.current,
+      event,
+      new Date().toISOString(),
+    );
+    setSession(nextSession);
     setReadingsRevealed(false);
   }
 

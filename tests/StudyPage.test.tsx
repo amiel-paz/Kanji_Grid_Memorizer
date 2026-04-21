@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StudyPage } from '../src/pages/StudyPage';
 
 function createDeterministicRandom(values: readonly number[]) {
@@ -18,6 +18,22 @@ function createDeterministicRandom(values: readonly number[]) {
 }
 
 describe('StudyPage', () => {
+  let storage: Storage;
+
+  beforeEach(() => {
+    storage = createMemoryStorage();
+    Object.defineProperty(window, 'localStorage', {
+      configurable: true,
+      value: storage,
+    });
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-21T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('shows the faded recall shell with cue guidance and session context', () => {
     render(
       <StudyPage
@@ -61,6 +77,65 @@ describe('StudyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Reveal readings and meanings' }));
 
     expect(screen.getByText('ゲツ, ガツ')).toBeInTheDocument();
+  });
+
+  it('writes progress only after an explicit review grade and reuses existing stored records', () => {
+    storage.setItem(
+      'kanji-grid-progress-v0',
+      JSON.stringify({
+        月: {
+          kanji: '月',
+          seenCount: 2,
+          goodCount: 1,
+          lastSeenAt: '2026-04-20T12:00:00.000Z',
+          confidence: 'learning',
+        },
+      }),
+    );
+
+    render(
+      <StudyPage
+        sessionOptions={{
+          id: 'study-page-session',
+          random: createDeterministicRandom([0.9, 0.1, 0.5, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.05]),
+        }}
+      />,
+    );
+
+    expect(storage.getItem('kanji-grid-progress-v0')).toContain('"月"');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reveal readings and meanings' }));
+
+    expect(storage.getItem('kanji-grid-progress-v0')).toEqual(
+      JSON.stringify({
+        月: {
+          kanji: '月',
+          seenCount: 2,
+          goodCount: 1,
+          lastSeenAt: '2026-04-20T12:00:00.000Z',
+          confidence: 'learning',
+        },
+      }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
+
+    expect(JSON.parse(storage.getItem('kanji-grid-progress-v0') ?? 'null')).toEqual({
+      月: {
+        kanji: '月',
+        seenCount: 2,
+        goodCount: 1,
+        lastSeenAt: '2026-04-20T12:00:00.000Z',
+        confidence: 'learning',
+      },
+      力: {
+        kanji: '力',
+        seenCount: 1,
+        goodCount: 1,
+        lastSeenAt: '2026-04-21T12:00:00.000Z',
+        confidence: 'learning',
+      },
+    });
   });
 
   it('switches to learn mode with persistent readings and next-item navigation', () => {
@@ -113,3 +188,28 @@ describe('StudyPage', () => {
     expect(screen.getAllByText('Kanji only until reveal')).toHaveLength(2);
   });
 });
+
+function createMemoryStorage(): Storage {
+  const values = new Map<string, string>();
+
+  return {
+    get length() {
+      return values.size;
+    },
+    clear() {
+      values.clear();
+    },
+    getItem(key) {
+      return values.get(key) ?? null;
+    },
+    key(index) {
+      return Array.from(values.keys())[index] ?? null;
+    },
+    removeItem(key) {
+      values.delete(key);
+    },
+    setItem(key, value) {
+      values.set(key, value);
+    },
+  };
+}
