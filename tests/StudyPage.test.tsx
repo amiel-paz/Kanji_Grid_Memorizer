@@ -163,6 +163,38 @@ describe('StudyPage', () => {
     expect(screen.getByText('ゲツ, ガツ')).toBeInTheDocument();
   });
 
+  it('resets reveal state and session position when switching drills', () => {
+    render(
+      <StudyPage
+        sessionOptions={{
+          id: 'study-page-session',
+          random: createDeterministicRandom([0.9, 0.1, 0.5, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.05]),
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reveal readings and meanings' }));
+    expect(screen.getByText('リョク, リキ')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: /Learn/i }));
+
+    expect(screen.getByText('リョク, リキ')).toBeInTheDocument();
+    expect(screen.getByText('1 / 10')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next kanji' }));
+    expect(screen.getByText('月 is ready to study')).toBeInTheDocument();
+    expect(screen.getByText('2 / 10')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('radio', { name: /Faded recall/i }));
+
+    expect(screen.getByText('力 is ready to study')).toBeInTheDocument();
+    expect(screen.getByText('1 / 10')).toBeInTheDocument();
+    expect(screen.queryByText('リョク, リキ')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reveal readings and meanings' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Again' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Good' })).not.toBeInTheDocument();
+  });
+
   it('keeps blind recall cue-hidden before and after grading', () => {
     render(
       <StudyPage

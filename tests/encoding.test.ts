@@ -14,8 +14,11 @@ import {
   assertKanjiCode,
   BASE8_COLORS,
   CODE_DIGITS,
+  createKanjiCode,
   formatKanjiCode,
+  getColorForCodeDigit,
   getKanjiCodeCells,
+  isCodeDigit,
   KANJI_CODE_POSITIONS,
 } from '../src/domain/encoding/palette';
 
@@ -27,6 +30,14 @@ describe('base-8 code assignment', () => {
 
   it('formats four base-8 digits as a compact code string', () => {
     expect(formatKanjiCode([0, 1, 2, 7])).toBe('0127');
+  });
+
+  it('accepts only the defined base-8 digits and maps them to stable colors', () => {
+    expect(isCodeDigit(0)).toBe(true);
+    expect(isCodeDigit(7)).toBe(true);
+    expect(isCodeDigit(-1)).toBe(false);
+    expect(isCodeDigit(8)).toBe(false);
+    expect(getColorForCodeDigit(5)).toBe(BASE8_COLORS[5]);
   });
 
   it('rejects malformed kanji codes', () => {
@@ -46,6 +57,10 @@ describe('base-8 code assignment', () => {
       { position: 'bottom-left', digit: 2, color: BASE8_COLORS[2] },
       { position: 'bottom-right', digit: 3, color: BASE8_COLORS[3] },
     ]);
+  });
+
+  it('creates validated kanji codes without changing the digit order', () => {
+    expect(createKanjiCode([7, 6, 5, 4])).toEqual([7, 6, 5, 4]);
   });
 
   it('publishes explicit placeholder assignment version metadata', () => {
