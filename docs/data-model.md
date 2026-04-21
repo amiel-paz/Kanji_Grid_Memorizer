@@ -108,7 +108,9 @@ Session cue opacity is narrowed to the review ladder: `100%`, `66%`, `33%`, and 
 This is intentionally disposable. A finished session may inform `UserProgress`, but the next
 session should be able to compute its own cue state from the drill and progress inputs.
 
-The starter review loop keeps queue movement inside session state. Answering or advancing rotates
-the active kanji to the back of the current run queue without mutating stable content.
+The starter review loop keeps queue movement inside session state. Session creation can randomize
+which kanji enter the current run, while answering or advancing still rotates the active kanji to
+the back of the current run queue without mutating stable content.
 
-TODO: Replace the starter rotation queue with a simple weighted queue when the first real drill is implemented.
+TODO: Replace the starter rotation queue with a simple weighted queue after the first randomized
+session selector is in place.

@@ -7,14 +7,19 @@ import type { DrillMode, ReviewGrade } from '../domain/drills/types';
 import {
   advanceSessionItem,
   answerSessionReview,
+  type CreateSessionOptions,
   createSession,
   getCueOpacity,
 } from '../domain/session/session';
 
-export function StudyPage() {
+interface StudyPageProps {
+  readonly sessionOptions?: CreateSessionOptions;
+}
+
+export function StudyPage({ sessionOptions }: StudyPageProps) {
   const [drillId, setDrillId] = useState(STARTER_DRILLS[0]?.id ?? 'learn');
   const drill = getDrillById(drillId);
-  const [session, setSession] = useState(() => createSession(mockKanji, drill));
+  const [session, setSession] = useState(() => createSession(mockKanji, drill, sessionOptions));
   const [readingsRevealed, setReadingsRevealed] = useState(drill.mode === 'learn');
 
   const activeEntry = useMemo(
@@ -45,7 +50,7 @@ export function StudyPage() {
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
     setDrillId(nextDrillId);
-    setSession(createSession(mockKanji, nextDrill));
+    setSession(createSession(mockKanji, nextDrill, sessionOptions));
     setReadingsRevealed(nextDrill.mode === 'learn');
   }
 
