@@ -1,4 +1,14 @@
-import type { UserProgress } from './types';
+import type { ReviewGrade } from '../drills/types';
+import type { CueOpacity } from '../session/types';
+import type { ProgressConfidence, UserProgress } from './types';
+
+export interface ProgressReviewOutcome {
+  readonly kanji: string;
+  readonly reviewGrade: ReviewGrade;
+  readonly previousCueOpacity: CueOpacity;
+  readonly nextCueOpacity: CueOpacity;
+  readonly reviewedAt?: string;
+}
 
 export function createInitialProgress(kanji: string): UserProgress {
   return {
@@ -9,4 +19,52 @@ export function createInitialProgress(kanji: string): UserProgress {
   };
 }
 
-// TODO: Add small, explicit progress update helpers once a real drill flow exists.
+export function recordSeen(progress: UserProgress, seenAt?: string): UserProgress {
+  return {
+    ...progress,
+    seenCount: progress.seenCount + 1,
+    lastSeenAt: seenAt ?? progress.lastSeenAt,
+    confidence: progress.confidence === 'familiar' ? 'familiar' : 'learning',
+  };
+}
+
+export function applyReviewOutcome(
+  progress: UserProgress,
+  outcome: ProgressReviewOutcome,
+): UserProgress {
+  assertSameKanji(progress, outcome.kanji);
+
+  const seenProgress = recordSeen(progress, outcome.reviewedAt);
+  const nextGoodCount = seenProgress.goodCount + (outcome.reviewGrade === 'good' ? 1 : 0);
+
+  return {
+    ...seenProgress,
+    goodCount: nextGoodCount,
+    confidence: nextConfidenceForReviewOutcome(seenProgress.confidence, outcome),
+  };
+}
+
+function nextConfidenceForReviewOutcome(
+  currentConfidence: ProgressConfidence,
+  outcome: ProgressReviewOutcome,
+): ProgressConfidence {
+  if (outcome.reviewGrade === 'again') {
+    return 'learning';
+  }
+
+  if (completesFadedRecallLadder(outcome)) {
+    return 'familiar';
+  }
+
+  return currentConfidence === 'familiar' ? 'familiar' : 'learning';
+}
+
+function completesFadedRecallLadder(outcome: ProgressReviewOutcome): boolean {
+  return outcome.reviewGrade === 'good' && outcome.previousCueOpacity > 0 && outcome.nextCueOpacity === 0;
+}
+
+function assertSameKanji(progress: UserProgress, kanji: string): void {
+  if (progress.kanji !== kanji) {
+    throw new Error(`Progress update kanji mismatch: expected ${progress.kanji}, received ${kanji}`);
+  }
+}
