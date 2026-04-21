@@ -1,27 +1,101 @@
 export interface LocalStore<T> {
   load(): T | undefined;
-  save(value: T): void;
-  clear(): void;
+  save(value: T): boolean;
+  clear(): boolean;
 }
 
-export function createLocalStore<T>(key: string): LocalStore<T> {
+export interface CreateLocalStoreOptions<T> {
+  readonly storage?: () => Storage | undefined;
+  readonly validate?: (value: unknown) => value is T;
+}
+
+export function createLocalStore<T>(
+  key: string,
+  options: CreateLocalStoreOptions<T> = {},
+): LocalStore<T> {
+  const getStorage = options.storage ?? getBrowserLocalStorage;
+
   return {
-    load() {
-      const raw = window.localStorage.getItem(key);
+    load(): T | undefined {
+      const storage = getStorage();
+
+      if (!storage) {
+        return undefined;
+      }
+
+      const raw = safeGetItem(storage, key);
 
       if (!raw) {
         return undefined;
       }
 
-      return JSON.parse(raw) as T;
+      const parsed = safeParse(raw);
+
+      if (parsed === undefined) {
+        return undefined;
+      }
+
+      if (options.validate && !options.validate(parsed)) {
+        return undefined;
+      }
+
+      return parsed as T;
     },
     save(value) {
-      window.localStorage.setItem(key, JSON.stringify(value));
+      const storage = getStorage();
+
+      if (!storage) {
+        return false;
+      }
+
+      try {
+        storage.setItem(key, JSON.stringify(value));
+        return true;
+      } catch {
+        return false;
+      }
     },
     clear() {
-      window.localStorage.removeItem(key);
+      const storage = getStorage();
+
+      if (!storage) {
+        return false;
+      }
+
+      try {
+        storage.removeItem(key);
+        return true;
+      } catch {
+        return false;
+      }
     },
   };
 }
 
-// TODO: Add validation/migration before storing meaningful progress data.
+function getBrowserLocalStorage(): Storage | undefined {
+  if (typeof window === 'undefined') {
+    return undefined;
+  }
+
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
+function safeGetItem(storage: Storage, key: string): string | null {
+  try {
+    return storage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function safeParse(raw: string): unknown {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return undefined;
+  }
+}
