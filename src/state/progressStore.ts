@@ -1,4 +1,6 @@
+import { applyReviewOutcome, createInitialProgress } from '../domain/progress/progress';
 import type { UserProgress } from '../domain/progress/types';
+import type { SessionAnswerEvent } from '../domain/session/types';
 import { createLocalStore } from '../lib/localStore';
 
 export const progressStore = createLocalStore<Record<string, UserProgress>>(
@@ -9,6 +11,42 @@ export const progressStore = createLocalStore<Record<string, UserProgress>>(
 );
 
 // TODO: Wrap this in a small React context after progress editing exists.
+
+export type ProgressByKanji = Readonly<Record<string, UserProgress>>;
+
+export function loadProgressRecords(): ProgressByKanji {
+  return progressStore.load() ?? {};
+}
+
+export function applyReviewEventToProgressRecords(
+  progressByKanji: ProgressByKanji,
+  event: SessionAnswerEvent,
+  reviewedAt?: string,
+): Record<string, UserProgress> {
+  const currentProgress = progressByKanji[event.kanji] ?? createInitialProgress(event.kanji);
+  const nextProgress = applyReviewOutcome(currentProgress, {
+    kanji: event.kanji,
+    reviewGrade: event.reviewGrade,
+    previousCueOpacity: event.previousCueOpacity,
+    nextCueOpacity: event.nextCueOpacity,
+    reviewedAt,
+  });
+
+  return {
+    ...progressByKanji,
+    [event.kanji]: nextProgress,
+  };
+}
+
+export function syncReviewEventToProgressStore(
+  progressByKanji: ProgressByKanji,
+  event: SessionAnswerEvent,
+  reviewedAt?: string,
+): Record<string, UserProgress> {
+  const nextProgressByKanji = applyReviewEventToProgressRecords(progressByKanji, event, reviewedAt);
+  progressStore.save(nextProgressByKanji);
+  return nextProgressByKanji;
+}
 
 function isUserProgressRecord(value: unknown): value is Record<string, UserProgress> {
   if (!isRecord(value)) {
