@@ -36,16 +36,16 @@ This example shapes the architecture:
 - misses may raise opacity one ladder step again
 - this behavior belongs in session/drill logic
 
-The current code demonstrates opacity transitions only. It does not yet choose a random set, manage
-a randomized set, weighted queue behavior, or persist results into learner progress.
+The current code demonstrates randomized session selection plus opacity transitions. It still does
+not manage a weighted queue or persist results into learner progress.
 
 ## Interaction Boundary
 
 The study screen can include mock controls while domain behavior is being proven. Review modes
 should follow the Anki-style order: recall first, reveal readings, then choose `Again` or `Good`.
 
-TODO: Replace the starter review loop with randomized selection and smarter queue shaping once the
-project reaches `work/session-random-10`.
+TODO: Replace the starter review loop's simple rotation with smarter queue shaping after
+`work/session-random-10`.
 
 ## Future Daily Flow
 

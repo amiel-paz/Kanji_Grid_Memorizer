@@ -45,6 +45,7 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 20 | `work/v1-polish-pass` | Make the shell feel coherent without changing core behavior. | Copy, basic accessibility, and responsive layout fixes scoped to the existing v1 shell. |
 | 21 | `work/v1-readme-runbook` | Make the project easy to resume. | README has setup, scripts, architecture, and next-task suggestions. |
 | 22 | `work/v1-final-audit` | Review scope creep and remove accidental false completeness. | Clean v1 scaffold that still leaves real learning work to the project owner. |
+| 23 | `work/data-canonical-joyo-jinmeiyo-import` | Replace fixture-only deck ownership with a versioned canonical source pipeline. | Import real Joyo and Jinmeiyo data under explicit provenance, keep Joyo-first ownership, define the union manifest, and materialize stable `KanjiEntry` records without adding learner progress or scheduling behavior. |
 
 ## Long-Term Study Loop Notes
 
@@ -62,7 +63,13 @@ What the product should build toward after the current v1 scaffold:
 - Review sessions that can mix due review items with the day's new-item allowance without
   rewriting stable content records.
 
-Suggested follow-on worktrees after the current plan reaches persistent progress:
+Suggested follow-on worktrees after the current v1 scaffold:
+
+- `work/data-canonical-joyo-jinmeiyo-import`: replace the fixture-only deck with a versioned
+  canonical import pipeline for real Joyo and Jinmeiyo data, preserving Joyo-first ownership and
+  keeping stable content separate from learner state.
+
+Suggested follow-on worktrees after the plan reaches persistent progress:
 
 - `work/progress-daily-new-limit`: choose today's new-kanji allowance, track carryover, and avoid
   silently dropping unfinished new items.

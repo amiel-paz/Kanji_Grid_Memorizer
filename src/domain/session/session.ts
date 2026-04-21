@@ -3,8 +3,19 @@ import { getDrillById } from '../drills/configs';
 import type { DrillConfig, ReviewGrade } from '../drills/types';
 import { CUE_OPACITY_LADDER, type CueOpacity, type SessionAnswerResult, type SessionState } from './types';
 
-export function createSession(entries: readonly KanjiEntry[], drillConfig: DrillConfig): SessionState {
-  const selected = entries.slice(0, drillConfig.deckSize);
+export type SessionRandomSource = () => number;
+
+export interface CreateSessionOptions {
+  readonly random?: SessionRandomSource;
+  readonly id?: string;
+}
+
+export function createSession(
+  entries: readonly KanjiEntry[],
+  drillConfig: DrillConfig,
+  options: CreateSessionOptions = {},
+): SessionState {
+  const selected = selectSessionEntries(entries, drillConfig.deckSize, options.random);
   const active = selected[0];
 
   if (!active) {
@@ -12,7 +23,7 @@ export function createSession(entries: readonly KanjiEntry[], drillConfig: Drill
   }
 
   return {
-    id: crypto.randomUUID(),
+    id: options.id ?? crypto.randomUUID(),
     drillConfigId: drillConfig.id,
     selectedKanji: selected.map((entry) => entry.kanji),
     queue: selected.map((entry) => entry.kanji),
@@ -29,6 +40,29 @@ export function createSession(entries: readonly KanjiEntry[], drillConfig: Drill
       ]),
     ),
   };
+}
+
+export function selectSessionEntries(
+  entries: readonly KanjiEntry[],
+  deckSize: number,
+  random: SessionRandomSource = Math.random,
+): readonly KanjiEntry[] {
+  const remainingEntries = [...entries];
+  const selected: KanjiEntry[] = [];
+  const selectionSize = Math.min(deckSize, remainingEntries.length);
+
+  while (selected.length < selectionSize) {
+    const selectedIndex = Math.floor(random() * remainingEntries.length);
+    const [entry] = remainingEntries.splice(selectedIndex, 1);
+
+    if (!entry) {
+      throw new Error(`Session selection produced an invalid index: ${selectedIndex}`);
+    }
+
+    selected.push(entry);
+  }
+
+  return selected;
 }
 
 export function initialOpacityForDrill(drillConfig: DrillConfig): CueOpacity {
