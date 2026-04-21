@@ -7,6 +7,9 @@ interactions. Recall drills are the useful path; grid-to-kanji matching drills a
 2. Faded recall: show kanji with cue strength controlled by session state.
 3. Blind recall: show kanji without cue support.
 
+Inside the current study shell, Learn can advance to the next kanji without grading. Review modes
+should keep the reveal-then-grade order instead of pretending to schedule or persist outcomes.
+
 ## Cue Policy
 
 Drills describe how much help the learner receives:
@@ -14,6 +17,9 @@ Drills describe how much help the learner receives:
 - `full`: show the cue at full strength.
 - `session-dim`: let the current session adjust cue opacity.
 - `hidden`: hide the cue.
+
+`hidden` means hidden for the whole drill shell, not only at session start. Blind recall should not
+quietly fade back into a visible cue after an `Again`.
 
 The cue policy belongs to the drill configuration. The current opacity belongs to the session. The
 tile only renders what it receives.

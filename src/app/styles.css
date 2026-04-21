@@ -176,6 +176,18 @@ select {
     @apply flex flex-col items-center gap-6;
   }
 
+  .study-stage-meta {
+    @apply grid w-full gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm;
+  }
+
+  .study-stage-meta dt {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-gray-500;
+  }
+
+  .study-stage-meta dd {
+    @apply mt-1 text-sm leading-6 text-gray-900;
+  }
+
   .study-stage-details {
     @apply grid gap-4;
   }

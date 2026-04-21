@@ -4,7 +4,7 @@ import { KanjiCueCard } from '../components/KanjiCueCard';
 import { mockKanji } from '../data/mockKanji';
 import { getDrillById, STARTER_DRILLS } from '../domain/drills/configs';
 import type { DrillMode, ReviewGrade } from '../domain/drills/types';
-import { createSession, getCueOpacity, recordReviewGrade } from '../domain/session/session';
+import { advanceSessionItem, createSession, getCueOpacity, recordReviewGrade } from '../domain/session/session';
 
 export function StudyPage() {
   const [drillId, setDrillId] = useState(STARTER_DRILLS[0]?.id ?? 'learn');
@@ -26,6 +26,17 @@ export function StudyPage() {
   const isReviewMode = drill.mode !== 'learn';
   const showReadings = !isReviewMode || readingsRevealed;
   const activeIndex = session.selectedKanji.indexOf(activeKanji);
+  const activeItemState = session.itemStateByKanji[activeKanji];
+
+  if (!activeItemState) {
+    throw new Error(`Active kanji is missing from session state: ${activeKanji}`);
+  }
+
+  const modePresentation = getModePresentation({
+    drillMode: drill.mode,
+    cueOpacity: opacity,
+    readingsRevealed,
+  });
 
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
@@ -37,6 +48,10 @@ export function StudyPage() {
   function handleReviewAnswer(reviewGrade: ReviewGrade) {
     setSession((current) => recordReviewGrade(current, activeKanji, reviewGrade));
     setReadingsRevealed(false);
+  }
+
+  function handleAdvanceLearnItem() {
+    setSession((current) => advanceSessionItem(current, activeKanji));
   }
 
   return (
@@ -79,6 +94,10 @@ export function StudyPage() {
               <strong>{Math.round(opacity * 100)}%</strong>
             </div>
             <div className="study-overview-row">
+              <span>Visible support</span>
+              <strong>{modePresentation.supportSummary}</strong>
+            </div>
+            <div className="study-overview-row">
               <span>Fixture source</span>
               <strong>{activeEntry.sourceSet}</strong>
             </div>
@@ -92,23 +111,41 @@ export function StudyPage() {
               <h2 className="section-title" id="study-stage-title">
                 {drill.label}
               </h2>
-              <p className="body-copy">{descriptionForMode(drill.mode)}</p>
+              <p className="body-copy">{modePresentation.stageDescription}</p>
             </div>
 
             <KanjiCueCard
               kanji={activeKanji}
               code={activeEntry.code}
               opacity={opacity}
-              label={`${activeKanji} review card with faded color cue`}
+              label={modePresentation.cardLabel(activeKanji)}
             />
+
+            <dl className="study-stage-meta" aria-label="Mode summary">
+              <div>
+                <dt>Focus</dt>
+                <dd>{modePresentation.focusLabel}</dd>
+              </div>
+              <div>
+                <dt>Support</dt>
+                <dd>{modePresentation.supportSummary}</dd>
+              </div>
+              <div>
+                <dt>Progress in this run</dt>
+                <dd>
+                  {activeItemState.goodCount} good / {activeItemState.attempts} attempts
+                </dd>
+              </div>
+            </dl>
           </div>
 
           <div className="study-stage-details">
             <section aria-labelledby="study-prompt-title" className="study-panel-block">
               <div className="section-heading">
                 <h3 className="section-title" id="study-prompt-title">
-                  Try to recall the readings first
+                  {modePresentation.promptTitle}
                 </h3>
+                <p className="fine-print">{modePresentation.promptBody}</p>
               </div>
               {showReadings ? (
                 <dl className="study-detail-list">
@@ -126,9 +163,7 @@ export function StudyPage() {
                   </div>
                 </dl>
               ) : (
-                <p className="fine-print">
-                  Recall the readings from memory, then reveal them before choosing how it went.
-                </p>
+                <p className="fine-print">{modePresentation.hiddenReadingsCopy}</p>
               )}
             </section>
 
@@ -139,37 +174,48 @@ export function StudyPage() {
 
               {isReviewMode ? (
                 readingsRevealed ? (
-                  <div className="study-action-row">
-                    <button
-                      className="btn btn-secondary"
-                      type="button"
-                      onClick={() => handleReviewAnswer('again')}
-                    >
-                      Again
-                    </button>
-                    <button
-                      className="btn btn-primary"
-                      type="button"
-                      onClick={() => handleReviewAnswer('good')}
-                    >
-                      Good
-                    </button>
-                  </div>
+                  <>
+                    <div className="study-action-row">
+                      <button
+                        className="btn btn-secondary"
+                        type="button"
+                        onClick={() => handleReviewAnswer('again')}
+                      >
+                        Again
+                      </button>
+                      <button
+                        className="btn btn-primary"
+                        type="button"
+                        onClick={() => handleReviewAnswer('good')}
+                      >
+                        Good
+                      </button>
+                    </div>
+                    <p className="fine-print">{modePresentation.gradedStateCopy}</p>
+                  </>
                 ) : (
-                  <div className="study-action-row">
-                    <button
-                      className="btn btn-primary"
-                      type="button"
-                      onClick={() => setReadingsRevealed(true)}
-                    >
-                      Reveal readings
-                    </button>
-                  </div>
+                  <>
+                    <div className="study-action-row">
+                      <button
+                        className="btn btn-primary"
+                        type="button"
+                        onClick={() => setReadingsRevealed(true)}
+                      >
+                        {modePresentation.revealActionLabel}
+                      </button>
+                    </div>
+                    <p className="fine-print">{modePresentation.preRevealActionCopy}</p>
+                  </>
                 )
               ) : (
-                <p className="fine-print">
-                  Learn mode keeps readings visible and does not introduce review grading yet.
-                </p>
+                <>
+                  <div className="study-action-row">
+                    <button className="btn btn-primary" type="button" onClick={handleAdvanceLearnItem}>
+                      Next kanji
+                    </button>
+                  </div>
+                  <p className="fine-print">{modePresentation.learnActionCopy}</p>
+                </>
               )}
             </section>
           </div>
@@ -179,15 +225,72 @@ export function StudyPage() {
   );
 }
 
-function descriptionForMode(mode: DrillMode): string {
-  switch (mode) {
+function getModePresentation({
+  drillMode,
+  cueOpacity,
+  readingsRevealed,
+}: {
+  drillMode: DrillMode;
+  cueOpacity: number;
+  readingsRevealed: boolean;
+}) {
+  switch (drillMode) {
     case 'learn':
-      return 'Show kanji, full cue, readings, and meanings.';
+      return {
+        stageDescription: 'Keep the full code cue, readings, and meanings in view while you get oriented to each kanji.',
+        promptTitle: 'Study the full card',
+        promptBody: 'Learn mode is for building recognition, so the answer fields stay visible from the start.',
+        hiddenReadingsCopy: '',
+        revealActionLabel: '',
+        preRevealActionCopy: '',
+        gradedStateCopy: '',
+        learnActionCopy: 'Move through the current session without changing cue opacity or introducing review grading.',
+        supportSummary: 'Full cue plus readings',
+        focusLabel: 'Associate the kanji with its cue, readings, and meanings.',
+        cardLabel: (kanji: string) => `${kanji} learn card with full cue support`,
+      };
     case 'faded-recall':
-      return 'Show the kanji with cue opacity controlled by session performance.';
+      return {
+        stageDescription:
+          'Recall first, then reveal the answer. Session state lowers the cue after each good review.',
+        promptTitle: readingsRevealed ? 'Check the answer before grading' : 'Recall with a fading cue',
+        promptBody: `The cue is currently at ${Math.round(cueOpacity * 100)}%, so use the color grid as a light prompt rather than the answer.`,
+        hiddenReadingsCopy: 'Try to say the meanings and readings before you reveal them. Good lowers the cue one step; Again raises it one step.',
+        revealActionLabel: 'Reveal readings and meanings',
+        preRevealActionCopy: 'Reveal only after you have committed to an answer in your head.',
+        gradedStateCopy: 'Choose Good if you recalled it cleanly; choose Again if you want the next pass to lean more on the cue.',
+        learnActionCopy: '',
+        supportSummary: `Cue visible at ${Math.round(cueOpacity * 100)}%`,
+        focusLabel: 'Use the cue less as it fades across the session ladder.',
+        cardLabel: (kanji: string) => `${kanji} faded recall card with session-dimmed cue`,
+      };
     case 'blind-recall':
-      return 'Show the kanji without visual cue support.';
+      return {
+        stageDescription: 'The kanji stays on screen, but the color cue remains hidden so the shell reads like a true recall pass.',
+        promptTitle: readingsRevealed ? 'Check the answer before grading' : 'Recall without cue support',
+        promptBody: 'Blind recall hides the cue entirely. Try to retrieve the readings and meanings from the kanji alone.',
+        hiddenReadingsCopy: 'No cue is shown in this drill. Reveal the answer only after you have tried to recall it unaided.',
+        revealActionLabel: 'Reveal readings and meanings',
+        preRevealActionCopy: 'This mode keeps cue support off even after grading so the shell stays intentionally blind.',
+        gradedStateCopy: 'Use Again or Good to mark the pass, but this drill does not reintroduce visible cue support.',
+        learnActionCopy: '',
+        supportSummary: 'Kanji only until reveal',
+        focusLabel: 'Recall from the kanji alone with no visible cue.',
+        cardLabel: (kanji: string) => `${kanji} blind recall card with hidden cue`,
+      };
     default:
-      return 'TODO: Define this drill mode.';
+      return {
+        stageDescription: 'TODO: Define this drill mode.',
+        promptTitle: 'Study prompt',
+        promptBody: '',
+        hiddenReadingsCopy: '',
+        revealActionLabel: 'Reveal readings',
+        preRevealActionCopy: '',
+        gradedStateCopy: '',
+        learnActionCopy: '',
+        supportSummary: 'Unknown support',
+        focusLabel: 'Study the current item.',
+        cardLabel: (kanji: string) => `${kanji} study card`,
+      };
   }
 }
