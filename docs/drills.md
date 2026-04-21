@@ -40,3 +40,17 @@ should follow the Anki-style order: recall first, reveal readings, then choose `
 
 TODO: Implement real answer handling and queue selection for faded and blind recall. The current
 code only demonstrates opacity transitions.
+
+## Future Daily Flow
+
+The intended long-term product flow is compatible with Anki-like daily pacing, but should use this
+project's own mastery rule.
+
+- New kanji should be introduced through a daily allowance instead of exposing the whole deck at
+  once.
+- If a learner does not finish all of the day's new kanji, the unfinished items should carry over
+  before more new items are introduced.
+- A kanji can be treated as learned for the "new item" path once it successfully progresses
+  through the full cue-opacity ladder, rather than by copying a generic fixed review-count rule.
+- Learned items should later reappear through persistent recall drills driven by saved progress,
+  not by mutating the stable kanji entry itself.
