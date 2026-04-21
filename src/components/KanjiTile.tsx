@@ -6,6 +6,7 @@ interface KanjiTileProps {
   opacity: number;
   label?: string;
   size?: 'sm' | 'md' | 'lg';
+  showCodeDigits?: boolean;
 }
 
 const sizeClassByName = {
@@ -14,24 +15,35 @@ const sizeClassByName = {
   lg: 'h-32 w-32',
 };
 
-export function KanjiTile({ code, opacity, label = 'kanji color code', size = 'md' }: KanjiTileProps) {
+export function KanjiTile({
+  code,
+  opacity,
+  label = `kanji color code ${code.join(' ')}`,
+  size = 'md',
+  showCodeDigits = false,
+}: KanjiTileProps) {
   validateTileOpacity(opacity);
   const cells = getKanjiCodeCells(code);
 
   return (
-    <div
-      aria-label={label}
-      className={`${sizeClassByName[size]} grid grid-cols-2 overflow-hidden rounded-md border border-gray-300 bg-white`}
-      role="img"
-      style={{ opacity }}
-    >
-      {cells.map((cell) => (
-        <div
-          aria-hidden="true"
-          key={cell.position}
-          style={{ backgroundColor: cell.color }}
-        />
-      ))}
-    </div>
+    <figure className="kanji-tile">
+      <div
+        aria-label={label}
+        className={`${sizeClassByName[size]} kanji-tile-grid`}
+        role="img"
+        style={{ opacity }}
+      >
+        {cells.map((cell) => (
+          <div aria-hidden="true" key={cell.position} style={{ backgroundColor: cell.color }} />
+        ))}
+      </div>
+      {showCodeDigits ? (
+        <figcaption className="kanji-tile-digits" aria-label={`code digits ${code.join(' ')}`}>
+          {code.map((digit, index) => (
+            <span key={`${digit}-${index}`}>{digit}</span>
+          ))}
+        </figcaption>
+      ) : null}
+    </figure>
   );
 }

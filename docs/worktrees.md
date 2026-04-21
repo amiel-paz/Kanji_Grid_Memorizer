@@ -38,13 +38,44 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 13 | `work/session-review-loop` | Make the starter review loop explicit and testable. | Session creation, initial opacity, answer events, and simple queue advancement in one domain pass. |
 | 14 | `work/session-random-10` | Implement the first real drill-shaping behavior. | Select 10 random kanji for a session, with deterministic test hooks. |
 | 15 | `work/persistence-local-store` | Harden the localStorage wrapper. | Safe load/save/clear behavior, error handling, and tests. |
-| 16 | `work/progress-model-v1` | Decide minimum useful progress. | `UserProgress` update helpers for seen/correct/confidence. |
-| 17 | `work/progress-local-sync` | Persist progress only after review interactions need it. | Lightweight app-level progress wiring plus session-answer updates to local progress. |
+| 16 | `work/progress-model-v1` | Decide minimum useful progress. | `UserProgress` update helpers for seen/correct/confidence, plus draft status rules that can later distinguish new, carryover, and review-bank items. |
+| 17 | `work/progress-local-sync` | Persist progress only after review interactions need it. | Lightweight app-level progress wiring plus session-answer updates to local progress, establishing the first permanent learner record. |
 | 18 | `work/tests-core-coverage` | Cover important pure and component behavior not already protected nearby. | Encoding, assignment, session, progress, tile/card/picker, and study smoke tests where gaps remain. |
 | 19 | `work/tests-regression-todos` | Convert important TODO assumptions into tests. | Tests for opacity not being stored on kanji, valid codes, and similar invariants. |
 | 20 | `work/v1-polish-pass` | Make the shell feel coherent without changing core behavior. | Copy, basic accessibility, and responsive layout fixes scoped to the existing v1 shell. |
 | 21 | `work/v1-readme-runbook` | Make the project easy to resume. | README has setup, scripts, architecture, and next-task suggestions. |
 | 22 | `work/v1-final-audit` | Review scope creep and remove accidental false completeness. | Clean v1 scaffold that still leaves real learning work to the project owner. |
+
+## Long-Term Study Loop Notes
+
+The current worktree sequence intentionally stops short of an Anki-like daily system, but the
+planned architecture should support that direction without changing the ownership boundaries.
+
+What the product should build toward after the current v1 scaffold:
+
+- Persistent progress that survives refreshes and browser restarts.
+- A daily cap of `N` new kanji introduced per day.
+- Carryover for unfinished new kanji, so if only `M` of `N` new items are actually learned, the
+  remaining `N - M` are offered again before introducing replacements.
+- Promotion from "new" into a persistent review bank after the learner successfully moves through
+  the full cue-opacity ladder for that item.
+- Review sessions that can mix due review items with the day's new-item allowance without
+  rewriting stable content records.
+
+Suggested follow-on worktrees after the current plan reaches persistent progress:
+
+- `work/progress-daily-new-limit`: choose today's new-kanji allowance, track carryover, and avoid
+  silently dropping unfinished new items.
+- `work/review-bank-v1`: store mastered items in a durable recall pool that future drills can
+  revisit.
+
+Keep the mastery rule product-specific:
+
+- This app does not need to copy Anki's "two correct answers" threshold directly.
+- A better project-native rule is that an item graduates from the new-item path after the learner
+  completes the cue-opacity ladder down to `0%` under the intended drill flow.
+- Session state still owns live opacity during a run; persistent progress only stores the durable
+  outcome needed to shape future sessions.
 
 ## First Batch
 

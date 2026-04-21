@@ -10,6 +10,7 @@ describe('KanjiCueCard', () => {
       '--cue-opacity': '0.66',
     });
     expect(screen.getByText('木')).toBeInTheDocument();
+    expect(screen.getByText('Code digits 0 1 2 3')).toBeInTheDocument();
   });
 
   it('rejects invalid cue opacity values', () => {

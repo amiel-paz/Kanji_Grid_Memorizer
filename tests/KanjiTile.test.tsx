@@ -10,6 +10,12 @@ describe('KanjiTile', () => {
     expect(screen.getByRole('img', { name: 'test grid' })).toHaveStyle({ opacity: '0.5' });
   });
 
+  it('can show the stable code digits alongside the tile', () => {
+    render(<KanjiTile code={[0, 1, 2, 3]} opacity={1} showCodeDigits />);
+
+    expect(screen.getByLabelText('code digits 0 1 2 3')).toBeInTheDocument();
+  });
+
   it('rejects invalid opacity values', () => {
     expect(() => validateTileOpacity(1.2)).toThrow('Tile opacity must be a number between 0 and 1.');
   });
