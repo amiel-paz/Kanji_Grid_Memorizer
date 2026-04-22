@@ -46,7 +46,8 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 21 | `work/v1-readme-runbook` | Make the project easy to resume. | README has setup, scripts, architecture, and next-task suggestions. |
 | 22 | `work/v1-final-audit` | Review scope creep and remove accidental false completeness. | Clean v1 scaffold that still leaves real learning work to the project owner. |
 | 23 | `work/data-canonical-joyo-jinmeiyo-import` | Replace fixture-only deck ownership with a versioned canonical source pipeline. | Import real Joyo and Jinmeiyo data under explicit provenance, keep Joyo-first ownership, define the union manifest, and materialize stable `KanjiEntry` records without adding learner progress or scheduling behavior. |
-| 24 | `work/api-boundary-review` | Revisit whether the app needs REST or another backend boundary. | Decision doc only: current local-first posture, triggers for REST/API work, candidate resources, and boundaries to preserve. No backend implementation. |
+| 24 | `work/progress-sync-file-exchange` | Plan a serverless multi-device path without changing the MVP into an online app. | Decision doc plus file-format spec for per-device learner-state exchange, including event-log shape, device IDs, schema versioning, import/export or shared-folder merge rules, and explicit preservation of the stable-content versus learner-state boundary. No cloud account system or backend implementation. |
+| 25 | `work/api-boundary-review` | Revisit whether the app needs REST or another backend boundary. | Decision doc only: current local-first posture, triggers for REST/API work, candidate resources, and boundaries to preserve. No backend implementation. |
 
 ## Long-Term Study Loop Notes
 
@@ -72,6 +73,9 @@ Suggested follow-on worktrees after the current v1 scaffold:
 
 Suggested follow-on worktrees after the plan reaches persistent progress:
 
+- `work/progress-sync-file-exchange`: define a file-based, account-free path for moving learner
+  state across personal devices, ideally through versioned per-device event logs rather than raw
+  merged counters.
 - `work/progress-daily-new-limit`: choose today's new-kanji allowance, track carryover, and avoid
   silently dropping unfinished new items.
 - `work/review-bank-v1`: store mastered items in a durable recall pool that future drills can

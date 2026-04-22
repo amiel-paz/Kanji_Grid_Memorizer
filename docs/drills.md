@@ -8,7 +8,8 @@ interactions. Recall drills are the useful path; grid-to-kanji matching drills a
 3. Blind recall: show kanji without cue support.
 
 Inside the current study shell, Learn can advance to the next kanji without grading. Review modes
-should keep the reveal-then-grade order instead of pretending to schedule or persist outcomes.
+keep the reveal-then-grade order and only persist local progress after an explicit `Again` or
+`Good`.
 
 ## Cue Policy
 
@@ -36,8 +37,9 @@ This example shapes the architecture:
 - misses may raise opacity one ladder step again
 - this behavior belongs in session/drill logic
 
-The current code demonstrates randomized session selection plus opacity transitions. It still does
-not manage a weighted queue or persist results into learner progress.
+The current code demonstrates randomized session selection, opacity transitions, and local progress
+persistence after explicit review grading. It still does not manage a weighted queue or any real
+due-card scheduling.
 
 ## Interaction Boundary
 
