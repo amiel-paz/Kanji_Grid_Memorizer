@@ -7,13 +7,21 @@ interface DrillModePickerProps {
 }
 
 export function DrillModePicker({ drills, selectedId, onSelect }: DrillModePickerProps) {
+  const helpTextId = 'drill-mode-help';
+
   return (
     <fieldset className="surface-panel drill-picker">
-      <legend className="section-title">Choose a drill</legend>
-      <p className="fine-print">
-        Switch the study surface without changing deck ownership, persistence, or progress rules.
+      <legend className="section-title">Drill mode</legend>
+      <p className="fine-print" id={helpTextId}>
+        Each mode changes how much support stays on screen. The current session deck stays the
+        same.
       </p>
-      <div className="drill-picker-options" role="radiogroup" aria-label="Drill mode">
+      <div
+        aria-describedby={helpTextId}
+        aria-label="Drill mode"
+        className="drill-picker-options"
+        role="radiogroup"
+      >
         {drills.map((drill) => (
           <label
             key={drill.id}
@@ -39,11 +47,11 @@ export function DrillModePicker({ drills, selectedId, onSelect }: DrillModePicke
 function descriptionForMode(mode: DrillConfig['mode']): string {
   switch (mode) {
     case 'learn':
-      return 'Full cue, readings, and meanings stay visible.';
+      return 'Keep the cue, meanings, and readings visible for the whole pass.';
     case 'faded-recall':
-      return 'Session state controls cue opacity after each review.';
+      return 'Reveal the answer after you try to recall it, then let session state fade the cue.';
     case 'blind-recall':
-      return 'Hide the color cue and rely on recall only.';
+      return 'Keep the color cue hidden and rely on recall from the kanji alone.';
     default:
       return 'Study shell mode.';
   }

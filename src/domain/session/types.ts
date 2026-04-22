@@ -8,6 +8,7 @@ export interface SessionKanjiState {
   readonly kanji: string;
   readonly attempts: number;
   readonly goodCount: number;
+  readonly againCount: number;
   readonly cueOpacity: CueOpacity;
 }
 
@@ -16,7 +17,7 @@ export interface SessionState {
   readonly drillConfigId: DrillConfig['id'];
   readonly selectedKanji: readonly string[];
   readonly queue: readonly string[];
-  readonly activeKanji: string;
+  readonly activeKanji: string | null;
   readonly itemStateByKanji: Readonly<Record<string, SessionKanjiState>>;
 }
 
@@ -28,7 +29,7 @@ export interface SessionAnswerEvent {
   readonly nextCueOpacity: CueOpacity;
   readonly queueBefore: readonly string[];
   readonly queueAfter: readonly string[];
-  readonly nextActiveKanji: string;
+  readonly nextActiveKanji: string | null;
 }
 
 export interface SessionAnswerResult {
