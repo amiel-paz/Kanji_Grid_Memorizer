@@ -11,6 +11,7 @@ Stable content only:
 - kanji
 - canonical index
 - source set
+- source-set version id
 - code digits, ordered top-left, top-right, bottom-left, bottom-right
 - meanings
 - onyomi
@@ -30,18 +31,19 @@ Current source-set IDs:
 
 - `mock-joyo`: handwritten development fixture data. It is shaped like a tiny Joyo-like deck so the
   app has useful local content, but it is not canonical Joyo data.
-- `joyo`: future canonical Joyo data. This is the first real source-set target, but it should only
-  be used after a versioned canonical import decision exists.
-- `jinmeiyo`: future canonical Jinmeiyo data. This should be added later as a separate source-set
-  owner with its own provenance instead of being folded invisibly into Joyo.
+- `joyo`: the first real canonical source set. The current app deck is materialized from a small
+  versioned in-repo Joyo extract.
+- `jinmeiyo`: the second canonical source set path. It remains explicit and separate so name-use
+  expansion does not get folded invisibly into Joyo.
 
 Canonical source-set priority is Joyo, then Jinmeiyo. If a future import has to choose one owner for
 a character or variant relationship that appears to touch both lists, classify it as Joyo and keep
 Jinmeiyo supplemental. That keeps common-use kanji ownership stable before name-use expansion.
 
-TODO: Define the canonical import manifest contract that maps imported Joyo/Jinmeiyo files to
-source-set versions before either source set is populated. The manifest should document how exact
-duplicates, variants, and source-list overlaps are resolved under the Joyo-first priority rule.
+Canonical manifests should document how imported Joyo/Jinmeiyo files map to source-set versions and
+how exact duplicates, variants, and source-list overlaps are resolved under the Joyo-first priority
+rule. In the current pass, Jinmeiyo is reserved as an explicit second source path rather than being
+merged into the Joyo deck.
 
 ## AssignmentVersion
 
@@ -50,18 +52,18 @@ Owned by `src/domain/content/types.ts`.
 Assignments need an explicit version so future deck expansion does not silently reshuffle old
 mappings.
 
-For now, `placeholder-v1` is development scaffolding. It records the placeholder strategy id and
-the 4096-code space size, then assigns codes by mapping `canonicalIndex` through a fixed
-permutation of the four-digit base-8 code space. This keeps the demo grids visually varied while
-remaining deterministic placeholder data. Production assignments should wait for a canonical,
-versioned source pipeline.
+Assignment versions now name the exact source-set versions they were built from. The current deck
+uses a stable base-8 permutation over `canonicalIndex`, but the important boundary is that the
+assignment version explicitly references the imported source-set version IDs it materializes.
 
-The active placeholder assignment version only owns `mock-joyo`. Future production assignment
-versions should explicitly name the canonical source-set versions they were built from so Joyo and
-Jinmeiyo expansion cannot silently change established code mappings.
+There are now two visible assignment tracks:
 
-TODO: Decide how assignment versions map to imported source files, canonical source-set version IDs,
-and release notes.
+- `mock-joyo-fixture-assignment-v1`: development-only fixture assignment for `mock-joyo`.
+- `joyo-manual-extract-assignment-v1`: the current canonical deck assignment, tied to
+  `joyo-manual-extract-v1`.
+
+Future Joyo+Jinmeiyo assignment versions should keep naming the source-set versions they were built
+from so expansion cannot silently change established code mappings.
 
 ## UserProgress
 

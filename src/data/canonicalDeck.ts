@@ -1,30 +1,34 @@
-import { SOURCE_SET_IDS, type SourceSetVersion } from '../domain/content/types';
+import {
+  CANONICAL_SOURCE_SET_PRIORITY,
+  SOURCE_SET_IDS,
+  type ContentDeckManifest,
+  type SourceSetVersion,
+} from '../domain/content/types';
 import { createBase8StableAssignmentVersion } from '../domain/encoding/assignment';
 import { materializeKanjiEntries, type KanjiSourceImport } from './kanjiSourceMaterialization';
 
-export const mockJoyoFixtureSourceVersion: SourceSetVersion = {
-  sourceSet: SOURCE_SET_IDS.MOCK_JOYO,
-  versionId: 'mock-joyo-fixture-v1',
-  label: 'Mock Joyo fixture v1',
-  provenance: 'Handwritten local development fixture data.',
+const joyoSourceVersion: SourceSetVersion = {
+  sourceSet: SOURCE_SET_IDS.JOYO,
+  versionId: 'joyo-manual-extract-v1',
+  label: 'Joyo manual extract v1',
+  provenance:
+    'Small in-repo source extract curated for this repository. This is the current real deck source, not a mock fixture.',
   notes:
-    'This source version is intentionally non-canonical. It stays useful for tests and development, but it does not own the real deck.',
+    'Intentionally reviewable rather than complete. The purpose of this pass is to make the canonical data boundary explicit before broader source coverage exists.',
 };
 
-export const mockJoyoFixtureAssignmentVersion = createBase8StableAssignmentVersion({
-  id: 'mock-joyo-fixture-assignment-v1',
-  sourceSetVersions: [
-    {
-      sourceSet: mockJoyoFixtureSourceVersion.sourceSet,
-      sourceSetVersionId: mockJoyoFixtureSourceVersion.versionId,
-    },
-  ],
-  description:
-    'Stable base-8 permutation assignment for development-only mock Joyo fixture data. This is not the canonical deck assignment.',
-});
+const jinmeiyoSourceVersion: SourceSetVersion = {
+  sourceSet: SOURCE_SET_IDS.JINMEIYO,
+  versionId: 'jinmeiyo-empty-reservation-v1',
+  label: 'Jinmeiyo empty reservation v1',
+  provenance:
+    'Explicit in-repo reservation for the second canonical source-set path. This file intentionally contains no entries in the current pass.',
+  notes:
+    'Keeping Jinmeiyo empty here prevents silent reclassification of common-use entries while the second import remains a separate follow-on step.',
+};
 
-const mockJoyoFixtureSource: KanjiSourceImport = {
-  version: mockJoyoFixtureSourceVersion,
+const joyoSourceImport: KanjiSourceImport = {
+  version: joyoSourceVersion,
   entries: [
     {
       kanji: '日',
@@ -32,7 +36,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['sun', 'day'],
       onyomi: ['ニチ', 'ジツ'],
       kunyomi: ['ひ', 'か'],
-      tags: ['mock', 'starter', 'nature', 'time'],
+      tags: ['joyo', 'starter', 'nature', 'time'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -41,7 +45,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['moon', 'month'],
       onyomi: ['ゲツ', 'ガツ'],
       kunyomi: ['つき'],
-      tags: ['mock', 'starter', 'nature', 'time'],
+      tags: ['joyo', 'starter', 'nature', 'time'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -50,7 +54,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['fire'],
       onyomi: ['カ'],
       kunyomi: ['ひ'],
-      tags: ['mock', 'starter', 'element'],
+      tags: ['joyo', 'starter', 'element'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -59,7 +63,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['water'],
       onyomi: ['スイ'],
       kunyomi: ['みず'],
-      tags: ['mock', 'starter', 'element'],
+      tags: ['joyo', 'starter', 'element'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -68,7 +72,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['tree', 'wood'],
       onyomi: ['モク', 'ボク'],
       kunyomi: ['き', 'こ'],
-      tags: ['mock', 'starter', 'nature'],
+      tags: ['joyo', 'starter', 'nature'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -77,7 +81,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['mountain'],
       onyomi: ['サン'],
       kunyomi: ['やま'],
-      tags: ['mock', 'starter', 'nature', 'place'],
+      tags: ['joyo', 'starter', 'nature', 'place'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -86,7 +90,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['river'],
       onyomi: ['セン'],
       kunyomi: ['かわ'],
-      tags: ['mock', 'starter', 'nature', 'place'],
+      tags: ['joyo', 'starter', 'nature', 'place'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -95,7 +99,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['rice field'],
       onyomi: ['デン'],
       kunyomi: ['た'],
-      tags: ['mock', 'starter', 'place', 'food'],
+      tags: ['joyo', 'starter', 'place', 'food'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -104,7 +108,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['person'],
       onyomi: ['ジン', 'ニン'],
       kunyomi: ['ひと'],
-      tags: ['mock', 'starter', 'people'],
+      tags: ['joyo', 'starter', 'people'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -113,7 +117,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['mouth', 'opening'],
       onyomi: ['コウ', 'ク'],
       kunyomi: ['くち'],
-      tags: ['mock', 'starter', 'body', 'shape'],
+      tags: ['joyo', 'starter', 'body', 'shape'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -122,7 +126,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['eye'],
       onyomi: ['モク', 'ボク'],
       kunyomi: ['め', 'ま'],
-      tags: ['mock', 'starter', 'body'],
+      tags: ['joyo', 'starter', 'body'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -131,7 +135,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['ear'],
       onyomi: ['ジ'],
       kunyomi: ['みみ'],
-      tags: ['mock', 'starter', 'body'],
+      tags: ['joyo', 'starter', 'body'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -140,7 +144,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['hand'],
       onyomi: ['シュ'],
       kunyomi: ['て', 'た'],
-      tags: ['mock', 'starter', 'body', 'action'],
+      tags: ['joyo', 'starter', 'body', 'action'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -149,7 +153,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['foot', 'leg', 'enough'],
       onyomi: ['ソク'],
       kunyomi: ['あし', 'た.りる'],
-      tags: ['mock', 'body', 'action'],
+      tags: ['joyo', 'body', 'action'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -158,7 +162,7 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['power', 'strength'],
       onyomi: ['リョク', 'リキ'],
       kunyomi: ['ちから'],
-      tags: ['mock', 'action', 'quality'],
+      tags: ['joyo', 'action', 'quality'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
     {
@@ -167,13 +171,40 @@ const mockJoyoFixtureSource: KanjiSourceImport = {
       meanings: ['name', 'reputation'],
       onyomi: ['メイ', 'ミョウ'],
       kunyomi: ['な'],
-      tags: ['mock', 'people', 'identity'],
+      tags: ['joyo', 'people', 'identity'],
       metadata: { grade: 1, jlptLevel: 'N5' },
     },
   ],
 };
 
-export const mockKanji = materializeKanjiEntries({
-  sources: [mockJoyoFixtureSource],
-  assignmentVersion: mockJoyoFixtureAssignmentVersion,
+const jinmeiyoSourceImport: KanjiSourceImport = {
+  version: jinmeiyoSourceVersion,
+  entries: [],
+};
+
+export const joyoCanonicalAssignmentVersion = createBase8StableAssignmentVersion({
+  id: 'joyo-manual-extract-assignment-v1',
+  sourceSetVersions: [
+    {
+      sourceSet: joyoSourceVersion.sourceSet,
+      sourceSetVersionId: joyoSourceVersion.versionId,
+    },
+  ],
+  description:
+    'Stable base-8 permutation assignment for the current Joyo canonical extract. Jinmeiyo is not part of this assignment version yet.',
+});
+
+export const canonicalDeckManifest: ContentDeckManifest = {
+  id: 'canonical-content-v1',
+  label: 'Joyo-first canonical deck',
+  sourceSetPriority: CANONICAL_SOURCE_SET_PRIORITY,
+  sourceSetVersions: [joyoSourceVersion, jinmeiyoSourceVersion],
+  assignmentVersion: joyoCanonicalAssignmentVersion,
+  description:
+    'Materialize stable KanjiEntry records from the Joyo import first, then add Jinmeiyo only through its own explicit versioned source path.',
+};
+
+export const canonicalKanjiDeck = materializeKanjiEntries({
+  sources: [joyoSourceImport, jinmeiyoSourceImport],
+  assignmentVersion: joyoCanonicalAssignmentVersion,
 });

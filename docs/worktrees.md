@@ -45,34 +45,56 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 20 | `work/v1-polish-pass` | Make the shell feel coherent without changing core behavior. | Copy, basic accessibility, and responsive layout fixes scoped to the existing v1 shell. |
 | 21 | `work/v1-readme-runbook` | Make the project easy to resume. | README has setup, scripts, architecture, and next-task suggestions. |
 | 22 | `work/v1-final-audit` | Review scope creep and remove accidental false completeness. | Clean v1 scaffold that still leaves real learning work to the project owner. |
-| 23 | `work/data-canonical-joyo-jinmeiyo-import` | Replace fixture-only deck ownership with a versioned canonical source pipeline. | Import real Joyo and Jinmeiyo data under explicit provenance, keep Joyo-first ownership, define the union manifest, and materialize stable `KanjiEntry` records without adding learner progress or scheduling behavior. |
-| 24 | `work/progress-sync-file-exchange` | Plan a serverless multi-device path without changing the MVP into an online app. | Decision doc plus file-format spec for per-device learner-state exchange, including event-log shape, device IDs, schema versioning, import/export or shared-folder merge rules, and explicit preservation of the stable-content versus learner-state boundary. No cloud account system or backend implementation. |
-| 25 | `work/api-boundary-review` | Revisit whether the app needs REST or another backend boundary. | Decision doc only: current local-first posture, triggers for REST/API work, candidate resources, and boundaries to preserve. No backend implementation. |
+| 23 | `work/data-canonical-joyo-import-full` | Replace the tiny canonical slice with the full real Joyo deck. | Explicit Joyo source file(s), provenance/version metadata, stable `KanjiEntry` materialization, and tests proving the app is no longer running on a tiny hand-entered subset. |
+| 24 | `work/data-canonical-jinmeiyo-import` | Add Jinmeiyo as a second explicit source path without reclassifying Joyo-owned kanji. | Jinmeiyo source file(s), source-set versioning, Joyo-first overlap handling, and a union manifest that keeps common-use ownership stable. |
+| 25 | `work/progress-session-seeding-v1` | Let durable learner progress shape a new session without breaking ownership boundaries. | Session creation can read saved progress to choose initial cue state and selection inputs while session state still owns live per-run behavior. |
+| 26 | `work/progress-daily-new-limit` | Make the first daily study allowance explicit. | A local-first daily cap for new kanji, wired into session creation and tested without adding cloud/backend work. |
+| 27 | `work/progress-carryover-v1` | Avoid silently dropping unfinished new items. | Carryover rules that re-offer started-but-unfinished kanji before introducing replacements on a later day. |
+| 28 | `work/review-bank-v1` | Create the first durable review pool for graduated items. | Progress-derived review-bank records and selection helpers that preserve the content-versus-progress boundary. |
+| 29 | `work/review-session-orchestration` | Turn the shell into a coherent daily study loop. | One app-level local study flow that can mix due review items with today's new-item allowance and carryover, without adding backend or sync work. |
+| 30 | `work/local-mvp-polish` | Make the local-first study loop comfortable enough to use daily. | Empty states, settings/copy clarity, responsiveness, accessibility, and UX cleanup scoped to the real-data local MVP. |
+| 31 | `work/local-mvp-ship-audit` | End on an honest MVP you'd be willing to ship to yourself or a friend. | Final regression pass, README/runbook updates, scope audit, and a clean stop point for the first truly usable local release. |
+| 32 | `work/progress-sync-file-exchange` | Plan a serverless multi-device path after the local MVP is already useful. | Decision doc plus file-format spec for per-device learner-state exchange, including event-log shape, device IDs, schema versioning, import/export or shared-folder merge rules, and explicit preservation of the stable-content versus learner-state boundary. No cloud account system or backend implementation. |
+| 33 | `work/api-boundary-review` | Revisit whether the app needs REST or another backend boundary only after the local MVP proves itself. | Decision doc only: current local-first posture, triggers for REST/API work, candidate resources, and boundaries to preserve. No backend implementation. |
 
-Treat row 22 as the stopping point for the current v1 shell. Rows 23 and beyond are intentionally
-separate follow-on tracks, not implied scope to absorb into the audit.
+Treat row 22 as the stopping point for the current v1 shell. Rows 23 through 31 are the planned
+path from honest shell to shippable local-first MVP. Rows 32 and 33 are intentionally post-MVP
+follow-on tracks, not implied scope to absorb into the first usable release.
 
-At this point the remaining numbered worktrees are only:
+At this point the remaining numbered worktrees are:
 
-- `work/data-canonical-joyo-jinmeiyo-import`
+- `work/data-canonical-joyo-import-full`
+- `work/data-canonical-jinmeiyo-import`
+- `work/progress-session-seeding-v1`
+- `work/progress-daily-new-limit`
+- `work/progress-carryover-v1`
+- `work/review-bank-v1`
+- `work/review-session-orchestration`
+- `work/local-mvp-polish`
+- `work/local-mvp-ship-audit`
 - `work/progress-sync-file-exchange`
 - `work/api-boundary-review`
 
 Clarify the saved-state milestone boundaries:
 
 - Row 17 already introduced local progress persistence after explicit review grading.
-- Row 23 is where real `joyo` and `jinmeiyo` source data should replace fixture-only deck content.
-- Row 24 is for portable local-first learner-state exchange across devices, not backend/cloud
-  persistence.
-- Row 25 is a decision review about whether an API boundary is needed later, not a commitment to
-  build one.
+- Rows 23 and 24 are where full real `joyo` and `jinmeiyo` source data should replace the current
+  tiny canonical slice.
+- Rows 25 through 29 are where the first actually useful daily study loop becomes concrete while
+  still preserving stable content ownership versus session ownership versus durable learner state.
+- Row 31 is the intended local-first MVP stop point for something you'd be willing to ship to
+  yourself or a friend.
+- Row 32 is for portable learner-state exchange across devices after the local MVP is already
+  useful, not backend/cloud persistence.
+- Row 33 is a later decision review about whether an API boundary is needed at all, not a
+  commitment to build one.
 
 ## Long-Term Study Loop Notes
 
-The current worktree sequence intentionally stops short of an Anki-like daily system, but the
-planned architecture should support that direction without changing the ownership boundaries.
+The current v1 shell intentionally stops short of an actually useful daily system, but the planned
+remaining worktrees should now reach one without changing the ownership boundaries.
 
-What the product should build toward after the current v1 scaffold:
+What the product should build toward on the path to the first local MVP:
 
 - Persistent progress that survives refreshes and browser restarts.
 - A daily cap of `N` new kanji introduced per day.
@@ -85,19 +107,27 @@ What the product should build toward after the current v1 scaffold:
 
 Suggested follow-on worktrees after the current v1 scaffold:
 
-- `work/data-canonical-joyo-jinmeiyo-import`: replace the fixture-only deck with a versioned
-  canonical import pipeline for real Joyo and Jinmeiyo data, preserving Joyo-first ownership and
-  keeping stable content separate from learner state.
+- `work/data-canonical-joyo-import-full`: replace the tiny canonical slice with the full Joyo
+  deck under explicit provenance and source-set versioning.
+- `work/data-canonical-jinmeiyo-import`: add Jinmeiyo as a separate canonical source path with
+  Joyo-first ownership rules for overlaps.
+- `work/progress-session-seeding-v1`: let saved progress influence new-session inputs without
+  moving live cue state out of session ownership.
+- `work/progress-daily-new-limit`: decide the daily new-item allowance.
+- `work/progress-carryover-v1`: keep unfinished new items from being silently dropped.
+- `work/review-bank-v1`: create the first durable review pool for graduated items.
+- `work/review-session-orchestration`: turn the separate parts into one coherent daily local study
+  loop.
+- `work/local-mvp-polish`: make the loop pleasant and legible enough for daily personal use.
+- `work/local-mvp-ship-audit`: stop on an honest local MVP.
 
-Suggested follow-on worktrees after the plan reaches persistent progress:
+Suggested post-MVP follow-on worktrees:
 
 - `work/progress-sync-file-exchange`: define a file-based, account-free path for moving learner
   state across personal devices, ideally through versioned per-device event logs rather than raw
   merged counters.
-- `work/progress-daily-new-limit`: choose today's new-kanji allowance, track carryover, and avoid
-  silently dropping unfinished new items.
-- `work/review-bank-v1`: store mastered items in a durable recall pool that future drills can
-  revisit.
+- `work/api-boundary-review`: revisit whether any backend or API work is justified only after the
+  local-first MVP proves its value.
 
 Keep the mastery rule product-specific:
 
@@ -150,6 +180,7 @@ Keep worktrees separate when they change a different contract or introduce a beh
 its own tests and review, such as randomized session selection, persistence boundaries, progress
 modeling, or a future canonical import pipeline.
 
-Do not add REST, GraphQL, RPC, or backend service work as part of the v1 scaffold unless a later
+Do not add REST, GraphQL, RPC, or backend service work as part of the local MVP path unless a later
 decision worktree says the product needs it. The planned `work/api-boundary-review` worktree should
-revisit that question after local progress, persistence, and the first review loop are concrete.
+revisit that question only after real data, local progress shaping, and the first useful daily
+study loop are concrete.

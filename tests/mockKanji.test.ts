@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { mockKanji } from '../src/data/mockKanji';
+import {
+  mockJoyoFixtureAssignmentVersion,
+  mockJoyoFixtureSourceVersion,
+  mockKanji,
+} from '../src/data/mockKanji';
 import { assertValidKanjiFixture } from '../src/data/validateKanjiFixture';
 import { SOURCE_SET_DEFINITIONS, SOURCE_SET_IDS } from '../src/domain/content/types';
 import {
-  base8IndexAssignment,
-  currentAssignmentVersion,
+  BASE8_STABLE_PERMUTATION_STRATEGY_ID,
+  base8StablePermutationAssignment,
   KANJI_CODE_SPACE_SIZE,
-  PLACEHOLDER_ASSIGNMENT_STRATEGY_ID,
 } from '../src/domain/encoding/assignment';
 
-const EXPECTED_MOCK_ASSIGNMENT_VERSION_ID = 'placeholder-v1';
+const EXPECTED_MOCK_ASSIGNMENT_VERSION_ID = 'mock-joyo-fixture-assignment-v1';
 const EXPECTED_MOCK_CODES = new Map<string, readonly number[]>([
   ['日', [0, 0, 6, 2]],
   ['月', [4, 6, 4, 3]],
@@ -34,11 +37,16 @@ describe('mock kanji fixture', () => {
     expect(() => assertValidKanjiFixture(mockKanji)).not.toThrow();
   });
 
-  it('uses the current placeholder assignment contract for mock-only data', () => {
-    expect(currentAssignmentVersion).toMatchObject({
+  it('uses the current stable assignment contract for mock-only data', () => {
+    expect(mockJoyoFixtureAssignmentVersion).toMatchObject({
       id: EXPECTED_MOCK_ASSIGNMENT_VERSION_ID,
-      sourceSets: [SOURCE_SET_IDS.MOCK_JOYO],
-      strategyId: PLACEHOLDER_ASSIGNMENT_STRATEGY_ID,
+      sourceSetVersions: [
+        {
+          sourceSet: SOURCE_SET_IDS.MOCK_JOYO,
+          sourceSetVersionId: mockJoyoFixtureSourceVersion.versionId,
+        },
+      ],
+      strategyId: BASE8_STABLE_PERMUTATION_STRATEGY_ID,
       codeSpaceSize: KANJI_CODE_SPACE_SIZE,
     });
   });
@@ -49,6 +57,7 @@ describe('mock kanji fixture', () => {
 
     expect(SOURCE_SET_DEFINITIONS[SOURCE_SET_IDS.MOCK_JOYO].ownership).toBe('development-fixture');
     expect(mockKanji.every((entry) => entry.sourceSet === SOURCE_SET_IDS.MOCK_JOYO)).toBe(true);
+    expect(mockKanji.every((entry) => entry.sourceSetVersionId === mockJoyoFixtureSourceVersion.versionId)).toBe(true);
     expect(
       mockKanji.every(
         (entry) => entry.assignmentVersionId === EXPECTED_MOCK_ASSIGNMENT_VERSION_ID,
@@ -67,22 +76,22 @@ describe('mock kanji fixture', () => {
     }
   });
 
-  it('keeps stable literal codes aligned with the placeholder assignment scaffold', () => {
+  it('keeps stable literal codes aligned with the mock assignment scaffold', () => {
     for (const entry of mockKanji) {
       expect(entry.code).toEqual(EXPECTED_MOCK_CODES.get(entry.kanji));
       expect(entry.code.every((digit) => Number.isInteger(digit) && digit >= 0 && digit <= 7)).toBe(
         true,
       );
       expect(entry.code).toEqual(
-        base8IndexAssignment.assignCode({
+        base8StablePermutationAssignment.assignCode({
           canonicalIndex: entry.canonicalIndex,
-          assignmentVersion: currentAssignmentVersion,
+          assignmentVersion: mockJoyoFixtureAssignmentVersion,
         }),
       );
     }
   });
 
-  it('uses unique placeholder indexes and kanji characters', () => {
+  it('uses unique fixture indexes and kanji characters', () => {
     expect(new Set(mockKanji.map((entry) => entry.canonicalIndex)).size).toBe(mockKanji.length);
     expect(new Set(mockKanji.map((entry) => entry.kanji)).size).toBe(mockKanji.length);
     expect(new Set(mockKanji.map((entry) => entry.code.join(''))).size).toBe(mockKanji.length);

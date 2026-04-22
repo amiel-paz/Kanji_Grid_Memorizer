@@ -1,10 +1,14 @@
 export type {
   AssignmentVersion,
+  AssignmentVersionSource,
+  CanonicalSourceSet,
+  ContentDeckManifest,
   KanjiEntry,
   KanjiMetadata,
   SourceSet,
   SourceSetDefinition,
   SourceSetOwnership,
+  SourceSetVersion,
 } from './content/types';
 export { CANONICAL_SOURCE_SET_PRIORITY, SOURCE_SET_DEFINITIONS, SOURCE_SET_IDS } from './content/types';
 export type { CuePolicy, DrillConfig, DrillMode, ReviewGrade } from './drills/types';

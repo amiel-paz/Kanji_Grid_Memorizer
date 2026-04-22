@@ -49,7 +49,8 @@ product target for now.
 ## Version 1 Scope
 
 - local web app
-- mock kanji data
+- small Joyo-first canonical deck with explicit in-repo provenance
+- mock kanji fixtures kept for development and tests
 - learn, faded recall, and blind recall modes represented in code
 - simple session-state-driven cue opacity
 - small tests around the core idea
@@ -60,7 +61,7 @@ presented as a finished drill loop.
 
 ## Out Of Scope For Now
 
-- canonical importer
+- broad canonical dataset coverage beyond the small in-repo Joyo-first import path
 - advanced scheduling
 - cloud sync
 - accounts
@@ -68,7 +69,7 @@ presented as a finished drill loop.
 - OCR
 - handwriting recognition
 - generated mnemonics
-- canonical kanji dataset selection
+- replacing the explicit Joyo-first ownership rule with an ambiguous merged source
 
 ## Product Questions To Preserve
 
@@ -76,7 +77,7 @@ presented as a finished drill loop.
 - How should a miss change the next cue level?
 - When does a kanji graduate from cue-supported practice to blind recall?
 - How should assignment versions be communicated if source data changes?
-- Which standard kanji dataset should supply Joyo and Jinmeiyo readings?
+- How should Jinmeiyo expansion be layered onto the Joyo-first canonical path without reclassifying common-use entries?
 
 Later product work can define the first real learning workflow once this shell is no longer the
 main thing being validated.

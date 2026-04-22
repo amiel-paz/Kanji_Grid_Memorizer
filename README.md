@@ -12,7 +12,8 @@ already exists.
 ## What This Repo Is Today
 
 - A Vite + React + TypeScript web app with a single study page.
-- Mock kanji fixture data for development.
+- A small Joyo-first canonical deck materialized from explicit in-repo source inputs.
+- Mock kanji fixture data kept separately for development and tests.
 - Three drill shells: Learn, Faded recall, and Blind recall.
 - Session-owned cue opacity and a simple rotating queue.
 - Local-only progress persistence after explicit review grading.
@@ -65,7 +66,7 @@ What each script does:
 ## Current Scope
 
 - Stable content ownership remains separate from live session behavior and separate again from durable progress.
-- Mock data remains fixture data only. It is useful for the shell, but it is not the canonical deck.
+- The app deck now comes from a small canonical Joyo import manifest. Mock data remains fixture data only.
 - The queue inside the current review shell is intentionally simple rotation within the selected 10-card session.
 - The current shell is good for validating UI flow and ownership boundaries, not for judging the eventual learning system.
 
@@ -75,13 +76,15 @@ What each script does:
 - No weighted requeue based on repeated misses. `Again` changes cue opacity, but the queue still rotates simply.
 - No removal from the current recall batch after a successful zero-cue pass. Cards stay in the session queue for the rest of the run.
 - No backend, API, auth, sync, or cloud persistence.
-- No canonical Joyo/Jinmeiyo import pipeline yet.
+- No full Joyo/Jinmeiyo coverage yet beyond the small in-repo canonical Joyo extract and explicit Jinmeiyo reservation path.
 
 ## Resume Map
 
 Start here when reopening the repo:
 
 - [`src/pages/StudyPage.tsx`](src/pages/StudyPage.tsx): current study shell behavior and drill switching.
+- [`src/data/canonicalDeck.ts`](src/data/canonicalDeck.ts): real deck manifest, canonical source-set versions, and stable `KanjiEntry` materialization.
+- [`src/data/mockKanji.ts`](src/data/mockKanji.ts): development-only mock fixture data and its separate assignment/source versions.
 - [`src/domain/session/session.ts`](src/domain/session/session.ts): session creation, queue movement, and cue opacity rules.
 - [`src/state/progressStore.ts`](src/state/progressStore.ts): local progress load/save boundary.
 - [`src/domain/progress/progress.ts`](src/domain/progress/progress.ts): minimal progress updates and `familiar` transition rules.
@@ -96,27 +99,44 @@ Start here when reopening the repo:
 This pass is the intended stopping point for the current v1 shell.
 
 Future work stays split in [`docs/worktrees.md`](docs/worktrees.md) so the repo does not imply a
-single automatic next step. Canonical data import, scheduler work, backend work, and sync-file
-exchange planning remain separate follow-on tracks rather than hidden scope inside this shell.
+single automatic next step. The remaining plan now explicitly aims at a shippable local-first MVP:
+full real data, a useful daily study loop, polish, and then a ship audit before any sync or API
+follow-on work.
 
 ## Remaining Numbered Worktrees
 
-The numbered worktree plan now has three remaining entries:
+The remaining plan is now split into two stages.
 
-- `work/data-canonical-joyo-jinmeiyo-import`
+Local-first MVP path:
+
+- `work/data-canonical-joyo-import-full`
+- `work/data-canonical-jinmeiyo-import`
+- `work/progress-session-seeding-v1`
+- `work/progress-daily-new-limit`
+- `work/progress-carryover-v1`
+- `work/review-bank-v1`
+- `work/review-session-orchestration`
+- `work/local-mvp-polish`
+- `work/local-mvp-ship-audit`
+
+Post-MVP follow-ons:
+
 - `work/progress-sync-file-exchange`
 - `work/api-boundary-review`
 
-Everything else discussed in the docs, such as daily-new limits or review-bank behavior, remains
-future follow-on work rather than an already-scoped numbered task.
-
 ## Real Data And Saved State
 
-- Real `joyo` and `jinmeiyo` content enters at `work/data-canonical-joyo-jinmeiyo-import`.
+- Full real `joyo` content enters at `work/data-canonical-joyo-import-full`.
+- `jinmeiyo` follows at `work/data-canonical-jinmeiyo-import` under the same explicit source-set
+  and assignment-version model.
+- The current real deck is only a small Joyo-first canonical import manifest, not the full future
+  dataset.
 - Local learner progress is already saved today through localStorage after explicit review grading.
 - That current save path is intentionally small: it is not session restore, cross-device sync, or
   backend-backed production persistence.
-- `work/progress-sync-file-exchange` is the planned step for more production-like portable learner
-  state while staying local-first and account-free.
+- The next planned progress worktrees are about shaping local sessions from saved state into a real
+  daily learning loop before sync is considered.
+- `work/progress-sync-file-exchange` is a post-MVP step for portable learner state while staying
+  local-first and account-free.
 - `work/api-boundary-review` is only a later decision point about whether any backend or API work
   is warranted at all.

@@ -1,5 +1,4 @@
 import type { AssignmentVersion } from '../content/types';
-import { SOURCE_SET_IDS } from '../content/types';
 import { CODE_DIGITS, createKanjiCode, KANJI_CODE_LENGTH, type KanjiCode } from './palette';
 
 export interface CodeAssignmentInput {
@@ -11,24 +10,29 @@ export interface CodeAssignmentStrategy {
   assignCode(input: CodeAssignmentInput): KanjiCode;
 }
 
-export const PLACEHOLDER_ASSIGNMENT_STRATEGY_ID = 'base8-stable-permutation-v1';
+export const BASE8_STABLE_PERMUTATION_STRATEGY_ID = 'base8-stable-permutation-v1';
 
 export const KANJI_CODE_SPACE_SIZE = CODE_DIGITS.length ** KANJI_CODE_LENGTH;
-const PLACEHOLDER_PERMUTATION_MULTIPLIER = 2417;
-const PLACEHOLDER_PERMUTATION_OFFSET = 1729;
+const BASE8_STABLE_PERMUTATION_MULTIPLIER = 2417;
+const BASE8_STABLE_PERMUTATION_OFFSET = 1729;
 
-export const currentAssignmentVersion: AssignmentVersion = {
-  id: 'placeholder-v1',
-  sourceSets: [SOURCE_SET_IDS.MOCK_JOYO],
-  strategyId: PLACEHOLDER_ASSIGNMENT_STRATEGY_ID,
-  codeSpaceSize: KANJI_CODE_SPACE_SIZE,
-  description:
-    'Placeholder deterministic assignment for local scaffold data. Maps canonicalIndex through a fixed permutation of the four-digit base-8 code space; not a canonical Joyo/Jinmeiyo import.',
-};
+export function createBase8StableAssignmentVersion({
+  id,
+  sourceSetVersions,
+  description,
+}: Pick<AssignmentVersion, 'id' | 'sourceSetVersions' | 'description'>): AssignmentVersion {
+  return {
+    id,
+    sourceSetVersions,
+    strategyId: BASE8_STABLE_PERMUTATION_STRATEGY_ID,
+    codeSpaceSize: KANJI_CODE_SPACE_SIZE,
+    description,
+  };
+}
 
 function assertSupportedAssignmentVersion(assignmentVersion: AssignmentVersion): void {
   if (
-    assignmentVersion.strategyId !== PLACEHOLDER_ASSIGNMENT_STRATEGY_ID ||
+    assignmentVersion.strategyId !== BASE8_STABLE_PERMUTATION_STRATEGY_ID ||
     assignmentVersion.codeSpaceSize !== KANJI_CODE_SPACE_SIZE
   ) {
     throw new Error('Unsupported kanji code assignment version.');
@@ -37,7 +41,7 @@ function assertSupportedAssignmentVersion(assignmentVersion: AssignmentVersion):
 
 function normalizeCanonicalIndex(canonicalIndex: number): number {
   if (!Number.isInteger(canonicalIndex)) {
-    throw new Error('canonicalIndex must be an integer for placeholder code assignment.');
+    throw new Error('canonicalIndex must be an integer for stable code assignment.');
   }
 
   return ((canonicalIndex % KANJI_CODE_SPACE_SIZE) + KANJI_CODE_SPACE_SIZE) % KANJI_CODE_SPACE_SIZE;
@@ -45,12 +49,12 @@ function normalizeCanonicalIndex(canonicalIndex: number): number {
 
 function permuteNormalizedIndex(normalizedIndex: number): number {
   return (
-    (normalizedIndex * PLACEHOLDER_PERMUTATION_MULTIPLIER + PLACEHOLDER_PERMUTATION_OFFSET) %
+    (normalizedIndex * BASE8_STABLE_PERMUTATION_MULTIPLIER + BASE8_STABLE_PERMUTATION_OFFSET) %
     KANJI_CODE_SPACE_SIZE
   );
 }
 
-export const base8IndexAssignment: CodeAssignmentStrategy = {
+export const base8StablePermutationAssignment: CodeAssignmentStrategy = {
   assignCode(input) {
     assertSupportedAssignmentVersion(input.assignmentVersion);
 
@@ -65,3 +69,5 @@ export const base8IndexAssignment: CodeAssignmentStrategy = {
     ]);
   },
 };
+
+export const base8IndexAssignment = base8StablePermutationAssignment;
