@@ -111,6 +111,32 @@ describe('session cue opacity', () => {
     expect(nextSession.activeKanji).toBe('月');
   });
 
+  it('keeps the selected session deck stable while queue order and per-run item state stay session-owned', () => {
+    const drill = getDrillById('faded-recall');
+    const session = createSession(mockKanji, drill, {
+      id: 'session-owned-state',
+      random: createDeterministicRandom([0.9, 0.1, 0.5, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.05]),
+    });
+    const answeredKanji = session.activeKanji;
+    const nextKanji = session.queue[1];
+    const { session: nextSession } = answerSessionReview(session, 'good');
+
+    expect(nextKanji).toBeDefined();
+    expect(nextSession.selectedKanji).toEqual(session.selectedKanji);
+    expect(nextSession.queue).toEqual([...session.queue.slice(1), session.queue[0]!]);
+    expect(nextSession.activeKanji).toBe(nextKanji);
+    expect(nextSession.itemStateByKanji[answeredKanji]).toMatchObject({
+      attempts: 1,
+      goodCount: 1,
+      cueOpacity: 0.66,
+    });
+    expect(nextSession.itemStateByKanji[nextKanji!]).toMatchObject({
+      attempts: 0,
+      goodCount: 0,
+      cueOpacity: 1,
+    });
+  });
+
   it('can advance learn mode without changing cue opacity or review counts', () => {
     const drill = getDrillById('learn');
     const session = createSession(mockKanji, drill, {

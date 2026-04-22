@@ -127,6 +127,59 @@ describe('progressStore', () => {
     });
     expect(progressStore.load()).toEqual(nextProgress);
   });
+
+  it('updates only the reviewed kanji and keeps persistence scoped to the small learner record', () => {
+    const nextProgress = syncReviewEventToProgressStore(
+      {
+        月: {
+          kanji: '月',
+          seenCount: 2,
+          goodCount: 1,
+          lastSeenAt: '2026-04-20T12:00:00.000Z',
+          confidence: 'learning',
+        },
+      },
+      {
+        type: 'review-answer',
+        kanji: '力',
+        reviewGrade: 'good',
+        previousCueOpacity: 0.33,
+        nextCueOpacity: 0,
+        queueBefore: ['力', '月'],
+        queueAfter: ['月', '力'],
+        nextActiveKanji: '月',
+      },
+      '2026-04-21T12:10:00.000Z',
+    );
+    const reviewedProgress = nextProgress['力'];
+
+    expect(nextProgress).toEqual({
+      月: {
+        kanji: '月',
+        seenCount: 2,
+        goodCount: 1,
+        lastSeenAt: '2026-04-20T12:00:00.000Z',
+        confidence: 'learning',
+      },
+      力: {
+        kanji: '力',
+        seenCount: 1,
+        goodCount: 1,
+        lastSeenAt: '2026-04-21T12:10:00.000Z',
+        confidence: 'familiar',
+      },
+    });
+    expect(reviewedProgress).toBeDefined();
+    expect(Object.keys(reviewedProgress ?? {}).sort()).toEqual([
+      'confidence',
+      'goodCount',
+      'kanji',
+      'lastSeenAt',
+      'seenCount',
+    ]);
+    expect(storage.length).toBe(1);
+    expect(storage.key(0)).toBe('kanji-grid-progress-v0');
+  });
 });
 
 function createMemoryStorage(): Storage {

@@ -138,6 +138,34 @@ describe('StudyPage', () => {
     });
   });
 
+  it('starts faded recall from fresh live session state even when stored progress already exists', () => {
+    storage.setItem(
+      'kanji-grid-progress-v0',
+      JSON.stringify({
+        力: {
+          kanji: '力',
+          seenCount: 8,
+          goodCount: 6,
+          lastSeenAt: '2026-04-20T12:00:00.000Z',
+          confidence: 'familiar',
+        },
+      }),
+    );
+
+    render(
+      <StudyPage
+        sessionOptions={{
+          id: 'study-page-session',
+          random: createDeterministicRandom([0.9, 0.1, 0.5, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.05]),
+        }}
+      />,
+    );
+
+    expect(screen.getByText('力 is ready to study')).toBeInTheDocument();
+    expect(screen.getAllByText('Cue visible at 100%')).toHaveLength(2);
+    expect(screen.getByText('0 good / 0 attempts')).toBeInTheDocument();
+  });
+
   it('switches to learn mode with persistent readings and next-item navigation', () => {
     render(
       <StudyPage
@@ -161,6 +189,22 @@ describe('StudyPage', () => {
 
     expect(screen.getByText('月 is ready to study')).toBeInTheDocument();
     expect(screen.getByText('ゲツ, ガツ')).toBeInTheDocument();
+  });
+
+  it('does not persist progress while navigating the learn-mode shell', () => {
+    render(
+      <StudyPage
+        sessionOptions={{
+          id: 'study-page-session',
+          random: createDeterministicRandom([0.9, 0.1, 0.5, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.05]),
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('radio', { name: /Learn/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next kanji' }));
+
+    expect(storage.getItem('kanji-grid-progress-v0')).toBeNull();
   });
 
   it('resets reveal state and session position when switching drills', () => {
@@ -193,6 +237,39 @@ describe('StudyPage', () => {
     expect(screen.getByRole('button', { name: 'Reveal readings and meanings' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Again' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Good' })).not.toBeInTheDocument();
+  });
+
+  it('recreates faded-recall session state instead of carrying live cue opacity across drill switches', () => {
+    render(
+      <StudyPage
+        sessionOptions={{
+          id: 'study-page-session',
+          random: createDeterministicRandom([0.9, 0.1, 0.5, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.05]),
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reveal readings and meanings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
+
+    expect(screen.getByText('月 is ready to study')).toBeInTheDocument();
+    expect(JSON.parse(storage.getItem('kanji-grid-progress-v0') ?? 'null')).toEqual({
+      力: {
+        kanji: '力',
+        seenCount: 1,
+        goodCount: 1,
+        lastSeenAt: '2026-04-21T12:00:00.000Z',
+        confidence: 'learning',
+      },
+    });
+
+    fireEvent.click(screen.getByRole('radio', { name: /Learn/i }));
+    fireEvent.click(screen.getByRole('radio', { name: /Faded recall/i }));
+
+    expect(screen.getByText('力 is ready to study')).toBeInTheDocument();
+    expect(screen.getAllByText('Cue visible at 100%')).toHaveLength(2);
+    expect(screen.getByText('0 good / 0 attempts')).toBeInTheDocument();
+    expect(screen.queryByText('リョク, リキ')).not.toBeInTheDocument();
   });
 
   it('keeps blind recall cue-hidden before and after grading', () => {
