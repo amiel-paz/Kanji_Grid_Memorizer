@@ -10,6 +10,7 @@ import {
   type CreateSessionOptions,
   createSession,
   getCueOpacity,
+  type SessionRandomSource,
 } from '../domain/session/session';
 import { loadProgressRecords, syncReviewEventToProgressStore } from '../state/progressStore';
 
@@ -18,46 +19,88 @@ interface StudyPageProps {
 }
 
 export function StudyPage({ sessionOptions }: StudyPageProps) {
+  const sessionRandomRef = useRef<SessionRandomSource>(sessionOptions?.random ?? Math.random);
   const [drillId, setDrillId] = useState(STARTER_DRILLS[0]?.id ?? 'learn');
   const drill = getDrillById(drillId);
-  const [session, setSession] = useState(() => createSession(mockKanji, drill, sessionOptions));
+  const [session, setSession] = useState(() =>
+    createSession(mockKanji, drill, {
+      ...sessionOptions,
+      random: sessionRandomRef.current,
+    }),
+  );
   const [readingsRevealed, setReadingsRevealed] = useState(drill.mode === 'learn');
   const progressByKanjiRef = useRef(loadProgressRecords());
+  const isSessionComplete = session.queue.length === 0 || session.activeKanji === null;
 
   const activeEntry = useMemo(
-    () => mockKanji.find((entry) => entry.kanji === session.activeKanji) ?? mockKanji[0],
+    () =>
+      session.activeKanji === null
+        ? null
+        : mockKanji.find((entry) => entry.kanji === session.activeKanji) ?? null,
     [session.activeKanji],
   );
 
-  if (!activeEntry) {
+  if (!isSessionComplete && !activeEntry) {
     return <main className="p-8">No kanji data available.</main>;
   }
 
-  const activeKanji = activeEntry.kanji;
-  const opacity = getCueOpacity(session, activeKanji);
+  const activeKanji = activeEntry?.kanji ?? null;
+  const opacity = activeKanji === null ? null : getCueOpacity(session, activeKanji);
   const isReviewMode = drill.mode !== 'learn';
   const showReadings = !isReviewMode || readingsRevealed;
-  const activeIndex = session.selectedKanji.indexOf(activeKanji);
-  const activeItemState = session.itemStateByKanji[activeKanji];
+  const activeIndex = activeKanji === null ? session.selectedKanji.length - 1 : session.selectedKanji.indexOf(activeKanji);
+  const activeItemState = activeKanji === null ? null : session.itemStateByKanji[activeKanji] ?? null;
+  const answerPanelId = 'study-answer-panel';
 
-  if (!activeItemState) {
+  if (!isSessionComplete && !activeItemState) {
     throw new Error(`Active kanji is missing from session state: ${activeKanji}`);
   }
 
   const modePresentation = getModePresentation({
     drillMode: drill.mode,
-    cueOpacity: opacity,
+    cueOpacity: opacity ?? 0,
   });
+  const answerStateSummary = isSessionComplete
+    ? 'Complete'
+    : isReviewMode
+    ? readingsRevealed
+      ? 'Answer revealed'
+      : 'Hidden until reveal'
+    : 'Always visible';
 
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
     setDrillId(nextDrillId);
-    setSession(createSession(mockKanji, nextDrill, sessionOptions));
+    setSession(
+      createSession(mockKanji, nextDrill, {
+        ...sessionOptions,
+        random: sessionRandomRef.current,
+      }),
+    );
     setReadingsRevealed(nextDrill.mode === 'learn');
   }
 
+  function handleRestartDrill() {
+    setSession(
+      createSession(mockKanji, drill, {
+        ...sessionOptions,
+        random: sessionRandomRef.current,
+      }),
+    );
+    setReadingsRevealed(drill.mode === 'learn');
+  }
+
   function handleReviewAnswer(reviewGrade: ReviewGrade) {
-    const { session: nextSession, event } = answerSessionReview(session, reviewGrade, activeKanji);
+    if (activeKanji === null) {
+      return;
+    }
+
+    const { session: nextSession, event } = answerSessionReview(
+      session,
+      reviewGrade,
+      activeKanji,
+      sessionRandomRef.current,
+    );
     progressByKanjiRef.current = syncReviewEventToProgressStore(
       progressByKanjiRef.current,
       event,
@@ -68,16 +111,21 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
   }
 
   function handleAdvanceLearnItem() {
+    if (activeKanji === null) {
+      return;
+    }
+
     setSession((current) => advanceSessionItem(current, activeKanji));
   }
 
   return (
     <main className="app-page">
       <header className="page-header">
-        <p className="eyebrow">Kanji Grid Memorizer</p>
-        <h1 className="page-title">First usable study shell</h1>
+        <p className="eyebrow">Study</p>
+        <h1 className="page-title">Study one kanji at a time</h1>
         <p className="body-copy">
-          Study one kanji at a time, choose a drill, and reveal help only when you need it.
+          Choose a drill, work through the current session, and reveal meanings and readings only
+          when you need them.
         </p>
       </header>
 
@@ -91,32 +139,38 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
 
           <section aria-labelledby="session-overview-title" className="surface-panel study-overview">
             <div className="section-heading">
-              <p className="section-kicker">Current item</p>
+              <p className="section-kicker">Session</p>
               <h2 className="section-title" id="session-overview-title">
-                {activeKanji} is ready to study
+                {isSessionComplete ? 'Session complete' : `Now studying ${activeKanji}`}
               </h2>
             </div>
-            <div className="study-overview-row" aria-live="polite">
+            <p aria-atomic="true" aria-live="polite" className="sr-only" role="status">
+              {drill.label}. Item {Math.min(activeIndex + 1, session.selectedKanji.length)} of{' '}
+              {session.selectedKanji.length}. Cue opacity{' '}
+              {opacity === null ? 'not applicable' : `${Math.round(opacity * 100)} percent`}.{' '}
+              {answerStateSummary}.
+            </p>
+            <div className="study-overview-row">
               <span>Drill</span>
               <strong>{drill.label}</strong>
             </div>
             <div className="study-overview-row">
-              <span>Session position</span>
+              <span>Position in session</span>
               <strong>
-                {activeIndex + 1} / {session.selectedKanji.length}
+                {Math.min(activeIndex + 1, session.selectedKanji.length)} / {session.selectedKanji.length}
               </strong>
             </div>
             <div className="study-overview-row">
               <span>Cue opacity</span>
-              <strong>{Math.round(opacity * 100)}%</strong>
+              <strong>{opacity === null ? 'Completed' : `${Math.round(opacity * 100)}%`}</strong>
             </div>
             <div className="study-overview-row">
-              <span>Visible support</span>
-              <strong>{modePresentation.supportSummary}</strong>
+              <span>Answer state</span>
+              <strong>{answerStateSummary}</strong>
             </div>
             <div className="study-overview-row">
               <span>Fixture source</span>
-              <strong>{activeEntry.sourceSet}</strong>
+              <strong>{activeEntry?.sourceSet ?? 'Session complete'}</strong>
             </div>
           </section>
         </aside>
@@ -126,31 +180,47 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
             <div className="section-heading">
               <p className="section-kicker">Study surface</p>
               <h2 className="section-title" id="study-stage-title">
-                {drill.label}
+                {isSessionComplete ? `${drill.label} complete` : drill.label}
               </h2>
-              <p className="body-copy">{modePresentation.stageDescription}</p>
+              <p className="body-copy">
+                {isSessionComplete
+                  ? completionDescriptionForMode(drill.mode)
+                  : modePresentation.stageDescription}
+              </p>
             </div>
 
-            <KanjiCueCard
-              kanji={activeKanji}
-              code={activeEntry.code}
-              opacity={opacity}
-              label={modePresentation.cardLabel(activeKanji)}
-            />
+            {isSessionComplete || activeEntry === null || activeKanji === null ? (
+              <div className="study-complete-card">
+                <p className="section-kicker">Session complete</p>
+                <p className="section-title">This batch is clear</p>
+                <p className="fine-print">
+                  Good answers at zero cue leave the recall batch for the rest of this run.
+                </p>
+              </div>
+            ) : (
+              <KanjiCueCard
+                kanji={activeKanji}
+                code={activeEntry.code}
+                opacity={opacity ?? 0}
+                label={modePresentation.cardLabel(activeKanji)}
+              />
+            )}
 
             <dl className="study-stage-meta" aria-label="Mode summary">
               <div>
                 <dt>Focus</dt>
-                <dd>{modePresentation.focusLabel}</dd>
+                <dd>{isSessionComplete ? completionFocusLabel(drill.mode) : modePresentation.focusLabel}</dd>
               </div>
               <div>
                 <dt>Support</dt>
-                <dd>{modePresentation.supportSummary}</dd>
+                <dd>{isSessionComplete ? 'No active review card' : modePresentation.supportSummary}</dd>
               </div>
               <div>
                 <dt>Progress in this run</dt>
                 <dd>
-                  {activeItemState.goodCount} good / {activeItemState.attempts} attempts
+                  {isSessionComplete || activeItemState === null
+                    ? `${session.selectedKanji.length - session.queue.length} cleared / ${session.selectedKanji.length} selected`
+                    : `${activeItemState.goodCount} good / ${activeItemState.attempts} attempts`}
                 </dd>
               </div>
             </dl>
@@ -158,42 +228,94 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
 
           <div className="study-stage-details">
             <section aria-labelledby="study-actions-title" className="study-panel-block">
-              <h3 className="sr-only" id="study-actions-title">
-                Study controls
-              </h3>
+              <div className="section-heading">
+                <p className="section-kicker">Answer</p>
+                <h3 className="section-title" id="study-actions-title">
+                  {isSessionComplete ? 'Session complete' : modePresentation.answerPanelTitle}
+                </h3>
+                <p className="fine-print">
+                  {isSessionComplete
+                    ? 'Start the drill again if you want a fresh batch, or switch modes to compare the shell.'
+                    : modePresentation.answerPanelCopy}
+                </p>
+              </div>
 
-              {showReadings ? (
-                <dl className="study-detail-list">
-                  <div>
-                    <dt>Meanings</dt>
-                    <dd>{activeEntry.meanings.join(', ')}</dd>
-                  </div>
-                  <div>
-                    <dt>Onyomi</dt>
-                    <dd>{activeEntry.onyomi.join(', ')}</dd>
-                  </div>
-                  <div>
-                    <dt>Kunyomi</dt>
-                    <dd>{activeEntry.kunyomi.join(', ')}</dd>
-                  </div>
-                </dl>
-              ) : (
-                <p className="fine-print">{modePresentation.hiddenReadingsCopy}</p>
-              )}
+              <div aria-live="polite" className="study-answer-panel" id={answerPanelId}>
+                {isSessionComplete ? (
+                  <p className="fine-print">
+                    This session has no active card left in the queue.
+                  </p>
+                ) : showReadings && activeEntry ? (
+                  <div className="study-answer-grid">
+                    <section aria-labelledby="meaning-block-title" className="study-detail-group">
+                      <h4 className="study-detail-group-title" id="meaning-block-title">
+                        Meanings
+                      </h4>
+                      <p className="study-detail-group-copy">{activeEntry.meanings.join(', ')}</p>
+                    </section>
 
-              {isReviewMode ? (
+                    <section aria-labelledby="reading-block-title" className="study-detail-group">
+                      <h4 className="study-detail-group-title" id="reading-block-title">
+                        Readings
+                      </h4>
+                      <dl className="study-detail-list">
+                        <div>
+                          <dt>Onyomi</dt>
+                          <dd>{activeEntry.onyomi.join(', ')}</dd>
+                        </div>
+                        <div>
+                          <dt>Kunyomi</dt>
+                          <dd>{activeEntry.kunyomi.join(', ')}</dd>
+                        </div>
+                      </dl>
+                    </section>
+                  </div>
+                ) : activeEntry ? (
+                  <div className="study-answer-grid">
+                    <section aria-labelledby="meaning-block-title" className="study-detail-group">
+                      <h4 className="study-detail-group-title" id="meaning-block-title">
+                        Meanings
+                      </h4>
+                      <p className="fine-print">{modePresentation.hiddenReadingsCopy}</p>
+                    </section>
+
+                    <section
+                      aria-labelledby="reading-block-title"
+                      className="study-detail-group study-detail-group-blurred"
+                    >
+                      <h4 className="study-detail-group-title" id="reading-block-title">
+                        Readings
+                      </h4>
+                      <p aria-hidden="true" className="study-detail-group-copy">
+                        Hidden until reveal
+                      </p>
+                      <p className="sr-only">Readings stay hidden until you reveal the answer.</p>
+                    </section>
+                  </div>
+                ) : (
+                  <p className="fine-print">{modePresentation.hiddenReadingsCopy}</p>
+                )}
+              </div>
+
+              {isSessionComplete ? (
+                <div className="study-action-row">
+                  <button className="btn btn-primary" type="button" onClick={handleRestartDrill}>
+                    Restart this drill
+                  </button>
+                </div>
+              ) : isReviewMode ? (
                 readingsRevealed ? (
                   <>
-                    <div className="study-action-row">
+                    <div className="study-grade-row">
                       <button
-                        className="btn btn-secondary"
+                        className="btn btn-secondary btn-square"
                         type="button"
                         onClick={() => handleReviewAnswer('again')}
                       >
                         Again
                       </button>
                       <button
-                        className="btn btn-primary"
+                        className="btn btn-primary btn-square"
                         type="button"
                         onClick={() => handleReviewAnswer('good')}
                       >
@@ -206,6 +328,8 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
                   <>
                     <div className="study-action-row">
                       <button
+                        aria-controls={answerPanelId}
+                        aria-expanded={readingsRevealed}
                         className="btn btn-primary"
                         type="button"
                         onClick={() => setReadingsRevealed(true)}
@@ -245,6 +369,8 @@ function getModePresentation({
     case 'learn':
       return {
         stageDescription: 'Keep the full code cue, readings, and meanings in view while you get oriented to each kanji.',
+        answerPanelTitle: 'Details stay visible',
+        answerPanelCopy: 'Use this pass to connect the kanji, color cue, meanings, and readings without hiding support.',
         hiddenReadingsCopy: '',
         revealActionLabel: '',
         preRevealActionCopy: '',
@@ -258,7 +384,10 @@ function getModePresentation({
       return {
         stageDescription:
           'Recall first, then reveal the answer. Session state lowers the cue after each good review.',
-        hiddenReadingsCopy: 'Try to say the meanings and readings before you reveal them. Good lowers the cue one step; Again raises it one step.',
+        answerPanelTitle: 'Reveal and grade',
+        answerPanelCopy: 'Try to answer from memory before you reveal the meanings and readings.',
+        hiddenReadingsCopy:
+          'Try to say the meanings and readings before you reveal them. Good lowers the cue one step; Again raises it one step.',
         revealActionLabel: 'Reveal readings and meanings',
         preRevealActionCopy: 'Reveal only after you have committed to an answer in your head.',
         gradedStateCopy: 'Choose Good if you recalled it cleanly; choose Again if you want the next pass to lean more on the cue.',
@@ -270,6 +399,8 @@ function getModePresentation({
     case 'blind-recall':
       return {
         stageDescription: 'The kanji stays on screen, but the color cue remains hidden so the shell reads like a true recall pass.',
+        answerPanelTitle: 'Reveal and grade',
+        answerPanelCopy: 'Try to answer from the kanji alone before you reveal meanings and readings.',
         hiddenReadingsCopy: 'No cue is shown in this drill. Reveal the answer only after you have tried to recall it unaided.',
         revealActionLabel: 'Reveal readings and meanings',
         preRevealActionCopy: 'This mode keeps cue support off even after grading so the shell stays intentionally blind.',
@@ -282,6 +413,8 @@ function getModePresentation({
     default:
       return {
         stageDescription: 'TODO: Define this drill mode.',
+        answerPanelTitle: 'Answer details',
+        answerPanelCopy: 'Review the current item details.',
         hiddenReadingsCopy: '',
         revealActionLabel: 'Reveal readings',
         preRevealActionCopy: '',
@@ -291,5 +424,31 @@ function getModePresentation({
         focusLabel: 'Study the current item.',
         cardLabel: (kanji: string) => `${kanji} study card`,
       };
+  }
+}
+
+function completionDescriptionForMode(drillMode: DrillMode): string {
+  switch (drillMode) {
+    case 'faded-recall':
+      return 'You cleared the current faded-recall batch. Cards that earned a clean zero-cue pass stayed out of rotation for the rest of this run.';
+    case 'blind-recall':
+      return 'You cleared the current blind-recall batch. Zero-cue passes are retired from the queue until you start a new session.';
+    case 'learn':
+      return 'You reached the end of this learn pass.';
+    default:
+      return 'You cleared the current session.';
+  }
+}
+
+function completionFocusLabel(drillMode: DrillMode): string {
+  switch (drillMode) {
+    case 'faded-recall':
+      return 'Review complete for the current faded-cue batch.';
+    case 'blind-recall':
+      return 'Review complete for the current blind-recall batch.';
+    case 'learn':
+      return 'Learn pass complete.';
+    default:
+      return 'Session complete.';
   }
 }

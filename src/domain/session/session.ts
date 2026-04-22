@@ -35,6 +35,7 @@ export function createSession(
           kanji: entry.kanji,
           attempts: 0,
           goodCount: 0,
+          againCount: 0,
           cueOpacity: initialOpacityForDrill(drillConfig),
         },
       ]),
@@ -86,7 +87,8 @@ export function getCueOpacity(session: SessionState, kanji: string): CueOpacity 
 export function answerSessionReview(
   session: SessionState,
   reviewGrade: ReviewGrade,
-  kanji: string = session.activeKanji,
+  kanji: string = session.activeKanji ?? '',
+  random: SessionRandomSource = Math.random,
 ): SessionAnswerResult {
   assertActiveKanji(session, kanji);
 
@@ -99,8 +101,15 @@ export function answerSessionReview(
   const isGoodReview = reviewGrade === 'good';
   const nextOpacity = nextCueOpacity(session, itemState.cueOpacity, isGoodReview);
   const queueBefore = session.queue;
-  const queueAfter = advanceQueue(queueBefore);
-  const nextActiveKanji = queueAfter[0] ?? kanji;
+  const nextAgainCount = isGoodReview ? itemState.againCount : itemState.againCount + 1;
+  const shouldRetire = shouldRetireReviewedKanji(session, itemState.cueOpacity, nextOpacity, reviewGrade);
+  const queueAfter = reorderQueueAfterReview(queueBefore, kanji, {
+    againCount: nextAgainCount,
+    random,
+    reviewGrade,
+    shouldRetire,
+  });
+  const nextActiveKanji = queueAfter[0] ?? null;
 
   const nextSession = {
     ...session,
@@ -112,6 +121,7 @@ export function answerSessionReview(
         ...itemState,
         attempts: itemState.attempts + 1,
         goodCount: itemState.goodCount + (isGoodReview ? 1 : 0),
+        againCount: nextAgainCount,
         cueOpacity: nextOpacity,
       },
     },
@@ -136,11 +146,12 @@ export function recordReviewGrade(
   session: SessionState,
   kanji: string,
   reviewGrade: ReviewGrade,
+  random: SessionRandomSource = Math.random,
 ): SessionState {
-  return answerSessionReview(session, reviewGrade, kanji).session;
+  return answerSessionReview(session, reviewGrade, kanji, random).session;
 }
 
-export function advanceSessionItem(session: SessionState, kanji: string = session.activeKanji): SessionState {
+export function advanceSessionItem(session: SessionState, kanji: string = session.activeKanji ?? ''): SessionState {
   assertActiveKanji(session, kanji);
 
   const nextQueue = advanceQueue(session.queue);
@@ -148,12 +159,12 @@ export function advanceSessionItem(session: SessionState, kanji: string = sessio
   return {
     ...session,
     queue: nextQueue,
-    activeKanji: nextQueue[0] ?? kanji,
+    activeKanji: nextQueue[0] ?? null,
   };
 }
 
 function assertActiveKanji(session: SessionState, kanji: string) {
-  if (kanji !== session.activeKanji) {
+  if (session.activeKanji === null || kanji !== session.activeKanji) {
     throw new Error(`Only the active kanji can be advanced or answered: ${kanji}`);
   }
 }
@@ -166,6 +177,89 @@ function advanceQueue(queue: readonly string[]): readonly string[] {
   }
 
   return [...remainingKanji, activeKanji];
+}
+
+function reorderQueueAfterReview(
+  queue: readonly string[],
+  reviewedKanji: string,
+  {
+    againCount,
+    random,
+    reviewGrade,
+    shouldRetire,
+  }: {
+    againCount: number;
+    random: SessionRandomSource;
+    reviewGrade: ReviewGrade;
+    shouldRetire: boolean;
+  },
+): readonly string[] {
+  const [activeKanji, ...remainingKanji] = queue;
+
+  if (!activeKanji) {
+    return queue;
+  }
+
+  if (activeKanji !== reviewedKanji) {
+    throw new Error(`Queue head does not match the reviewed kanji: ${reviewedKanji}`);
+  }
+
+  if (shouldRetire) {
+    return remainingKanji;
+  }
+
+  const insertAt =
+    reviewGrade === 'again'
+      ? againInsertIndex(remainingKanji.length, againCount, random)
+      : goodInsertIndex(remainingKanji.length, random);
+
+  return insertIntoQueue(remainingKanji, reviewedKanji, insertAt);
+}
+
+function insertIntoQueue(queue: readonly string[], kanji: string, insertAt: number): readonly string[] {
+  return [...queue.slice(0, insertAt), kanji, ...queue.slice(insertAt)];
+}
+
+function againInsertIndex(
+  remainingLength: number,
+  againCount: number,
+  random: SessionRandomSource,
+): number {
+  if (remainingLength === 0) {
+    return 0;
+  }
+
+  const maxOffset = Math.min(remainingLength, Math.max(0, 4 - againCount));
+  return Math.floor(random() * (maxOffset + 1));
+}
+
+function goodInsertIndex(remainingLength: number, random: SessionRandomSource): number {
+  if (remainingLength === 0) {
+    return 0;
+  }
+
+  const earliestLateSlot = Math.floor(remainingLength / 2);
+  const lateSlotCount = remainingLength - earliestLateSlot + 1;
+  return earliestLateSlot + Math.floor(random() * lateSlotCount);
+}
+
+function shouldRetireReviewedKanji(
+  session: SessionState,
+  previousCueOpacity: CueOpacity,
+  nextCueOpacity: CueOpacity,
+  reviewGrade: ReviewGrade,
+): boolean {
+  if (reviewGrade !== 'good') {
+    return false;
+  }
+
+  const drill = getDrillById(session.drillConfigId);
+
+  if (drill.cuePolicy === 'full') {
+    return false;
+  }
+
+  return previousCueOpacity === 0 && nextCueOpacity === 0;
 }
 
 function nextCueOpacity(
