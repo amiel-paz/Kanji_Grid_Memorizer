@@ -5,10 +5,10 @@ import {
   SOURCE_SET_IDS,
 } from '../src/domain/content/types';
 import {
-  base8IndexAssignment,
-  currentAssignmentVersion,
+  BASE8_STABLE_PERMUTATION_STRATEGY_ID,
+  base8StablePermutationAssignment,
+  createBase8StableAssignmentVersion,
   KANJI_CODE_SPACE_SIZE,
-  PLACEHOLDER_ASSIGNMENT_STRATEGY_ID,
 } from '../src/domain/encoding/assignment';
 import {
   assertKanjiCode,
@@ -21,6 +21,17 @@ import {
   isCodeDigit,
   KANJI_CODE_POSITIONS,
 } from '../src/domain/encoding/palette';
+
+const testAssignmentVersion = createBase8StableAssignmentVersion({
+  id: 'test-assignment-v1',
+  sourceSetVersions: [
+    {
+      sourceSet: SOURCE_SET_IDS.JOYO,
+      sourceSetVersionId: 'joyo-test-v1',
+    },
+  ],
+  description: 'Test-only stable assignment version.',
+});
 
 describe('base-8 code assignment', () => {
   it('defines exactly eight color digits', () => {
@@ -63,14 +74,19 @@ describe('base-8 code assignment', () => {
     expect(createKanjiCode([7, 6, 5, 4])).toEqual([7, 6, 5, 4]);
   });
 
-  it('publishes explicit placeholder assignment version metadata', () => {
-    expect(currentAssignmentVersion).toMatchObject({
-      id: 'placeholder-v1',
-      sourceSets: [SOURCE_SET_IDS.MOCK_JOYO],
-      strategyId: PLACEHOLDER_ASSIGNMENT_STRATEGY_ID,
+  it('publishes explicit stable assignment version metadata', () => {
+    expect(testAssignmentVersion).toMatchObject({
+      id: 'test-assignment-v1',
+      sourceSetVersions: [
+        {
+          sourceSet: SOURCE_SET_IDS.JOYO,
+          sourceSetVersionId: 'joyo-test-v1',
+        },
+      ],
+      strategyId: BASE8_STABLE_PERMUTATION_STRATEGY_ID,
       codeSpaceSize: 4096,
     });
-    expect(currentAssignmentVersion.description).toContain('Placeholder deterministic assignment');
+    expect(testAssignmentVersion.description).toContain('stable assignment');
     expect(KANJI_CODE_SPACE_SIZE).toBe(4096);
   });
 
@@ -82,37 +98,37 @@ describe('base-8 code assignment', () => {
       'not canonical Joyo data',
     );
     expect(SOURCE_SET_DEFINITIONS[SOURCE_SET_IDS.JOYO]).toMatchObject({
-      ownership: 'future-canonical-import',
+      ownership: 'canonical-import',
     });
     expect(SOURCE_SET_DEFINITIONS[SOURCE_SET_IDS.JINMEIYO]).toMatchObject({
-      ownership: 'future-canonical-import',
+      ownership: 'canonical-import',
     });
     expect(CANONICAL_SOURCE_SET_PRIORITY).toEqual([SOURCE_SET_IDS.JOYO, SOURCE_SET_IDS.JINMEIYO]);
   });
 
   it('deterministically derives varied digits from canonical index', () => {
-    const firstAssignment = base8IndexAssignment.assignCode({
+    const firstAssignment = base8StablePermutationAssignment.assignCode({
       canonicalIndex: 65,
-      assignmentVersion: currentAssignmentVersion,
+      assignmentVersion: testAssignmentVersion,
     });
-    const secondAssignment = base8IndexAssignment.assignCode({
+    const secondAssignment = base8StablePermutationAssignment.assignCode({
       canonicalIndex: 65,
-      assignmentVersion: currentAssignmentVersion,
+      assignmentVersion: testAssignmentVersion,
     });
 
     expect(firstAssignment).toEqual([6, 1, 6, 2]);
     expect(secondAssignment).toEqual(firstAssignment);
   });
 
-  it('maps the full placeholder code space as a stable permutation', () => {
+  it('maps the full code space as a stable permutation', () => {
     const assignedCodes = new Set<string>();
 
     for (let canonicalIndex = 0; canonicalIndex < KANJI_CODE_SPACE_SIZE; canonicalIndex += 1) {
       assignedCodes.add(
         formatKanjiCode(
-          base8IndexAssignment.assignCode({
+          base8StablePermutationAssignment.assignCode({
             canonicalIndex,
-            assignmentVersion: currentAssignmentVersion,
+            assignmentVersion: testAssignmentVersion,
           }),
         ),
       );
@@ -123,42 +139,42 @@ describe('base-8 code assignment', () => {
 
   it('wraps canonical indexes through the stable four-digit permutation', () => {
     expect(
-      base8IndexAssignment.assignCode({
+      base8StablePermutationAssignment.assignCode({
         canonicalIndex: 4095,
-        assignmentVersion: currentAssignmentVersion,
+        assignmentVersion: testAssignmentVersion,
       }),
     ).toEqual([6, 5, 2, 0]);
 
     expect(
-      base8IndexAssignment.assignCode({
+      base8StablePermutationAssignment.assignCode({
         canonicalIndex: 4096,
-        assignmentVersion: currentAssignmentVersion,
+        assignmentVersion: testAssignmentVersion,
       }),
     ).toEqual([3, 3, 0, 1]);
 
     expect(
-      base8IndexAssignment.assignCode({
+      base8StablePermutationAssignment.assignCode({
         canonicalIndex: 4097,
-        assignmentVersion: currentAssignmentVersion,
+        assignmentVersion: testAssignmentVersion,
       }),
     ).toEqual([0, 0, 6, 2]);
   });
 
   it('normalizes negative indexes before validating code digits', () => {
     expect(
-      base8IndexAssignment.assignCode({
+      base8StablePermutationAssignment.assignCode({
         canonicalIndex: -1,
-        assignmentVersion: currentAssignmentVersion,
+        assignmentVersion: testAssignmentVersion,
       }),
     ).toEqual([6, 5, 2, 0]);
   });
 
   it('rejects unsupported versions before assignment', () => {
     expect(() =>
-      base8IndexAssignment.assignCode({
+      base8StablePermutationAssignment.assignCode({
         canonicalIndex: 1,
         assignmentVersion: {
-          ...currentAssignmentVersion,
+          ...testAssignmentVersion,
           strategyId: 'future-canonical-v1',
         },
       }),
@@ -167,10 +183,10 @@ describe('base-8 code assignment', () => {
 
   it('rejects non-integer canonical indexes', () => {
     expect(() =>
-      base8IndexAssignment.assignCode({
+      base8StablePermutationAssignment.assignCode({
         canonicalIndex: 1.5,
-        assignmentVersion: currentAssignmentVersion,
+        assignmentVersion: testAssignmentVersion,
       }),
-    ).toThrow('canonicalIndex must be an integer for placeholder code assignment.');
+    ).toThrow('canonicalIndex must be an integer for stable code assignment.');
   });
 });

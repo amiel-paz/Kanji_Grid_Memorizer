@@ -7,8 +7,9 @@ export const SOURCE_SET_IDS = {
 } as const;
 
 export type SourceSet = (typeof SOURCE_SET_IDS)[keyof typeof SOURCE_SET_IDS];
+export type CanonicalSourceSet = Exclude<SourceSet, typeof SOURCE_SET_IDS.MOCK_JOYO>;
 
-export type SourceSetOwnership = 'development-fixture' | 'future-canonical-import';
+export type SourceSetOwnership = 'development-fixture' | 'canonical-import';
 
 export interface SourceSetDefinition {
   readonly id: SourceSet;
@@ -28,26 +29,48 @@ export const SOURCE_SET_DEFINITIONS = {
   [SOURCE_SET_IDS.JOYO]: {
     id: SOURCE_SET_IDS.JOYO,
     label: 'Joyo',
-    ownership: 'future-canonical-import',
+    ownership: 'canonical-import',
     description:
-      'Future canonical Joyo source set. Import provenance and source version mapping must be explicit before use.',
+      'Canonical Joyo source set. Real deck imports must point to an explicit Joyo source-set version.',
   },
   [SOURCE_SET_IDS.JINMEIYO]: {
     id: SOURCE_SET_IDS.JINMEIYO,
     label: 'Jinmeiyo',
-    ownership: 'future-canonical-import',
+    ownership: 'canonical-import',
     description:
-      'Future canonical Jinmeiyo source set. It should be added after Joyo with its own import provenance.',
+      'Canonical Jinmeiyo source set. It remains a separate supplemental import path after Joyo.',
   },
 } as const satisfies Record<SourceSet, SourceSetDefinition>;
 
 export const CANONICAL_SOURCE_SET_PRIORITY = [SOURCE_SET_IDS.JOYO, SOURCE_SET_IDS.JINMEIYO] as const;
 
+export interface SourceSetVersion {
+  readonly sourceSet: SourceSet;
+  readonly versionId: string;
+  readonly label: string;
+  readonly provenance: string;
+  readonly notes: string;
+}
+
+export interface AssignmentVersionSource {
+  readonly sourceSet: SourceSet;
+  readonly sourceSetVersionId: SourceSetVersion['versionId'];
+}
+
 export interface AssignmentVersion {
   readonly id: string;
-  readonly sourceSets: readonly SourceSet[];
+  readonly sourceSetVersions: readonly AssignmentVersionSource[];
   readonly strategyId: string;
   readonly codeSpaceSize: number;
+  readonly description: string;
+}
+
+export interface ContentDeckManifest {
+  readonly id: string;
+  readonly label: string;
+  readonly sourceSetPriority: readonly CanonicalSourceSet[];
+  readonly sourceSetVersions: readonly SourceSetVersion[];
+  readonly assignmentVersion: AssignmentVersion;
   readonly description: string;
 }
 
@@ -60,6 +83,7 @@ export interface KanjiEntry {
   readonly kanji: string;
   readonly canonicalIndex: number;
   readonly sourceSet: SourceSet;
+  readonly sourceSetVersionId: SourceSetVersion['versionId'];
   readonly assignmentVersionId: AssignmentVersion['id'];
   readonly code: KanjiCode;
   readonly meanings: readonly string[];

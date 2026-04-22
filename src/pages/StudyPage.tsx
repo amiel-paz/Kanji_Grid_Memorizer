@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { DrillModePicker } from '../components/DrillModePicker';
+import { canonicalKanjiDeck } from '../data/canonicalDeck';
 import { KanjiCueCard } from '../components/KanjiCueCard';
-import { mockKanji } from '../data/mockKanji';
 import { getDrillById, STARTER_DRILLS } from '../domain/drills/configs';
 import type { DrillMode, ReviewGrade } from '../domain/drills/types';
 import {
@@ -20,12 +20,13 @@ interface StudyPageProps {
 export function StudyPage({ sessionOptions }: StudyPageProps) {
   const [drillId, setDrillId] = useState(STARTER_DRILLS[0]?.id ?? 'learn');
   const drill = getDrillById(drillId);
-  const [session, setSession] = useState(() => createSession(mockKanji, drill, sessionOptions));
+  const [session, setSession] = useState(() => createSession(canonicalKanjiDeck, drill, sessionOptions));
   const [readingsRevealed, setReadingsRevealed] = useState(drill.mode === 'learn');
   const progressByKanjiRef = useRef(loadProgressRecords());
 
   const activeEntry = useMemo(
-    () => mockKanji.find((entry) => entry.kanji === session.activeKanji) ?? mockKanji[0],
+    () =>
+      canonicalKanjiDeck.find((entry) => entry.kanji === session.activeKanji) ?? canonicalKanjiDeck[0],
     [session.activeKanji],
   );
 
@@ -52,7 +53,7 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
     setDrillId(nextDrillId);
-    setSession(createSession(mockKanji, nextDrill, sessionOptions));
+    setSession(createSession(canonicalKanjiDeck, nextDrill, sessionOptions));
     setReadingsRevealed(nextDrill.mode === 'learn');
   }
 
@@ -115,7 +116,7 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
               <strong>{modePresentation.supportSummary}</strong>
             </div>
             <div className="study-overview-row">
-              <span>Fixture source</span>
+              <span>Source set</span>
               <strong>{activeEntry.sourceSet}</strong>
             </div>
           </section>

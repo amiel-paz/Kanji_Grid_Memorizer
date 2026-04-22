@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { mockKanji } from '../src/data/mockKanji';
+import {
+  mockJoyoFixtureAssignmentVersion,
+  mockJoyoFixtureSourceVersion,
+  mockKanji,
+} from '../src/data/mockKanji';
 import { assertValidKanjiFixture, validateKanjiFixture } from '../src/data/validateKanjiFixture';
 import { SOURCE_SET_IDS } from '../src/domain/content/types';
-import { currentAssignmentVersion } from '../src/domain/encoding/assignment';
 
 describe('kanji fixture validation', () => {
   it('accepts the current local mock fixture', () => {
@@ -47,10 +50,19 @@ describe('kanji fixture validation', () => {
         },
         {
           path: '[0].sourceSet',
-          message: `Source set is not included in assignment version ${currentAssignmentVersion.id}.`,
+          message: `Source set is not included in assignment version ${mockJoyoFixtureAssignmentVersion.id}.`,
         },
       ]),
     );
+  });
+
+  it('reports wrong source-set version ids for local fixture data', () => {
+    const entry = makeEntry({ sourceSetVersionId: 'mock-joyo-fixture-v0' });
+
+    expect(validateKanjiFixture([entry])).toContainEqual({
+      path: '[0].sourceSetVersionId',
+      message: `Source set version id must be ${mockJoyoFixtureSourceVersion.versionId}.`,
+    });
   });
 
   it('reports wrong assignment version ids', () => {
@@ -58,16 +70,16 @@ describe('kanji fixture validation', () => {
 
     expect(validateKanjiFixture([entry])).toContainEqual({
       path: '[0].assignmentVersionId',
-      message: `Assignment version id must be ${currentAssignmentVersion.id}.`,
+      message: `Assignment version id must be ${mockJoyoFixtureAssignmentVersion.id}.`,
     });
   });
 
-  it('reports placeholder code mismatches without recalculating fixture data', () => {
+  it('reports stable-assignment code mismatches without recalculating fixture data', () => {
     const entry = makeEntry({ code: [0, 0, 0, 0] });
 
     expect(validateKanjiFixture([entry])).toContainEqual({
       path: '[0].code',
-      message: `Code must match placeholder assignment for canonicalIndex ${entry.canonicalIndex}.`,
+      message: `Code must match stable assignment for canonicalIndex ${entry.canonicalIndex}.`,
     });
   });
 
@@ -75,7 +87,7 @@ describe('kanji fixture validation', () => {
     const entry = makeEntry({ assignmentVersionId: 'future-v1' });
 
     expect(() => assertValidKanjiFixture([entry])).toThrow(
-      'Kanji fixture validation failed:\n[0].assignmentVersionId: Assignment version id must be placeholder-v1.',
+      'Kanji fixture validation failed:\n[0].assignmentVersionId: Assignment version id must be mock-joyo-fixture-assignment-v1.',
     );
   });
 });

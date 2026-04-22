@@ -4,7 +4,11 @@ import {
   type SourceSet,
   type SourceSetOwnership,
 } from '../domain/content/types';
-import { base8IndexAssignment, currentAssignmentVersion } from '../domain/encoding/assignment';
+import { base8StablePermutationAssignment } from '../domain/encoding/assignment';
+import {
+  mockJoyoFixtureAssignmentVersion,
+  mockJoyoFixtureSourceVersion,
+} from './mockKanji';
 import { assertKanjiCode, type KanjiCode } from '../domain/encoding/palette';
 
 export interface KanjiFixtureValidationIssue {
@@ -15,14 +19,16 @@ export interface KanjiFixtureValidationIssue {
 export interface KanjiFixtureValidationOptions {
   readonly assignmentVersion?: AssignmentVersion;
   readonly expectedSourceSetOwnership?: SourceSetOwnership;
+  readonly expectedSourceSetVersionId?: string;
   readonly requirePlaceholderCodeAlignment?: boolean;
 }
 
 type EntryRecord = Record<string, unknown>;
 
 const DEFAULT_OPTIONS = {
-  assignmentVersion: currentAssignmentVersion,
+  assignmentVersion: mockJoyoFixtureAssignmentVersion,
   expectedSourceSetOwnership: 'development-fixture',
+  expectedSourceSetVersionId: mockJoyoFixtureSourceVersion.versionId,
   requirePlaceholderCodeAlignment: true,
 } as const satisfies Required<KanjiFixtureValidationOptions>;
 
@@ -48,6 +54,7 @@ export function validateKanjiFixture(
     validateStringArray(entry, 'kunyomi', path, issues);
     validateStringArray(entry, 'tags', path, issues);
     validateSourceSet(entry, path, validationOptions, issues);
+    validateSourceSetVersionId(entry, path, validationOptions.expectedSourceSetVersionId, issues);
     validateAssignmentVersionId(entry, path, validationOptions.assignmentVersion, issues);
     validateCode(entry, path, issues);
     validatePlaceholderCodeAlignment(entry, path, validationOptions, issues);
@@ -142,7 +149,11 @@ function validateSourceSet(
     });
   }
 
-  if (!options.assignmentVersion.sourceSets.includes(sourceSet as SourceSet)) {
+  const assignmentSupportsSource = options.assignmentVersion.sourceSetVersions.some(
+    (assignmentSource) => assignmentSource.sourceSet === (sourceSet as SourceSet),
+  );
+
+  if (!assignmentSupportsSource) {
     issues.push({
       path: `${path}.sourceSet`,
       message: `Source set is not included in assignment version ${options.assignmentVersion.id}.`,
@@ -160,6 +171,20 @@ function validateAssignmentVersionId(
     issues.push({
       path: `${path}.assignmentVersionId`,
       message: `Assignment version id must be ${assignmentVersion.id}.`,
+    });
+  }
+}
+
+function validateSourceSetVersionId(
+  entry: EntryRecord,
+  path: string,
+  expectedSourceSetVersionId: string,
+  issues: KanjiFixtureValidationIssue[],
+): void {
+  if (entry.sourceSetVersionId !== expectedSourceSetVersionId) {
+    issues.push({
+      path: `${path}.sourceSetVersionId`,
+      message: `Source set version id must be ${expectedSourceSetVersionId}.`,
     });
   }
 }
@@ -207,7 +232,7 @@ function validatePlaceholderCodeAlignment(
     return;
   }
 
-  const expectedCode = base8IndexAssignment.assignCode({
+  const expectedCode = base8StablePermutationAssignment.assignCode({
     canonicalIndex,
     assignmentVersion: options.assignmentVersion,
   });
@@ -215,7 +240,7 @@ function validatePlaceholderCodeAlignment(
   if (!sameCode(code, expectedCode)) {
     issues.push({
       path: `${path}.code`,
-      message: `Code must match placeholder assignment for canonicalIndex ${canonicalIndex}.`,
+      message: `Code must match stable assignment for canonicalIndex ${canonicalIndex}.`,
     });
   }
 }
