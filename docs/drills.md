@@ -1,15 +1,15 @@
 # Drills
 
-The scaffold represents three starting drill modes. They are product targets, not all finished
-interactions. Recall drills are the useful path; grid-to-kanji matching drills are out of scope.
+The scaffold represents three starting drill modes. They are the current v1 shell, not a finished
+learning system. Recall drills are the useful path; grid-to-kanji matching drills are out of scope.
 
 1. Learn: show kanji, full cue, readings, and meanings.
 2. Faded recall: show kanji with cue strength controlled by session state.
 3. Blind recall: show kanji without cue support.
 
 Inside the current study shell, Learn can advance to the next kanji without grading. Review modes
-keep the reveal-then-grade order and only persist local progress after an explicit `Again` or
-`Good`.
+keep the reveal-then-grade order, rotate through the selected session queue, and only persist local
+progress after an explicit `Again` or `Good`.
 
 ## Cue Policy
 
@@ -35,6 +35,7 @@ This example shapes the architecture:
 - reveal meanings plus all known on and kun readings before grading
 - correct answers reduce opacity along the `100% -> 66% -> 33% -> 0%` ladder
 - misses may raise opacity one ladder step again
+- zero-cue successes still stay in the rotating session queue for the rest of the run
 - this behavior belongs in session/drill logic
 
 The current code demonstrates randomized session selection, opacity transitions, and local progress
@@ -46,8 +47,8 @@ due-card scheduling.
 The study screen can include mock controls while domain behavior is being proven. Review modes
 should follow the Anki-style order: recall first, reveal readings, then choose `Again` or `Good`.
 
-TODO: Replace the starter review loop's simple rotation with smarter queue shaping after
-`work/session-random-10`.
+Later work can replace the starter review loop's simple rotation with smarter queue shaping after
+the shell stops being the main thing under review.
 
 ## Future Daily Flow
 

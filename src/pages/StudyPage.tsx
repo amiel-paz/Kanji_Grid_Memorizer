@@ -11,7 +11,7 @@ import {
   createSession,
   getCueOpacity,
 } from '../domain/session/session';
-import { loadProgressRecords, syncReviewEventToProgressStore } from '../state/progressStore';
+import { loadProgressRecords, persistReviewEventToProgressStore } from '../state/progressStore';
 
 interface StudyPageProps {
   readonly sessionOptions?: CreateSessionOptions;
@@ -58,7 +58,7 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
 
   function handleReviewAnswer(reviewGrade: ReviewGrade) {
     const { session: nextSession, event } = answerSessionReview(session, reviewGrade, activeKanji);
-    progressByKanjiRef.current = syncReviewEventToProgressStore(
+    progressByKanjiRef.current = persistReviewEventToProgressStore(
       progressByKanjiRef.current,
       event,
       new Date().toISOString(),
@@ -75,9 +75,9 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
     <main className="app-page">
       <header className="page-header">
         <p className="eyebrow">Kanji Grid Memorizer</p>
-        <h1 className="page-title">First usable study shell</h1>
+        <h1 className="page-title">V1 study shell</h1>
         <p className="body-copy">
-          Study one kanji at a time, choose a drill, and reveal help only when you need it.
+          Study one kanji at a time, switch drills, and reveal help only where this shell supports it.
         </p>
       </header>
 
@@ -101,7 +101,7 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
               <strong>{drill.label}</strong>
             </div>
             <div className="study-overview-row">
-              <span>Session position</span>
+              <span>Deck slot</span>
               <strong>
                 {activeIndex + 1} / {session.selectedKanji.length}
               </strong>
@@ -148,7 +148,7 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
                 <dd>{modePresentation.supportSummary}</dd>
               </div>
               <div>
-                <dt>Progress in this run</dt>
+                <dt>Session counts</dt>
                 <dd>
                   {activeItemState.goodCount} good / {activeItemState.attempts} attempts
                 </dd>
@@ -244,12 +244,13 @@ function getModePresentation({
   switch (drillMode) {
     case 'learn':
       return {
-        stageDescription: 'Keep the full code cue, readings, and meanings in view while you get oriented to each kanji.',
+        stageDescription:
+          'Keep the full code cue, readings, and meanings in view while you get oriented to each kanji in this session shell.',
         hiddenReadingsCopy: '',
         revealActionLabel: '',
         preRevealActionCopy: '',
         gradedStateCopy: '',
-        learnActionCopy: 'Move through the current session without changing cue opacity or introducing review grading.',
+        learnActionCopy: 'Move through the current session without review grading or saved progress updates.',
         supportSummary: 'Full cue plus readings',
         focusLabel: 'Associate the kanji with its cue, readings, and meanings.',
         cardLabel: (kanji: string) => `${kanji} learn card with full cue support`,
@@ -257,11 +258,13 @@ function getModePresentation({
     case 'faded-recall':
       return {
         stageDescription:
-          'Recall first, then reveal the answer. Session state lowers the cue after each good review.',
-        hiddenReadingsCopy: 'Try to say the meanings and readings before you reveal them. Good lowers the cue one step; Again raises it one step.',
+          'Recall first, then reveal the answer. In this simple rotating session, Good lowers the cue for that item on its next pass.',
+        hiddenReadingsCopy:
+          'Try to say the meanings and readings before you reveal them. Good lowers the cue one step for the next rotation; Again raises it one step.',
         revealActionLabel: 'Reveal readings and meanings',
         preRevealActionCopy: 'Reveal only after you have committed to an answer in your head.',
-        gradedStateCopy: 'Choose Good if you recalled it cleanly; choose Again if you want the next pass to lean more on the cue.',
+        gradedStateCopy:
+          'Choose Good if you recalled it cleanly; choose Again if you want the next rotation to lean more on the cue.',
         learnActionCopy: '',
         supportSummary: `Cue visible at ${Math.round(cueOpacity * 100)}%`,
         focusLabel: 'Use the cue less as it fades across the session ladder.',
@@ -269,10 +272,11 @@ function getModePresentation({
       };
     case 'blind-recall':
       return {
-        stageDescription: 'The kanji stays on screen, but the color cue remains hidden so the shell reads like a true recall pass.',
+        stageDescription:
+          'The kanji stays on screen, but the color cue remains hidden so this shell behaves like a cue-free recall pass.',
         hiddenReadingsCopy: 'No cue is shown in this drill. Reveal the answer only after you have tried to recall it unaided.',
         revealActionLabel: 'Reveal readings and meanings',
-        preRevealActionCopy: 'This mode keeps cue support off even after grading so the shell stays intentionally blind.',
+        preRevealActionCopy: 'This mode keeps cue support off after grading too, so the shell stays intentionally blind.',
         gradedStateCopy: 'Use Again or Good to mark the pass, but this drill does not reintroduce visible cue support.',
         learnActionCopy: '',
         supportSummary: 'Kanji only until reveal',

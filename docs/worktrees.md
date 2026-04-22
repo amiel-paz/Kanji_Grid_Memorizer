@@ -49,6 +49,24 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 24 | `work/progress-sync-file-exchange` | Plan a serverless multi-device path without changing the MVP into an online app. | Decision doc plus file-format spec for per-device learner-state exchange, including event-log shape, device IDs, schema versioning, import/export or shared-folder merge rules, and explicit preservation of the stable-content versus learner-state boundary. No cloud account system or backend implementation. |
 | 25 | `work/api-boundary-review` | Revisit whether the app needs REST or another backend boundary. | Decision doc only: current local-first posture, triggers for REST/API work, candidate resources, and boundaries to preserve. No backend implementation. |
 
+Treat row 22 as the stopping point for the current v1 shell. Rows 23 and beyond are intentionally
+separate follow-on tracks, not implied scope to absorb into the audit.
+
+At this point the remaining numbered worktrees are only:
+
+- `work/data-canonical-joyo-jinmeiyo-import`
+- `work/progress-sync-file-exchange`
+- `work/api-boundary-review`
+
+Clarify the saved-state milestone boundaries:
+
+- Row 17 already introduced local progress persistence after explicit review grading.
+- Row 23 is where real `joyo` and `jinmeiyo` source data should replace fixture-only deck content.
+- Row 24 is for portable local-first learner-state exchange across devices, not backend/cloud
+  persistence.
+- Row 25 is a decision review about whether an API boundary is needed later, not a commitment to
+  build one.
+
 ## Long-Term Study Loop Notes
 
 The current worktree sequence intentionally stops short of an Anki-like daily system, but the

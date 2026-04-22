@@ -4,17 +4,17 @@ Kanji Grid Memorizer is a local-first React/TypeScript study shell for one produ
 each kanji owns a stable 2x2 base-8 color cue, and the active drill decides how much of
 that cue to show.
 
-This repo is currently a usable v1 shell, not a finished learning system. It is strong
-enough to demo the cue model, the reveal-first review flow, the session ownership
-boundary, and the local progress boundary without pretending that scheduling or canonical
-data work already exists.
+This repo is currently an honest v1 shell, not a finished learning system. It is enough
+to demo the cue model, the reveal-first review flow, the session ownership boundary, and
+the local progress boundary without pretending that scheduling or canonical data work
+already exists.
 
 ## What This Repo Is Today
 
 - A Vite + React + TypeScript web app with a single study page.
 - Mock kanji fixture data for development.
 - Three drill shells: Learn, Faded recall, and Blind recall.
-- Session-owned cue opacity and queue state.
+- Session-owned cue opacity and a simple rotating queue.
 - Local-only progress persistence after explicit review grading.
 - Tests around the current study shell, session rules, progress helpers, and local store behavior.
 
@@ -60,6 +60,7 @@ What each script does:
 - Explicit review grading writes local progress. Reveal-only actions, drill switching, and Learn-mode navigation do not persist anything.
 - Saved progress is loaded from localStorage, but it does not currently seed a new session's live cue opacity or queue.
 - Progress confidence becomes `familiar` only when a `Good` completes a faded step onto `0%`. An `Again` drops `familiar` back to `learning`.
+- The UI shows a stable deck slot within the selected 10-card batch, not completion through the session.
 
 ## Current Scope
 
@@ -90,16 +91,32 @@ Start here when reopening the repo:
 - [`docs/architecture.md`](docs/architecture.md): ownership boundaries to preserve.
 - [`docs/worktrees.md`](docs/worktrees.md): planned worktree sequence.
 
-## Suggested Next Worktree
+## After This Audit
 
-Per [`docs/worktrees.md`](docs/worktrees.md), the next planned worktree after this one is
-`work/v1-final-audit`.
+This pass is the intended stopping point for the current v1 shell.
 
-Keep that pass narrow:
+Future work stays split in [`docs/worktrees.md`](docs/worktrees.md) so the repo does not imply a
+single automatic next step. Canonical data import, scheduler work, backend work, and sync-file
+exchange planning remain separate follow-on tracks rather than hidden scope inside this shell.
 
-- remove any remaining false completeness or accidental overclaiming
-- align copy, docs, and tests with the actual v1 shell
-- leave explicit TODOs where the scaffold is intentionally still thin
+## Remaining Numbered Worktrees
 
-That audit should not absorb canonical data import work, scheduler work, backend work, or any
-new product behavior.
+The numbered worktree plan now has three remaining entries:
+
+- `work/data-canonical-joyo-jinmeiyo-import`
+- `work/progress-sync-file-exchange`
+- `work/api-boundary-review`
+
+Everything else discussed in the docs, such as daily-new limits or review-bank behavior, remains
+future follow-on work rather than an already-scoped numbered task.
+
+## Real Data And Saved State
+
+- Real `joyo` and `jinmeiyo` content enters at `work/data-canonical-joyo-jinmeiyo-import`.
+- Local learner progress is already saved today through localStorage after explicit review grading.
+- That current save path is intentionally small: it is not session restore, cross-device sync, or
+  backend-backed production persistence.
+- `work/progress-sync-file-exchange` is the planned step for more production-like portable learner
+  state while staying local-first and account-free.
+- `work/api-boundary-review` is only a later decision point about whether any backend or API work
+  is warranted at all.

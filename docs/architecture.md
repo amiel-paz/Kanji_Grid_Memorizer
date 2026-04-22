@@ -27,6 +27,10 @@ success" session can lower cue opacity after a correct answer without mutating t
 Session code can be simple at first. It should still make the ownership boundary obvious: a drill
 may decide what happens next, but it does not rewrite the deck.
 
+The current v1 queue is intentionally simple rotation within one selected session batch. A review
+answer moves the active item to the back; it does not remove cards after a zero-cue pass, shape a
+due queue, or seed a future session from saved progress.
+
 Session types live in `src/domain/session/types.ts`.
 
 ## Persistent Progress
@@ -50,8 +54,8 @@ opacity applies to the color grid only; the kanji and white center remain fully 
 legibility.
 
 Review actions follow a simple two-button convention: `Again` is the secondary action and `Good` is
-the primary action. Drill logic decides whether `Good` removes the item from rotation or lowers cue
-opacity.
+the primary action. In the current v1 shell, review answers always rotate the queue; drill logic
+only decides whether visible cue support stays full, fades, or remains hidden.
 
 ## Module Boundaries
 
@@ -71,4 +75,5 @@ opacity.
 - Add state providers only when props or local state become awkward in real flows.
 - Prefer small TODOs at ownership boundaries over broad placeholder systems.
 
-TODO: Add a real app state provider only after local component state becomes awkward.
+If local component state becomes awkward later, add a small app state provider then rather than
+pretending one is needed already.

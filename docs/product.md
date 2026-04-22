@@ -39,8 +39,9 @@ reveal at any moment.
 
 ## Review Direction
 
-Review should feel close to a lightweight Anki-style loop: show one kanji card, answer from memory,
-reveal meanings plus all known on and kun readings, then choose `Again` or `Good`.
+The current v1 shell keeps review close to a lightweight Anki-style reveal-first loop: show one
+kanji card, answer from memory, reveal meanings plus all known on and kun readings, then choose
+`Again` or `Good`.
 
 The most useful drills are faded recall and blind recall. Grid-to-kanji matching drills are not a
 product target for now.
@@ -77,4 +78,5 @@ presented as a finished drill loop.
 - How should assignment versions be communicated if source data changes?
 - Which standard kanji dataset should supply Joyo and Jinmeiyo readings?
 
-TODO: Define the first real learning workflow once the scaffold feels comfortable to modify.
+Later product work can define the first real learning workflow once this shell is no longer the
+main thing being validated.
