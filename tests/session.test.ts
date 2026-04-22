@@ -87,7 +87,7 @@ describe('session cue opacity', () => {
     expect(entry).not.toHaveProperty('opacity');
   });
 
-  it('returns an explicit review-answer event and advances the queue after grading', () => {
+  it('returns an explicit review-answer event and rotates the simple queue after grading', () => {
     const drill = getDrillById('faded-recall');
     const session = createSession(mockKanji, drill, {
       id: 'review-session',

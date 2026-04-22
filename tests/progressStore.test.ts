@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   applyReviewEventToProgressRecords,
   loadProgressRecords,
+  persistReviewEventToProgressStore,
   progressStore,
-  syncReviewEventToProgressStore,
 } from '../src/state/progressStore';
 
 describe('progressStore', () => {
@@ -101,7 +101,7 @@ describe('progressStore', () => {
   });
 
   it('persists the next progress record set after an explicit review event', () => {
-    const nextProgress = syncReviewEventToProgressStore(
+    const nextProgress = persistReviewEventToProgressStore(
       loadProgressRecords(),
       {
         type: 'review-answer',
@@ -129,7 +129,7 @@ describe('progressStore', () => {
   });
 
   it('updates only the reviewed kanji and keeps persistence scoped to the small learner record', () => {
-    const nextProgress = syncReviewEventToProgressStore(
+    const nextProgress = persistReviewEventToProgressStore(
       {
         月: {
           kanji: '月',

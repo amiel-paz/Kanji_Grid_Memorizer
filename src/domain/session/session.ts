@@ -99,7 +99,7 @@ export function answerSessionReview(
   const isGoodReview = reviewGrade === 'good';
   const nextOpacity = nextCueOpacity(session, itemState.cueOpacity, isGoodReview);
   const queueBefore = session.queue;
-  const queueAfter = advanceQueue(queueBefore);
+  const queueAfter = rotateQueue(queueBefore);
   const nextActiveKanji = queueAfter[0] ?? kanji;
 
   const nextSession = {
@@ -143,7 +143,7 @@ export function recordReviewGrade(
 export function advanceSessionItem(session: SessionState, kanji: string = session.activeKanji): SessionState {
   assertActiveKanji(session, kanji);
 
-  const nextQueue = advanceQueue(session.queue);
+  const nextQueue = rotateQueue(session.queue);
 
   return {
     ...session,
@@ -158,7 +158,8 @@ function assertActiveKanji(session: SessionState, kanji: string) {
   }
 }
 
-function advanceQueue(queue: readonly string[]): readonly string[] {
+// V1 keeps every selected item in a simple rotating queue for the full session.
+function rotateQueue(queue: readonly string[]): readonly string[] {
   const [activeKanji, ...remainingKanji] = queue;
 
   if (!activeKanji) {

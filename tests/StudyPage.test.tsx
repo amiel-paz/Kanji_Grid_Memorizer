@@ -34,7 +34,7 @@ describe('StudyPage', () => {
     vi.useRealTimers();
   });
 
-  it('shows the faded recall shell with cue guidance and session context', () => {
+  it('shows the faded recall shell with cue guidance and simple session context', () => {
     render(
       <StudyPage
         sessionOptions={{
@@ -44,7 +44,7 @@ describe('StudyPage', () => {
       />,
     );
 
-    expect(screen.getByRole('heading', { name: 'First usable study shell' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'V1 study shell' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Faded recall' })).toBeInTheDocument();
     expect(screen.getByText('1 / 10')).toBeInTheDocument();
     expect(screen.getAllByText('Cue visible at 100%')).toHaveLength(2);

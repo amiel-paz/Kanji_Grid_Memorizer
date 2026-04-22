@@ -10,7 +10,7 @@ export const progressStore = createLocalStore<Record<string, UserProgress>>(
   },
 );
 
-// TODO: Wrap this in a small React context after progress editing exists.
+// If progress editing grows beyond page-local state later, a small React context may help.
 
 export type ProgressByKanji = Readonly<Record<string, UserProgress>>;
 
@@ -38,7 +38,7 @@ export function applyReviewEventToProgressRecords(
   };
 }
 
-export function syncReviewEventToProgressStore(
+export function persistReviewEventToProgressStore(
   progressByKanji: ProgressByKanji,
   event: SessionAnswerEvent,
   reviewedAt?: string,
