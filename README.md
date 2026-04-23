@@ -120,7 +120,6 @@ exchange, an API-boundary decision review, and learner-library follow-ons.
 
 The remaining plan is now post-MVP only:
 
-- `work/api-boundary-review`
 - `work/progress-seen-library`
 - `work/progress-manual-seen-intake`
 
@@ -142,8 +141,8 @@ The remaining plan is now post-MVP only:
   new-item path into the first durable review-bank candidate pool.
 - [`docs/progress-sync-file-exchange.md`](docs/progress-sync-file-exchange.md) now records the
   post-MVP decision for portable learner state while staying local-first and account-free.
-- `work/api-boundary-review` is only a later decision point about whether any backend or API work
-  is warranted at all.
+- [`docs/api-boundary-review.md`](docs/api-boundary-review.md) now records why a backend or formal
+  API boundary is still unnecessary after the local-first MVP.
 - `work/progress-seen-library` and `work/progress-manual-seen-intake` are post-MVP UI follow-ons
   for exposing and editing durable learner progress without moving stable content or live session
   state out of their current ownership boundaries.

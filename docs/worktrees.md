@@ -67,7 +67,6 @@ The local-first MVP path through row 31 is now complete.
 
 At this point the remaining numbered worktrees are:
 
-- `work/api-boundary-review`
 - `work/progress-seen-library`
 - `work/progress-manual-seen-intake`
 
@@ -127,8 +126,10 @@ Suggested post-MVP follow-on worktrees:
   [`docs/progress-sync-file-exchange.md`](docs/progress-sync-file-exchange.md) for the file-based,
   account-free learner-state exchange spec built around per-device logs plus a one-time bootstrap
   snapshot for migrating today's local store.
-- `work/api-boundary-review`: revisit whether any backend or API work is justified only after the
-  local-first MVP proves its value.
+- `work/api-boundary-review`: complete. See
+  [`docs/api-boundary-review.md`](docs/api-boundary-review.md) for the decision to keep the app
+  local-first until file exchange and learner-library follow-ons prove that a hosted boundary is
+  actually needed.
 - `work/progress-seen-library`: add a place to browse all learner-seen kanji with their grids and
   meanings using durable progress plus stable content records.
 - `work/progress-manual-seen-intake`: add a place to browse not-yet-seen kanji and explicitly
@@ -186,6 +187,6 @@ its own tests and review, such as randomized session selection, persistence boun
 modeling, or a future canonical import pipeline.
 
 Do not add REST, GraphQL, RPC, or backend service work as part of the local MVP path unless a later
-decision worktree says the product needs it. The planned `work/api-boundary-review` worktree should
-revisit that question only after real data, local progress shaping, and the first useful daily
-study loop are concrete.
+decision worktree says the product needs it. The completed
+[`docs/api-boundary-review.md`](docs/api-boundary-review.md) review keeps that question deferred
+until real usage shows that local-first plus file exchange is no longer enough.
