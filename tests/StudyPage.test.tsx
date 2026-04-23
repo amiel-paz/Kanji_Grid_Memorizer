@@ -45,13 +45,15 @@ describe('StudyPage', () => {
 
     render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
 
-    expect(screen.getByRole('heading', { name: 'Study one kanji at a time' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'A small local kanji loop that stays honest' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Faded recall' })).toBeInTheDocument();
     expect(screen.getByText('1 / 5')).toBeInTheDocument();
     expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
     expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
     expect(screen.getByText(/unfinished carryover first, then today's allowed truly new kanji/i)).toBeInTheDocument();
-    expect(screen.getByText(/review-bank backfill\..*not due scheduling/i)).toBeInTheDocument();
+    expect(screen.getByText(/durable review-bank backfill\..*not due scheduling/i)).toBeInTheDocument();
+    expect(screen.getByText('0 carryover, 5 new, 0 review')).toBeInTheDocument();
+    expect(screen.getByText('5 of 5 fresh slots left')).toBeInTheDocument();
     expect(screen.getAllByText('Hidden until reveal')).toHaveLength(2);
   });
 
@@ -371,6 +373,73 @@ describe('StudyPage', () => {
     expect(screen.getByRole('heading', { name: 'Session complete', level: 2 })).toBeInTheDocument();
     expect(screen.getByText('This batch is clear')).toBeInTheDocument();
     expect(screen.getByText('5 cleared / 5 selected')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Restart this drill' })).toBeInTheDocument();
+  });
+
+  it('shows an honest empty state when no cards can enter a new local batch yet', () => {
+    storage.setItem(
+      'kanji-grid-progress-v0',
+      JSON.stringify({
+        仮A: {
+          kanji: '仮A',
+          seenCount: 1,
+          goodCount: 0,
+          firstSeenAt: '2026-04-21T09:00:00.000Z',
+          lastSeenAt: '2026-04-21T09:00:00.000Z',
+          confidence: 'learning',
+        },
+        仮B: {
+          kanji: '仮B',
+          seenCount: 1,
+          goodCount: 0,
+          firstSeenAt: '2026-04-21T09:05:00.000Z',
+          lastSeenAt: '2026-04-21T09:05:00.000Z',
+          confidence: 'learning',
+        },
+        仮C: {
+          kanji: '仮C',
+          seenCount: 1,
+          goodCount: 0,
+          firstSeenAt: '2026-04-21T09:10:00.000Z',
+          lastSeenAt: '2026-04-21T09:10:00.000Z',
+          confidence: 'learning',
+        },
+        仮D: {
+          kanji: '仮D',
+          seenCount: 1,
+          goodCount: 0,
+          firstSeenAt: '2026-04-21T09:15:00.000Z',
+          lastSeenAt: '2026-04-21T09:15:00.000Z',
+          confidence: 'learning',
+        },
+        仮E: {
+          kanji: '仮E',
+          seenCount: 1,
+          goodCount: 0,
+          firstSeenAt: '2026-04-21T09:20:00.000Z',
+          lastSeenAt: '2026-04-21T09:20:00.000Z',
+          confidence: 'learning',
+        },
+      }),
+    );
+
+    render(
+      <StudyPage
+        sessionOptions={{
+          id: 'empty-study-page-session',
+          dailyNewLimit: 5,
+          random: createDeterministicRandom([0, 0, 0]),
+        }}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Nothing queued right now', level: 2 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Faded recall waiting', level: 2 })).toBeInTheDocument();
+    expect(screen.getByText('0 / 0')).toBeInTheDocument();
+    expect(screen.getAllByText('No active card')).toHaveLength(2);
+    expect(screen.getByText('0 carryover, 0 new, 0 review')).toBeInTheDocument();
+    expect(screen.getByText('0 of 5 fresh slots left')).toBeInTheDocument();
+    expect(screen.getByText(/No active card is queued yet\. Fresh-new slots left today: 0 of 5\./i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Restart this drill' })).toBeInTheDocument();
   });
 });

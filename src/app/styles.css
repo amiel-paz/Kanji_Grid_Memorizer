@@ -38,7 +38,7 @@ select {
 
 @layer components {
   .app-page {
-    @apply mx-auto flex min-h-screen max-w-4xl flex-col gap-8 px-6 py-8 sm:py-10;
+    @apply mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-5 py-8 sm:px-6 sm:py-10 lg:px-8;
   }
 
   .page-header {
@@ -54,7 +54,7 @@ select {
   }
 
   .body-copy {
-    @apply max-w-2xl text-base leading-7 text-gray-700;
+    @apply max-w-3xl text-base leading-7 text-gray-700;
   }
 
   .surface-panel {
@@ -113,11 +113,11 @@ select {
   }
 
   .study-shell {
-    @apply grid gap-6 lg:grid-cols-[minmax(17rem,21rem)_1fr] lg:items-start;
+    @apply grid gap-6 lg:grid-cols-[minmax(18rem,22rem)_minmax(0,1fr)] lg:items-start;
   }
 
   .study-sidebar {
-    @apply flex flex-col gap-6;
+    @apply flex flex-col gap-6 lg:sticky lg:top-6;
   }
 
   .drill-picker {
@@ -174,7 +174,7 @@ select {
   }
 
   .study-stage {
-    @apply grid gap-6 lg:grid-cols-[minmax(18rem,24rem)_1fr];
+    @apply grid gap-6 xl:grid-cols-[minmax(19rem,24rem)_minmax(0,1fr)];
   }
 
   .study-stage-card {
@@ -185,12 +185,20 @@ select {
     @apply self-center;
   }
 
-  .study-complete-card {
+  .study-status-card {
     @apply flex w-full max-w-[20rem] flex-col gap-3 self-center rounded-[1.5rem] border border-dashed border-gray-300 bg-gray-50 px-6 py-8 text-center sm:max-w-[22rem];
   }
 
+  .study-status-card-empty {
+    @apply border-amber-300 bg-amber-50/70;
+  }
+
+  .study-status-card-complete {
+    @apply border-gray-300 bg-gray-50;
+  }
+
   .study-stage-meta {
-    @apply grid w-full gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm sm:grid-cols-3;
+    @apply grid w-full gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm md:grid-cols-3;
   }
 
   .study-stage-meta dt {
@@ -214,7 +222,7 @@ select {
   }
 
   .study-answer-grid {
-    @apply grid gap-4;
+    @apply grid gap-4 lg:grid-cols-2;
   }
 
   .study-detail-group {
@@ -250,11 +258,11 @@ select {
   }
 
   .study-action-row {
-    @apply flex max-w-[22rem] flex-wrap gap-3;
+    @apply flex max-w-[24rem] flex-wrap gap-3;
   }
 
   .study-grade-row {
-    @apply grid max-w-[22rem] grid-cols-2 gap-3;
+    @apply grid max-w-[24rem] grid-cols-2 gap-3;
   }
 
   .study-action-row .btn {
@@ -263,5 +271,9 @@ select {
 
   .btn-square {
     @apply aspect-square w-full px-3 text-base;
+  }
+
+  .study-answer-empty {
+    @apply flex flex-col gap-2 rounded-2xl border border-dashed border-gray-300 bg-white/70 p-4;
   }
 }
