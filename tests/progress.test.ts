@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { applyReviewOutcome, createInitialProgress, recordSeen } from '../src/domain/progress/progress';
+import {
+  applyReviewOutcome,
+  createInitialProgress,
+  hasSeenProgress,
+  isUnfinishedNewItemProgress,
+  recordSeen,
+} from '../src/domain/progress/progress';
 
 describe('progress helpers', () => {
   it('creates an explicit empty progress record for a kanji', () => {
@@ -55,6 +61,19 @@ describe('progress helpers', () => {
       lastSeenAt: '2026-04-20T01:00:00.000Z',
       confidence: 'learning',
     });
+  });
+
+  it('derives durable seen and unfinished-new carryover signals from progress', () => {
+    expect(hasSeenProgress(undefined)).toBe(false);
+    expect(isUnfinishedNewItemProgress(undefined)).toBe(false);
+    expect(hasSeenProgress({ confidence: 'new' })).toBe(false);
+    expect(isUnfinishedNewItemProgress({ confidence: 'new' })).toBe(false);
+    expect(hasSeenProgress({ seenCount: 1, confidence: 'new' })).toBe(true);
+    expect(isUnfinishedNewItemProgress({ seenCount: 1, confidence: 'new' })).toBe(true);
+    expect(hasSeenProgress({ seenCount: 2, confidence: 'learning' })).toBe(true);
+    expect(isUnfinishedNewItemProgress({ seenCount: 2, confidence: 'learning' })).toBe(true);
+    expect(hasSeenProgress({ seenCount: 4, confidence: 'familiar' })).toBe(true);
+    expect(isUnfinishedNewItemProgress({ seenCount: 4, confidence: 'familiar' })).toBe(false);
   });
 
   it('counts every review as seen and increments goodCount only for good answers', () => {

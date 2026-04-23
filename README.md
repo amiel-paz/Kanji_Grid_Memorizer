@@ -52,7 +52,8 @@ What each script does:
 
 - The default drill is Faded recall.
 - A fresh session still aims for a 10-card batch, but newly created sessions can admit only up to 5 truly new kanji per local day from durable saved progress.
-- Previously seen kanji can still fill the rest of the batch. If there is not enough seen material yet, the current app can honestly return a smaller batch instead of implying a fuller scheduler already exists.
+- Started-but-unfinished new kanji now carry forward into later session creation before fresh replacement new kanji are admitted. Older carryover reduces that day's fresh-new allowance; same-day carryover does not double-count because `firstSeenAt` already consumed today's slot.
+- Previously seen `familiar` kanji can still fill the rest of the batch. If there is not enough seen material yet, the current app can honestly return a smaller batch instead of implying a fuller scheduler already exists.
 - Switching drills recreates the session for the chosen mode and resets reveal state. Live cue opacity does not carry across drill switches.
 - Learn keeps the full cue, meanings, onyomi, and kunyomi visible and uses `Next kanji` to move through the current session without grading.
 - Faded recall uses a reveal-first review loop: try recall, reveal readings and meanings, then grade with `Again` or `Good`.
@@ -75,7 +76,7 @@ What each script does:
 
 ## Not Built Yet
 
-- No due-card logic, carryover, review-bank behavior, or mixed new/review orchestration layer.
+- No due-card logic, review-bank behavior, or mixed new/review orchestration layer beyond the small carryover rule for unfinished new items.
 - The only daily pacing rule landed so far is the explicit local-first cap of 5 truly new kanji per day at session creation time.
 - No weighted requeue based on repeated misses. `Again` changes cue opacity, but the queue still rotates simply.
 - No removal from the current recall batch after a successful zero-cue pass. Cards stay in the session queue for the rest of the run.
@@ -116,7 +117,6 @@ The remaining plan is now split into two stages.
 Local-first MVP path:
 
 - `work/progress-session-seeding-v1`
-- `work/progress-carryover-v1`
 - `work/review-bank-v1`
 - `work/review-session-orchestration`
 - `work/local-mvp-polish`

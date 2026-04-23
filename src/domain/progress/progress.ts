@@ -10,6 +10,11 @@ export interface ProgressReviewOutcome {
   readonly reviewedAt?: string;
 }
 
+export interface ProgressCarryoverSeed {
+  readonly seenCount?: number;
+  readonly confidence: ProgressConfidence;
+}
+
 export function createInitialProgress(kanji: string): UserProgress {
   return {
     kanji,
@@ -29,6 +34,22 @@ export function recordSeen(progress: UserProgress, seenAt?: string): UserProgres
     lastSeenAt: seenAt ?? progress.lastSeenAt,
     confidence: progress.confidence === 'familiar' ? 'familiar' : 'learning',
   };
+}
+
+export function hasSeenProgress(progress: ProgressCarryoverSeed | undefined): boolean {
+  if (!progress) {
+    return false;
+  }
+
+  return (progress.seenCount ?? 0) > 0 || progress.confidence !== 'new';
+}
+
+export function isUnfinishedNewItemProgress(progress: ProgressCarryoverSeed | undefined): boolean {
+  if (!progress) {
+    return false;
+  }
+
+  return hasSeenProgress(progress) && progress.confidence !== 'familiar';
 }
 
 export function applyReviewOutcome(
