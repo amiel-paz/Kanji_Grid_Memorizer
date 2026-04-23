@@ -49,7 +49,7 @@ product target for now.
 ## Version 1 Scope
 
 - local web app
-- full Joyo canonical deck with explicit in-repo provenance and source-set version metadata
+- full Joyo canonical deck plus a small explicit Jinmeiyo supplemental import path, both with in-repo provenance and source-set version metadata
 - mock kanji fixtures kept for development and tests
 - learn, faded recall, and blind recall modes represented in code
 - simple session-state-driven cue opacity
@@ -61,7 +61,7 @@ presented as a finished drill loop.
 
 ## Out Of Scope For Now
 
-- canonical dataset coverage beyond the explicit in-repo full Joyo import path
+- canonical dataset coverage beyond the explicit in-repo full Joyo import path plus the small supplemental Jinmeiyo slice
 - advanced scheduling
 - cloud sync
 - accounts

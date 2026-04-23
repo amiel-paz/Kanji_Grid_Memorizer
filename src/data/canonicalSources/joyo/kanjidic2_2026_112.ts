@@ -10,7 +10,7 @@ export const joyoSourceVersion: SourceSetVersion = {
   provenance:
     'Full Joyo source-set import materialized from KANJIDIC2 database version 2026-112 (created 2026-04-22) by filtering entries with grade values 1 through 8.',
   notes:
-    'canonicalIndex preserves the filtered KANJIDIC2 file order. Meanings keep only English glosses, and Jinmeiyo remains a separate empty reservation path in this pass.',
+    'canonicalIndex preserves the filtered KANJIDIC2 file order. Meanings keep only English glosses, and Jinmeiyo now arrives only through its own explicit supplemental source path.',
 };
 
 export const joyoImportManifest: SourceSetImportManifest = {
@@ -19264,4 +19264,3 @@ export const joyoSourceImport: KanjiSourceImport = {
   version: joyoSourceVersion,
   entries: joyoSourceRecords,
 };
-

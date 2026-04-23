@@ -38,7 +38,7 @@ export const SOURCE_SET_DEFINITIONS = {
     label: 'Jinmeiyo',
     ownership: 'canonical-import',
     description:
-      'Canonical Jinmeiyo source set. It remains a separate supplemental import path after Joyo.',
+      'Canonical Jinmeiyo source set. It remains a separate supplemental import path after Joyo, and Joyo stays the canonical owner on overlaps.',
   },
 } as const satisfies Record<SourceSet, SourceSetDefinition>;
 
@@ -80,6 +80,8 @@ export interface AssignmentVersion {
   readonly description: string;
 }
 
+export type CanonicalSourceOverlapPolicy = 'higher-priority-source-wins';
+
 export interface ContentDeckManifest {
   readonly id: string;
   readonly label: string;
@@ -87,6 +89,7 @@ export interface ContentDeckManifest {
   readonly sourceSetVersions: readonly SourceSetVersion[];
   readonly sourceImportManifests: readonly SourceSetImportManifest[];
   readonly assignmentVersion: AssignmentVersion;
+  readonly overlapPolicy: CanonicalSourceOverlapPolicy;
   readonly description: string;
 }
 

@@ -34,7 +34,8 @@ Current source-set IDs:
 - `joyo`: the first real canonical source set. The current app deck is materialized from a full
   versioned in-repo Joyo import file plus an explicit import manifest.
 - `jinmeiyo`: the second canonical source set path. It remains explicit and separate so name-use
-  expansion does not get folded invisibly into Joyo.
+  expansion does not get folded invisibly into Joyo. The current repo includes a small real
+  supplemental Jinmeiyo subset import rather than an empty reservation.
 
 Canonical source-set priority is Joyo, then Jinmeiyo. If a future import has to choose one owner for
 a character or variant relationship that appears to touch both lists, classify it as Joyo and keep
@@ -42,12 +43,13 @@ Jinmeiyo supplemental. That keeps common-use kanji ownership stable before name-
 
 Canonical manifests should document how imported Joyo/Jinmeiyo files map to source-set versions and
 how exact duplicates, variants, and source-list overlaps are resolved under the Joyo-first priority
-rule. In the current pass, Jinmeiyo is reserved as an explicit second source path rather than being
-merged into the Joyo deck.
+rule. In the current pass, Jinmeiyo is a small explicit second import path rather than being merged
+into the Joyo deck.
 
-The current Joyo source-set version is `joyo-kanjidic2-2026-112`, with a companion import manifest
-that records the upstream KANJIDIC2 version, entry count, and normalization notes used to
-materialize the in-repo canonical source file.
+The current Joyo source-set version is `joyo-kanjidic2-2026-112`, and the current Jinmeiyo
+supplemental source-set version is `jinmeiyo-kanjidic2-2026-112-subset-v1`. Each has a companion
+import manifest that records the upstream KANJIDIC2 version, entry count, and normalization notes
+used to materialize the in-repo canonical source files.
 
 ## AssignmentVersion
 
@@ -63,8 +65,8 @@ assignment version explicitly references the imported source-set version IDs it 
 There are now two visible assignment tracks:
 
 - `mock-joyo-fixture-assignment-v1`: development-only fixture assignment for `mock-joyo`.
-- `joyo-kanjidic2-2026-112-assignment-v1`: the current canonical deck assignment, tied to
-  `joyo-kanjidic2-2026-112`.
+- `canonical-joyo-kanjidic2-2026-112-plus-jinmeiyo-kanjidic2-2026-112-subset-v1-assignment-v1`:
+  the current canonical deck assignment, tied to both imported canonical source-set versions.
 
 Future Joyo+Jinmeiyo assignment versions should keep naming the source-set versions they were built
 from so expansion cannot silently change established code mappings.
