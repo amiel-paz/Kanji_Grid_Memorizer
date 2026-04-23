@@ -50,7 +50,7 @@ reveal at any moment.
 
 ## Review Direction
 
-The current v1 shell keeps review close to a lightweight Anki-style reveal-first loop: show one
+The current local MVP keeps review close to a lightweight Anki-style reveal-first loop: show one
 kanji card, answer from memory, reveal meanings plus all known on and kun readings, then choose
 `Again` or `Good`.
 
@@ -64,11 +64,13 @@ product target for now.
 - mock kanji fixtures kept for development and tests
 - learn, faded recall, and blind recall modes represented in code
 - simple session-state-driven cue opacity
+- local progress persistence after explicit reveal-first grading
+- a small local daily loop with a 5-kanji fresh-new cap, unfinished carryover, and simple
+  review-bank backfill
 - small tests around the core idea
 
-The v1 scaffold may use toy interaction as long as it remains honest about what is real. "Mock
-correct" and "Mock miss" are acceptable while session behavior is being shaped. They should not be
-presented as a finished drill loop.
+The current MVP is intentionally small, but it is no longer just a mock shell. It should present a
+truthful local study loop rather than placeholder controls pretending a scheduler already exists.
 
 ## Out Of Scope For Now
 
@@ -90,5 +92,5 @@ presented as a finished drill loop.
 - How should assignment versions be communicated if source data changes?
 - How should Jinmeiyo expansion be layered onto the Joyo-first canonical path without reclassifying common-use entries?
 
-Later product work can define the first real learning workflow once this shell is no longer the
-main thing being validated.
+Post-MVP work can deepen scheduling, sync, and learner-library surfaces once this small local loop
+has already proved worth keeping.

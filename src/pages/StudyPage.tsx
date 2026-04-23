@@ -521,7 +521,7 @@ function getModePresentation({
       };
     default:
       return {
-        stageDescription: 'TODO: Define this drill mode.',
+        stageDescription: 'This drill mode is not configured yet.',
         answerPanelTitle: 'Answer details',
         answerPanelCopy: 'Review the current item details.',
         hiddenReadingsCopy: '',

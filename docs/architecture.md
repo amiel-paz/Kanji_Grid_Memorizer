@@ -1,6 +1,6 @@
 # Architecture
 
-The scaffold separates stable content, session behavior, and rendering. That separation is the
+The app separates stable content, session behavior, and rendering. That separation is the
 main architectural decision in the product.
 
 ## Stable Content
@@ -28,7 +28,7 @@ success" session can lower cue opacity after a correct answer without mutating t
 Session code can be simple at first. It should still make the ownership boundary obvious: a drill
 may decide what happens next, but it does not rewrite the deck.
 
-The current v1 queue is intentionally simple rotation within one selected session batch. A review
+The current local-MVP queue is intentionally simple rotation within one selected session batch. A review
 answer moves the active item to the back; it does not shape a due queue or add broader scheduling.
 New session creation may seed the starting cue for a selected kanji from saved progress and may
 also cap how many truly new kanji can enter that day's batch while carrying unfinished new-path
@@ -45,7 +45,7 @@ Session types live in `src/domain/session/types.ts`.
 `UserProgress` is the long-lived learner record. It can eventually summarize outcomes across
 sessions, but it should stay smaller than a scheduler until the app has a real learning loop.
 
-In the current pass, progress can seed only the initial cue support of a new session plus the
+In the current MVP, progress can seed only the initial cue support of a new session plus the
 session-creation boundary for truly new, unfinished carryover, and first review-bank-path kanji.
 It does not store live session opacity, queue position, reveal state, or active attempts.
 
@@ -65,7 +65,7 @@ opacity applies to the color grid only; the kanji and white center remain fully 
 legibility.
 
 Review actions follow a simple two-button convention: `Again` is the secondary action and `Good` is
-the primary action. In the current v1 shell, review answers usually rotate the queue, but a clean
+the primary action. In the current local MVP, review answers usually rotate the queue, but a clean
 zero-cue pass retires that card from the rest of the current run. Drill logic still only decides
 cue support and retirement inside session state; it does not rewrite stable content or durable
 progress ownership.
@@ -86,7 +86,7 @@ progress ownership.
 - Keep product logic in `src/domain` when it can be tested without React.
 - Keep mock data honest: useful for development, not canonical product truth.
 - Add state providers only when props or local state become awkward in real flows.
-- Prefer small TODOs at ownership boundaries over broad placeholder systems.
+- Prefer small notes at ownership boundaries over broad placeholder systems.
 
 If local component state becomes awkward later, add a small app state provider then rather than
 pretending one is needed already.

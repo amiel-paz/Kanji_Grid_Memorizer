@@ -59,15 +59,14 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 34 | `work/progress-seen-library` | Add a learner-facing browser for kanji already encountered. | A local page or panel that lists seen kanji with their stable grids and meanings, sourced from durable learner progress without moving live session state into content or progress. |
 | 35 | `work/progress-manual-seen-intake` | Let the learner mark a not-yet-seen kanji as encountered outside the app. | A local unlearned-kanji browser with an explicit action to create or update durable learner progress so those kanji can enter future study flows, without mutating stable `KanjiEntry` ownership. |
 
-Treat row 22 as the stopping point for the current v1 shell. Rows 23 through 31 are the planned
+Treat row 22 as the stopping point for the original v1 shell. Rows 23 through 31 are the planned
 path from honest shell to shippable local-first MVP. Rows 32 and 33 are intentionally post-MVP
 follow-on tracks, not implied scope to absorb into the first usable release.
 
+The local-first MVP path through row 31 is now complete.
+
 At this point the remaining numbered worktrees are:
 
-- `work/review-session-orchestration`
-- `work/local-mvp-polish`
-- `work/local-mvp-ship-audit`
 - `work/progress-sync-file-exchange`
 - `work/api-boundary-review`
 - `work/progress-seen-library`
@@ -102,8 +101,8 @@ Clarify the saved-state milestone boundaries:
 
 ## Long-Term Study Loop Notes
 
-The current v1 shell intentionally stops short of an actually useful daily system, but the planned
-remaining worktrees should now reach one without changing the ownership boundaries.
+The original v1 shell intentionally stopped short of an actually useful daily system. The completed
+local-MVP path now reaches one without changing the ownership boundaries.
 
 What the product should build toward on the path to the first local MVP:
 
@@ -116,12 +115,12 @@ What the product should build toward on the path to the first local MVP:
 - Review sessions that can mix review-bank backfill with the day's new-item allowance without
   rewriting stable content records.
 
-Suggested follow-on worktrees after the current v1 scaffold:
+Completed local-first MVP path:
 
-- `work/review-session-orchestration`: turn the separate parts into one coherent daily local study
-  loop.
-- `work/local-mvp-polish`: make the loop pleasant and legible enough for daily personal use.
-- `work/local-mvp-ship-audit`: stop on an honest local MVP.
+- `work/review-session-orchestration`: turned the separate parts into one coherent daily local
+  study loop.
+- `work/local-mvp-polish`: made the loop more pleasant and legible for daily personal use.
+- `work/local-mvp-ship-audit`: stopped on an honest local MVP.
 
 Suggested post-MVP follow-on worktrees:
 
