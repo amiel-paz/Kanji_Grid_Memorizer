@@ -14,7 +14,7 @@ personal study history along with it.
 Content types live in `src/domain/content/types.ts`.
 
 Source-set ownership also lives with stable content. `mock-joyo` is development fixture data only,
-while `joyo` is now the real full canonical deck path and `jinmeiyo` is a small real supplemental
+while `joyo` is now the real full canonical deck path and `jinmeiyo` is a full real supplemental
 source path. Mock entries may be useful and realistic, but they should not become the canonical
 deck by accident. Canonical imports should live in explicit versioned source files plus import
 manifests, and they should apply Joyo-first ownership before adding Jinmeiyo so name-use expansion
@@ -30,7 +30,7 @@ may decide what happens next, but it does not rewrite the deck.
 
 The current local-MVP queue is intentionally simple rotation within one selected session batch. A review
 answer moves the active item to the back; it does not shape a due queue or add broader scheduling.
-New session creation may seed the starting cue for a selected kanji from saved progress and may
+New session creation may use saved progress to shape which kanji enter a selected batch and may
 also cap how many truly new kanji can enter that day's batch while carrying unfinished new-path
 items forward before fresh replacements. It may also backfill from the durable review-bank
 candidate pool once an item has graduated out of the unfinished new path. The current local rule
@@ -45,8 +45,8 @@ Session types live in `src/domain/session/types.ts`.
 `UserProgress` is the long-lived learner record. It can eventually summarize outcomes across
 sessions, but it should stay smaller than a scheduler until the app has a real learning loop.
 
-In the current MVP, progress can seed only the initial cue support of a new session plus the
-session-creation boundary for truly new, unfinished carryover, and first review-bank-path kanji.
+In the current MVP, progress shapes only the session-creation boundary for truly new, unfinished
+carryover, and first review-bank-path kanji.
 That same durable boundary can also drive learner-library views and explicit manual-intake writes.
 It still does not store live session opacity, queue position, reveal state, or active attempts.
 

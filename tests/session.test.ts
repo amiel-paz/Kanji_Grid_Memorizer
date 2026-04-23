@@ -56,7 +56,7 @@ describe('session cue opacity', () => {
     expect(getCueOpacity(blindSession, blindSession.activeKanji ?? '')).toBe(0);
   });
 
-  it('seeds faded-recall starting cue support from saved progress confidence while leaving live run counts fresh', () => {
+  it('starts faded-recall sessions at full cue support even when saved progress exists', () => {
     const drill = getDrillById('faded-recall');
     const [newEntry, learningEntry, familiarEntry] = mockKanji;
 
@@ -90,13 +90,13 @@ describe('session cue opacity', () => {
       attempts: 0,
       goodCount: 0,
       againCount: 0,
-      cueOpacity: 0.66,
+      cueOpacity: 1,
     });
     expect(session.itemStateByKanji[familiarEntry.kanji]).toMatchObject({
       attempts: 0,
       goodCount: 0,
       againCount: 0,
-      cueOpacity: 0.33,
+      cueOpacity: 1,
     });
   });
 

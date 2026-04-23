@@ -46,8 +46,8 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 21 | `work/v1-readme-runbook` | Make the project easy to resume. | README has setup, scripts, architecture, and next-task suggestions. |
 | 22 | `work/v1-final-audit` | Review scope creep and remove accidental false completeness. | Clean v1 scaffold that still leaves real learning work to the project owner. |
 | 23 | `work/data-canonical-joyo-import-full` | Replace the tiny canonical slice with the full real Joyo deck. | Explicit Joyo source file(s), provenance/version metadata, stable `KanjiEntry` materialization, and tests proving the app is no longer running on a tiny hand-entered subset. |
-| 24 | `work/data-canonical-jinmeiyo-import` | Add Jinmeiyo as a second explicit source path without reclassifying Joyo-owned kanji. | Small real-data Jinmeiyo source file(s), source-set versioning, Joyo-first overlap handling, and a union manifest that keeps common-use ownership stable. |
-| 25 | `work/progress-session-seeding-v1` | Let durable learner progress shape a new session without breaking ownership boundaries. | Session creation can read saved progress to choose initial cue state and selection inputs while session state still owns live per-run behavior. |
+| 24 | `work/data-canonical-jinmeiyo-import` | Add Jinmeiyo as a second explicit source path without reclassifying Joyo-owned kanji. | Full real-data Jinmeiyo source file(s), source-set versioning, Joyo-first overlap handling, and a union manifest that keeps common-use ownership stable. |
+| 25 | `work/progress-session-seeding-v1` | Let durable learner progress shape a new session without breaking ownership boundaries. | Session creation can read saved progress to shape selection inputs and learner-state boundaries while session state still owns live per-run behavior. |
 | 26 | `work/progress-daily-new-limit` | Make the first daily study allowance explicit. | A local-first daily cap for new kanji, wired into session creation and tested without adding cloud/backend work. |
 | 27 | `work/progress-carryover-v1` | Avoid silently dropping unfinished new items. | Carryover rules that re-offer started-but-unfinished kanji before introducing replacements on a later day. |
 | 28 | `work/review-bank-v1` | Create the first durable review pool for graduated items. | Progress-derived review-bank records and selection helpers that preserve the content-versus-progress boundary. |
@@ -58,26 +58,29 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 33 | `work/api-boundary-review` | Revisit whether the app needs REST or another backend boundary only after the local MVP proves itself. | Decision doc only: current local-first posture, triggers for REST/API work, candidate resources, and boundaries to preserve. No backend implementation. |
 | 34 | `work/progress-seen-library` | Add a learner-facing browser for kanji already encountered. | A local page or panel that lists seen kanji with their stable grids and meanings, sourced from durable learner progress without moving live session state into content or progress. |
 | 35 | `work/progress-manual-seen-intake` | Let the learner mark a not-yet-seen kanji as encountered outside the app. | A local unlearned-kanji browser with an explicit action to create or update durable learner progress so those kanji can enter future study flows, without mutating stable `KanjiEntry` ownership. |
+| 36 | `work/review-priority-fail-history` | Make next-day review pressure respond honestly to repeated misses. | Local-first repetition weighting or short-horizon due selection shaped by durable failure history from faded/blind recall, with explicit tests and docs. Preserve stable content ownership with `KanjiEntry`, durable scheduling signals with `UserProgress`, and live run behavior with session state. |
+| 37 | `work/drill-reading-mcq` | Add a readings-to-kanji multiple-choice game with intentionally confusable distractors. | A local drill that shows On/Kun readings, offers 4 kanji choices, and chooses the 3 distractors from one explicit documented confusability metric or distance rule, plus focused tests and honest docs. Keep it local-first and reviewable rather than building a large quiz framework. |
 
 Treat row 22 as the stopping point for the original v1 shell. Rows 23 through 31 are the planned
 path from honest shell to shippable local-first MVP. Rows 32 and 33 are intentionally post-MVP
 follow-on tracks, not implied scope to absorb into the first usable release.
 
-The local-first MVP path through row 31 is now complete, and the planned post-MVP follow-ons
-through row 35 are complete too.
+The local-first MVP path through row 31 is complete, and the planned post-MVP follow-ons through
+row 35 are complete too. Rows 36 and 37 are the current next numbered worktrees.
 
 At this point the remaining numbered worktrees are:
 
-- None. The current numbered worktree plan is complete.
+- `work/review-priority-fail-history`
+- `work/drill-reading-mcq`
 
 Clarify the saved-state milestone boundaries:
 
 - Row 17 already introduced local progress persistence after explicit review grading.
 - Row 23 is where the full real `joyo` deck replaces the old tiny canonical slice.
-- Row 24 landed a small real-data `jinmeiyo` supplemental import path without reclassifying
+- Row 24 landed the full real-data `jinmeiyo` supplemental import path without reclassifying
   Joyo-owned entries.
-- Row 25 lets durable progress seed the starting cue support for a new session while still leaving
-  live session opacity, reveal state, attempts, and queue behavior with session ownership.
+- Row 25 lets durable progress shape new-session selection inputs while still leaving live session
+  opacity, reveal state, attempts, and queue behavior with session ownership.
 - Row 26 lands the first explicit daily new-item boundary: up to 5 truly new kanji per local day
   can enter a newly created session based on durable saved progress.
 - Row 27 adds the first carryover rule: started-but-unfinished new kanji are re-offered before
@@ -96,6 +99,11 @@ Clarify the saved-state milestone boundaries:
 - Rows 34 and 35 are learner-library follow-ons: they expose durable learner progress in the UI and
   allow explicit manual intake of encountered kanji, but they should still leave stable content
   ownership with `KanjiEntry` and live drill behavior with session state.
+- Row 36 is the first post-MVP pass that should let repeated misses influence near-future review
+  frequency without moving stable content facts into progress or turning the local app into a
+  backend-shaped scheduler.
+- Row 37 adds a new local multiple-choice drill that goes from readings to kanji and uses one
+  explicit confusability metric for distractor choice rather than random filler options.
 
 ## Long-Term Study Loop Notes
 
@@ -135,6 +143,11 @@ Suggested post-MVP follow-on worktrees:
 - `work/progress-manual-seen-intake`: complete. It adds a local intake surface for not-yet-seen
   kanji and writes only durable learner progress so later study flows can treat those kanji as
   encountered.
+- `work/review-priority-fail-history`: planned. It should deepen the local review loop so
+  tomorrow's faded/blind recall mix can prioritize items with recent repeated misses instead of
+  treating all review-bank candidates as equally urgent.
+- `work/drill-reading-mcq`: planned. It should add a local readings-to-kanji choice drill with
+  three intentionally close distractors chosen by one documented distance or confusability rule.
 
 Keep the mastery rule product-specific:
 

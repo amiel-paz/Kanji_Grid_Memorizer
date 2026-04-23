@@ -1,15 +1,30 @@
-import { useMemo } from 'react';
-import { KanjiTile } from '../components/KanjiTile';
+import { useEffect, useMemo, useState } from 'react';
+import { KanjiCueCard } from '../components/KanjiCueCard';
+import { KanjiReadings } from '../components/KanjiReadings';
+import { PaginationControls } from '../components/PaginationControls';
 import { canonicalKanjiDeck } from '../data/canonicalDeck';
 import { getSeenLibraryItems } from '../domain/progress/seenLibrary';
 import type { ProgressConfidence } from '../domain/progress/types';
 import { loadProgressRecords } from '../state/progressStore';
 
+const SEEN_LIBRARY_PAGE_SIZE = 120;
+
 export function SeenLibraryPage() {
+  const [currentPage, setCurrentPage] = useState(1);
   const libraryItems = useMemo(
     () => getSeenLibraryItems(canonicalKanjiDeck, loadProgressRecords()),
     [],
   );
+  const totalPages = Math.max(1, Math.ceil(libraryItems.length / SEEN_LIBRARY_PAGE_SIZE));
+  const pageStartIndex = (currentPage - 1) * SEEN_LIBRARY_PAGE_SIZE;
+  const visibleLibraryItems = libraryItems.slice(
+    pageStartIndex,
+    pageStartIndex + SEEN_LIBRARY_PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
 
   return (
     <main className="app-page">
@@ -43,19 +58,28 @@ export function SeenLibraryPage() {
               {libraryItems.length} seen kanji
             </h2>
             <p className="fine-print">
-              Sorted by most recently seen first, then by earlier first-seen history.
+              Sorted by most recently seen first, then by earlier first-seen history. Pages show
+              at most {SEEN_LIBRARY_PAGE_SIZE} cards at a time.
             </p>
           </div>
 
+          <PaginationControls
+            currentPage={currentPage}
+            itemLabel="seen kanji"
+            pageSize={SEEN_LIBRARY_PAGE_SIZE}
+            totalItems={libraryItems.length}
+            onPageChange={setCurrentPage}
+          />
+
           <div className="seen-library-grid">
-            {libraryItems.map(({ entry, progress }) => (
+            {visibleLibraryItems.map(({ entry, progress }) => (
               <article className="surface-panel seen-library-card" key={entry.kanji}>
                 <div className="seen-library-card-top">
-                  <KanjiTile
+                  <KanjiCueCard
+                    kanji={entry.kanji}
                     code={entry.code}
-                    label={`${entry.kanji} stable code grid`}
+                    label={`${entry.kanji} cue card preview`}
                     opacity={1}
-                    showCodeDigits
                     size="sm"
                   />
 
@@ -67,6 +91,7 @@ export function SeenLibraryPage() {
                       </span>
                     </div>
                     <p className="study-detail-group-copy">{entry.meanings.join(', ')}</p>
+                    <KanjiReadings kunyomi={entry.kunyomi} onyomi={entry.onyomi} />
                     <p className="fine-print">
                       {entry.sourceSet} source
                     </p>
@@ -90,6 +115,14 @@ export function SeenLibraryPage() {
               </article>
             ))}
           </div>
+
+          <PaginationControls
+            currentPage={currentPage}
+            itemLabel="seen kanji"
+            pageSize={SEEN_LIBRARY_PAGE_SIZE}
+            totalItems={libraryItems.length}
+            onPageChange={setCurrentPage}
+          />
         </section>
       )}
     </main>

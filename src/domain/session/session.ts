@@ -66,7 +66,7 @@ export function createSession(
           attempts: 0,
           goodCount: 0,
           againCount: 0,
-          cueOpacity: initialOpacityForDrill(drillConfig, seedProgressByKanji[entry.kanji]),
+          cueOpacity: initialOpacityForDrill(drillConfig),
         },
       ]),
     ),
@@ -113,14 +113,13 @@ export function selectSessionEntries(
 
 export function initialOpacityForDrill(
   drillConfig: DrillConfig,
-  progressSeed?: SessionProgressSeed,
 ): CueOpacity {
   if (drillConfig.cuePolicy === 'hidden') {
     return 0;
   }
 
   if (drillConfig.cuePolicy === 'session-dim') {
-    return initialSessionDimOpacity(progressSeed);
+    return initialSessionDimOpacity();
   }
 
   return 1;
@@ -339,16 +338,8 @@ function nextCueOpacity(
   return CUE_OPACITY_LADDER[nextIndex] ?? 0;
 }
 
-function initialSessionDimOpacity(progressSeed?: SessionProgressSeed): CueOpacity {
-  switch (progressSeed?.confidence) {
-    case 'learning':
-      return 0.66;
-    case 'familiar':
-      return 0.33;
-    case 'new':
-    default:
-      return 1;
-  }
+function initialSessionDimOpacity(): CueOpacity {
+  return 1;
 }
 
 // Local session creation stays intentionally small and non-due-based:
