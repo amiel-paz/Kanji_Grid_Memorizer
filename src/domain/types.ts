@@ -7,7 +7,9 @@ export type {
   KanjiMetadata,
   SourceSet,
   SourceSetDefinition,
+  SourceSetImportManifest,
   SourceSetOwnership,
+  SourceSetUpstreamReference,
   SourceSetVersion,
 } from './content/types';
 export { CANONICAL_SOURCE_SET_PRIORITY, SOURCE_SET_DEFINITIONS, SOURCE_SET_IDS } from './content/types';

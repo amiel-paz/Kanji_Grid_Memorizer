@@ -14,10 +14,11 @@ personal study history along with it.
 Content types live in `src/domain/content/types.ts`.
 
 Source-set ownership also lives with stable content. `mock-joyo` is development fixture data only,
-while `joyo` is now the real canonical deck path and `jinmeiyo` stays a separate explicit follow-on
-source path. Mock entries may be useful and realistic, but they should not become the canonical
-deck by accident. Canonical imports should apply Joyo-first ownership before adding Jinmeiyo, so
-name-use expansion cannot reclassify common-use entries silently.
+while `joyo` is now the real full canonical deck path and `jinmeiyo` stays a separate explicit
+follow-on source path. Mock entries may be useful and realistic, but they should not become the
+canonical deck by accident. Canonical imports should live in explicit versioned source files plus
+import manifests, and they should apply Joyo-first ownership before adding Jinmeiyo so name-use
+expansion cannot reclassify common-use entries silently.
 
 ## Session Behavior
 

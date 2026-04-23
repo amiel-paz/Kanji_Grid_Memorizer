@@ -63,7 +63,6 @@ follow-on tracks, not implied scope to absorb into the first usable release.
 
 At this point the remaining numbered worktrees are:
 
-- `work/data-canonical-joyo-import-full`
 - `work/data-canonical-jinmeiyo-import`
 - `work/progress-session-seeding-v1`
 - `work/progress-daily-new-limit`
@@ -78,8 +77,9 @@ At this point the remaining numbered worktrees are:
 Clarify the saved-state milestone boundaries:
 
 - Row 17 already introduced local progress persistence after explicit review grading.
-- Rows 23 and 24 are where full real `joyo` and `jinmeiyo` source data should replace the current
-  tiny canonical slice.
+- Row 23 is where the full real `joyo` deck replaces the old tiny canonical slice.
+- Row 24 is where `jinmeiyo` should arrive as the second explicit source-set path without
+  reclassifying Joyo-owned entries.
 - Rows 25 through 29 are where the first actually useful daily study loop becomes concrete while
   still preserving stable content ownership versus session ownership versus durable learner state.
 - Row 31 is the intended local-first MVP stop point for something you'd be willing to ship to
@@ -107,8 +107,6 @@ What the product should build toward on the path to the first local MVP:
 
 Suggested follow-on worktrees after the current v1 scaffold:
 
-- `work/data-canonical-joyo-import-full`: replace the tiny canonical slice with the full Joyo
-  deck under explicit provenance and source-set versioning.
 - `work/data-canonical-jinmeiyo-import`: add Jinmeiyo as a separate canonical source path with
   Joyo-first ownership rules for overlaps.
 - `work/progress-session-seeding-v1`: let saved progress influence new-session inputs without

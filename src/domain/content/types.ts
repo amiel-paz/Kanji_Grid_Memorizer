@@ -52,6 +52,21 @@ export interface SourceSetVersion {
   readonly notes: string;
 }
 
+export interface SourceSetUpstreamReference {
+  readonly label: string;
+  readonly url: string;
+  readonly version: string;
+  readonly license: string;
+}
+
+export interface SourceSetImportManifest {
+  readonly sourceSet: SourceSet;
+  readonly sourceSetVersionId: SourceSetVersion['versionId'];
+  readonly entryCount: number;
+  readonly upstreams: readonly SourceSetUpstreamReference[];
+  readonly normalizationNotes: readonly string[];
+}
+
 export interface AssignmentVersionSource {
   readonly sourceSet: SourceSet;
   readonly sourceSetVersionId: SourceSetVersion['versionId'];
@@ -70,6 +85,7 @@ export interface ContentDeckManifest {
   readonly label: string;
   readonly sourceSetPriority: readonly CanonicalSourceSet[];
   readonly sourceSetVersions: readonly SourceSetVersion[];
+  readonly sourceImportManifests: readonly SourceSetImportManifest[];
   readonly assignmentVersion: AssignmentVersion;
   readonly description: string;
 }
