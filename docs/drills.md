@@ -1,7 +1,8 @@
 # Drills
 
-The scaffold represents three starting drill modes. They are the current v1 shell, not a finished
-learning system. Recall drills are the useful path; grid-to-kanji matching drills are out of scope.
+The app currently ships three starting drill modes. They form the first local MVP, not a finished
+long-term learning system. Recall drills are the useful path; grid-to-kanji matching drills are
+out of scope.
 
 1. Learn: show kanji, full cue, readings, and meanings.
 2. Faded recall: show kanji with cue strength controlled by session state.
@@ -44,13 +45,14 @@ due-card scheduling.
 
 ## Interaction Boundary
 
-The study screen can include mock controls while domain behavior is being proven. Review modes
-should follow the Anki-style order: recall first, reveal readings, then choose `Again` or `Good`.
+The study screen uses explicit reveal and grading controls rather than hidden automation. Review
+modes should follow the Anki-style order: recall first, reveal readings, then choose `Again` or
+`Good`.
 
 Later work can replace the starter review loop's simple rotation with smarter queue shaping after
 the shell stops being the main thing under review.
 
-## Future Daily Flow
+## Current Daily Flow
 
 The intended product flow is compatible with Anki-like daily pacing, but should use this project's
 own mastery rule.
@@ -60,7 +62,7 @@ own mastery rule.
 - Started-but-unfinished new kanji now carry over before fresh replacement new items are admitted
   on a later session creation.
 - Kanji that clear the faded ladder onto `0%` now become durable review-bank candidates, and the
-  current pass uses those candidates only as simple backfill when a new local session batch still
+  current MVP uses those candidates only as simple backfill when a new local session batch still
   has open slots after carryover and today's allowed fresh-new items. It still does not add due-card
   logic or promise a finished daily scheduler.
 - A kanji can be treated as learned for the "new item" path once it successfully progresses

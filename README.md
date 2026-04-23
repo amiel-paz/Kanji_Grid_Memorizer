@@ -1,13 +1,12 @@
 # Kanji Grid Memorizer
 
-Kanji Grid Memorizer is a local-first React/TypeScript study shell for one product idea:
+Kanji Grid Memorizer is a local-first React/TypeScript study MVP for one product idea:
 each kanji owns a stable 2x2 base-8 color cue, and the active drill decides how much of
 that cue to show.
 
-This repo is currently an honest v1 shell, not a finished learning system. It is enough
-to demo the cue model, the reveal-first review flow, the session ownership boundary, and
-the local progress boundary without pretending that scheduling or canonical data work
-already exists.
+This repo is now an honest first local MVP, not a finished long-term learning system. It
+is far enough along to use daily on one device or hand to a friend for a truthful preview,
+while still being explicit about what is and is not implemented.
 
 ## What This Repo Is Today
 
@@ -17,6 +16,9 @@ already exists.
 - Three drill shells: Learn, Faded recall, and Blind recall.
 - Session-owned cue opacity and a simple rotating queue.
 - Local-only progress persistence after explicit review grading.
+- A small daily study loop: unfinished carryover first, then today's truly new allowance, then
+  durable review-bank backfill.
+- Honest empty and completion states when a new local batch cannot or does not need to queue cards.
 - Tests around the current study shell, session rules, progress helpers, and local store behavior.
 
 ## Setup And Scripts
@@ -68,13 +70,15 @@ What each script does:
 - Saved progress does not own live queue position, reveal state, attempts, or answer flow after a session starts. Learn stays full-cue and Blind recall stays cue-hidden regardless of saved progress.
 - Progress confidence and review-bank membership are now separate signals: a later `Again` can drop starting cue support back to `learning` without pushing an already-graduated kanji back into unfinished-new carryover.
 - The UI shows a stable deck slot within the selected 10-card batch, not completion through the session.
+- The UI now also shows the current batch mix and today's remaining fresh-new allowance so the
+  local rules are legible instead of hidden behind the shell.
 
 ## Current Scope
 
 - Stable content ownership remains separate from live session behavior and separate again from durable progress.
 - The app deck now comes from a full canonical Joyo import manifest. Mock data remains fixture data only.
 - The queue inside the current review shell is intentionally simple rotation within the selected 10-card session.
-- The current shell is good for validating UI flow and ownership boundaries, not for judging the eventual learning system.
+- This is a single-device local-first MVP, not a due-scheduled or sync-enabled study system.
 
 ## Not Built Yet
 
@@ -83,7 +87,8 @@ What each script does:
 - No weighted requeue based on repeated misses. `Again` changes cue opacity, but the queue still rotates simply.
 - No due scheduling after a successful zero-cue pass beyond retiring the card for the rest of the current run and recording durable review-bank candidacy.
 - No backend, API, auth, sync, or cloud persistence.
-- No full Jinmeiyo import yet beyond the small explicit supplemental subset landed in this worktree.
+- No learner-facing seen-library or manual "mark as encountered" intake flow yet.
+- No broader Jinmeiyo import yet beyond the small explicit supplemental subset currently in the repo.
 
 ## Resume Map
 
@@ -105,27 +110,20 @@ Start here when reopening the repo:
 
 ## After This Audit
 
-This pass is the intended stopping point for the current v1 shell.
+This pass is the intended stopping point for the first shippable local-first MVP.
 
 Future work stays split in [`docs/worktrees.md`](docs/worktrees.md) so the repo does not imply a
-single automatic next step. The remaining plan now explicitly aims at a shippable local-first MVP:
-Jinmeiyo expansion, a useful daily study loop, polish, and then a ship audit before any sync or
-API follow-on work.
+single automatic next step. The remaining work is now explicitly post-MVP: portable learner-state
+exchange, an API-boundary decision review, and learner-library follow-ons.
 
 ## Remaining Numbered Worktrees
 
-The remaining plan is now split into two stages.
-
-Local-first MVP path:
-
-- `work/review-session-orchestration`
-- `work/local-mvp-polish`
-- `work/local-mvp-ship-audit`
-
-Post-MVP follow-ons:
+The remaining plan is now post-MVP only:
 
 - `work/progress-sync-file-exchange`
 - `work/api-boundary-review`
+- `work/progress-seen-library`
+- `work/progress-manual-seen-intake`
 
 ## Real Data And Saved State
 
@@ -143,9 +141,10 @@ Post-MVP follow-ons:
   a local daily cap for truly new items without moving live session state into progress.
 - Local learner progress now also records whether a kanji has graduated out of the unfinished
   new-item path into the first durable review-bank candidate pool.
-- The next planned progress worktrees are about shaping local sessions from saved state into a real
-  daily learning loop before sync is considered.
 - `work/progress-sync-file-exchange` is a post-MVP step for portable learner state while staying
   local-first and account-free.
 - `work/api-boundary-review` is only a later decision point about whether any backend or API work
   is warranted at all.
+- `work/progress-seen-library` and `work/progress-manual-seen-intake` are post-MVP UI follow-ons
+  for exposing and editing durable learner progress without moving stable content or live session
+  state out of their current ownership boundaries.

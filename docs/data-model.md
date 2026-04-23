@@ -43,7 +43,7 @@ Jinmeiyo supplemental. That keeps common-use kanji ownership stable before name-
 
 Canonical manifests should document how imported Joyo/Jinmeiyo files map to source-set versions and
 how exact duplicates, variants, and source-list overlaps are resolved under the Joyo-first priority
-rule. In the current pass, Jinmeiyo is a small explicit second import path rather than being merged
+rule. In the current repo, Jinmeiyo is a small explicit second import path rather than being merged
 into the Joyo deck.
 
 The current Joyo source-set version is `joyo-kanjidic2-2026-112`, and the current Jinmeiyo
@@ -75,7 +75,8 @@ from so expansion cannot silently change established code mappings.
 
 Owned by `src/domain/progress/types.ts`.
 
-Persistent per-user learning data. This is intentionally small in v1 and local only.
+Persistent per-user learning data. This is intentionally small in the current local MVP and local
+only.
 
 Progress can eventually answer questions like:
 
@@ -87,12 +88,10 @@ Progress can eventually answer questions like:
 - Was this kanji first seen on today's local date?
 
 It can seed a new session's starting cue support from the durable confidence bucket, and it can
-also tell session creation whether a kanji is truly new today for the explicit daily new-item cap
+also tell session creation whether a kanji is truly new today for the explicit daily new-item cap,
 whether it must be re-offered as unfinished carryover before replacement new items are admitted, or
 whether it already belongs to the first review-bank candidate pool after graduating out of the new
 path. It should not carry the live cue opacity for an active drill. Session state owns that.
-
-TODO: Decide the minimum progress fields needed before building real scheduling.
 
 ## DrillConfig
 
@@ -142,5 +141,5 @@ which kanji enter the current run, while answering or advancing still reorders t
 inside the current run queue without mutating stable content. A clean zero-cue pass may retire the
 card from the rest of that run, but that remains session-owned behavior.
 
-TODO: Replace the starter rotation queue with a simple weighted queue after the first randomized
-session selector is in place.
+Deferred for later: keep the starter rotation queue until a later worktree proves a better local
+queue without moving ownership out of session state.
