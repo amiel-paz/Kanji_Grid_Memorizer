@@ -1,6 +1,7 @@
 import type { KanjiEntry } from '../content/types';
 import { getDrillById } from '../drills/configs';
 import type { DrillConfig, ReviewGrade } from '../drills/types';
+import { hasSeenProgress, isUnfinishedNewItemProgress } from '../progress/progress';
 import {
   CUE_OPACITY_LADDER,
   DEFAULT_DAILY_NEW_KANJI_LIMIT,
@@ -75,35 +76,39 @@ export function selectSessionEntries(
 ): readonly KanjiEntry[] {
   const random = options.random ?? Math.random;
   const progressByKanji = options.progressByKanji ?? {};
-  const remainingEntries = [...entries];
-  const selected: KanjiEntry[] = [];
-  let remainingDailyNewAllowance = getRemainingDailyNewAllowance(
-    progressByKanji,
-    options.createdAt,
-    options.dailyNewLimit,
+  const selectionSize = Math.min(deckSize, entries.length);
+  const todayKey = toLocalDateKey(options.createdAt ?? new Date().toISOString());
+  const carryoverEntries = entries.filter((entry) =>
+    isUnfinishedNewItemProgress(progressByKanji[entry.kanji]),
   );
-  const selectionSize = Math.min(deckSize, remainingEntries.length);
+  const seenBackfillEntries = entries.filter((entry) => {
+    const progress = progressByKanji[entry.kanji];
+    return hasSeenProgress(progress) && !isUnfinishedNewItemProgress(progress);
+  });
+  const trulyNewEntries = entries.filter((entry) => !hasSeenProgress(progressByKanji[entry.kanji]));
+  const carryoverSelection = selectRandomEntries(carryoverEntries, selectionSize, random);
+  const olderCarryoverCount = carryoverSelection.filter((entry) => {
+    const progress = progressByKanji[entry.kanji];
+    return !progress || !isFirstSeenOnLocalDate(progress, todayKey);
+  }).length;
+  const remainingDeckSlots = selectionSize - carryoverSelection.length;
+  const remainingDailyNewAllowance = Math.max(
+    0,
+    getRemainingDailyNewAllowance(progressByKanji, options.createdAt, options.dailyNewLimit) -
+      olderCarryoverCount,
+  );
+  const freshNewSelection = selectRandomEntries(
+    trulyNewEntries,
+    Math.min(remainingDeckSlots, remainingDailyNewAllowance),
+    random,
+  );
+  const seenBackfillSelection = selectRandomEntries(
+    seenBackfillEntries,
+    remainingDeckSlots - freshNewSelection.length,
+    random,
+  );
 
-  while (selected.length < selectionSize && remainingEntries.length > 0) {
-    const selectedIndex = Math.floor(random() * remainingEntries.length);
-    const [entry] = remainingEntries.splice(selectedIndex, 1);
-
-    if (!entry) {
-      throw new Error(`Session selection produced an invalid index: ${selectedIndex}`);
-    }
-
-    if (hasSeenProgress(progressByKanji[entry.kanji])) {
-      selected.push(entry);
-      continue;
-    }
-
-    if (remainingDailyNewAllowance > 0) {
-      selected.push(entry);
-      remainingDailyNewAllowance -= 1;
-    }
-  }
-
-  return selected;
+  return [...carryoverSelection, ...freshNewSelection, ...seenBackfillSelection];
 }
 
 export function initialOpacityForDrill(
@@ -346,6 +351,28 @@ function initialSessionDimOpacity(progressSeed?: SessionProgressSeed): CueOpacit
   }
 }
 
+function selectRandomEntries(
+  entries: readonly KanjiEntry[],
+  count: number,
+  random: SessionRandomSource,
+): readonly KanjiEntry[] {
+  const remainingEntries = [...entries];
+  const selected: KanjiEntry[] = [];
+
+  while (selected.length < count && remainingEntries.length > 0) {
+    const selectedIndex = Math.floor(random() * remainingEntries.length);
+    const [entry] = remainingEntries.splice(selectedIndex, 1);
+
+    if (!entry) {
+      throw new Error(`Session selection produced an invalid index: ${selectedIndex}`);
+    }
+
+    selected.push(entry);
+  }
+
+  return selected;
+}
+
 function getRemainingDailyNewAllowance(
   progressByKanji: SessionProgressSeedByKanji,
   createdAt: string | undefined,
@@ -357,14 +384,6 @@ function getRemainingDailyNewAllowance(
   ).length;
 
   return Math.max(0, (dailyNewLimit ?? DEFAULT_DAILY_NEW_KANJI_LIMIT) - consumedTodayCount);
-}
-
-function hasSeenProgress(progress: SessionProgressSeed | undefined): boolean {
-  if (!progress) {
-    return false;
-  }
-
-  return (progress.seenCount ?? 0) > 0 || progress.confidence !== 'new';
 }
 
 function isFirstSeenOnLocalDate(progress: SessionProgressSeed, localDateKey: string): boolean {
