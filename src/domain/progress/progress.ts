@@ -13,6 +13,7 @@ export interface ProgressReviewOutcome {
 export interface ProgressCarryoverSeed {
   readonly seenCount?: number;
   readonly confidence: ProgressConfidence;
+  readonly reviewBankCandidate?: boolean;
 }
 
 export function createInitialProgress(kanji: string): UserProgress {
@@ -49,7 +50,15 @@ export function isUnfinishedNewItemProgress(progress: ProgressCarryoverSeed | un
     return false;
   }
 
-  return hasSeenProgress(progress) && progress.confidence !== 'familiar';
+  return hasSeenProgress(progress) && !isReviewBankCandidateProgress(progress);
+}
+
+export function isReviewBankCandidateProgress(progress: ProgressCarryoverSeed | undefined): boolean {
+  if (!progress) {
+    return false;
+  }
+
+  return progress.reviewBankCandidate === true || progress.confidence === 'familiar';
 }
 
 export function applyReviewOutcome(
@@ -60,11 +69,13 @@ export function applyReviewOutcome(
 
   const seenProgress = recordSeen(progress, outcome.reviewedAt);
   const nextGoodCount = seenProgress.goodCount + (outcome.reviewGrade === 'good' ? 1 : 0);
+  const reviewBankCandidate = nextReviewBankCandidate(seenProgress, outcome);
 
   return {
     ...seenProgress,
     goodCount: nextGoodCount,
     confidence: nextConfidenceForReviewOutcome(seenProgress.confidence, outcome),
+    ...(reviewBankCandidate ? { reviewBankCandidate: true } : {}),
   };
 }
 
@@ -85,6 +96,13 @@ function nextConfidenceForReviewOutcome(
 
 function completesFadedRecallLadder(outcome: ProgressReviewOutcome): boolean {
   return outcome.reviewGrade === 'good' && outcome.previousCueOpacity > 0 && outcome.nextCueOpacity === 0;
+}
+
+function nextReviewBankCandidate(
+  progress: UserProgress,
+  outcome: ProgressReviewOutcome,
+): boolean {
+  return progress.reviewBankCandidate === true || completesFadedRecallLadder(outcome);
 }
 
 function assertSameKanji(progress: UserProgress, kanji: string): void {

@@ -173,6 +173,29 @@ describe('session cue opacity', () => {
     ]);
   });
 
+  it('keeps review-bank items out of unfinished carryover even if later confidence falls back to learning', () => {
+    const entries = mockKanji.slice(0, 4);
+    const selected = selectSessionEntries(entries, 4, {
+      createdAt: '2026-04-21T12:00:00.000Z',
+      dailyNewLimit: 1,
+      progressByKanji: {
+        [entries[0]!.kanji]: {
+          kanji: entries[0]!.kanji,
+          confidence: 'learning',
+          seenCount: 4,
+          firstSeenAt: '2026-04-20T10:00:00.000Z',
+          reviewBankCandidate: true,
+        },
+      },
+      random: createDeterministicRandom([0, 0]),
+    });
+
+    expect(selected.map((entry) => entry.kanji)).toEqual([
+      entries[1]!.kanji,
+      entries[0]!.kanji,
+    ]);
+  });
+
   it('does not double-count same-day carryover against the fresh-new allowance', () => {
     const entries = mockKanji.slice(0, 4);
     const selected = selectSessionEntries(entries, 4, {

@@ -32,8 +32,9 @@ The current v1 queue is intentionally simple rotation within one selected sessio
 answer moves the active item to the back; it does not shape a due queue or add broader scheduling.
 New session creation may seed the starting cue for a selected kanji from saved progress and may
 also cap how many truly new kanji can enter that day's batch while carrying unfinished new-path
-items forward before fresh replacements, but queue position, reveal state, attempts, answer flow,
-and post-start opacity changes stay session-owned.
+items forward before fresh replacements. It may also backfill from the durable review-bank
+candidate pool once an item has graduated out of the unfinished new path, but queue position,
+reveal state, attempts, answer flow, and post-start opacity changes stay session-owned.
 
 Session types live in `src/domain/session/types.ts`.
 
@@ -43,8 +44,8 @@ Session types live in `src/domain/session/types.ts`.
 sessions, but it should stay smaller than a scheduler until the app has a real learning loop.
 
 In the current pass, progress can seed only the initial cue support of a new session plus the
-session-creation boundary for truly new and carryover new-path kanji. It does not store live
-session opacity, queue position, reveal state, or active attempts.
+session-creation boundary for truly new, unfinished carryover, and first review-bank-path kanji.
+It does not store live session opacity, queue position, reveal state, or active attempts.
 
 Progress types live in `src/domain/progress/types.ts`.
 
@@ -62,8 +63,10 @@ opacity applies to the color grid only; the kanji and white center remain fully 
 legibility.
 
 Review actions follow a simple two-button convention: `Again` is the secondary action and `Good` is
-the primary action. In the current v1 shell, review answers always rotate the queue; drill logic
-only decides whether visible cue support stays full, fades, or remains hidden.
+the primary action. In the current v1 shell, review answers usually rotate the queue, but a clean
+zero-cue pass retires that card from the rest of the current run. Drill logic still only decides
+cue support and retirement inside session state; it does not rewrite stable content or durable
+progress ownership.
 
 ## Module Boundaries
 

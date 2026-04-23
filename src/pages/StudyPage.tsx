@@ -132,8 +132,9 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
           Choose a drill, work through the current session, and reveal meanings and readings only
           when you need them. Truly new kanji are capped at {DEFAULT_DAILY_NEW_KANJI_LIMIT} per
           local day from saved progress, and started-but-unfinished new kanji carry forward before
-          fresh replacements. The app still does not backfill the rest with broader review
-          scheduling.
+          fresh replacements. Kanji that clear the new-item fade ladder persist as review-bank
+          candidates, but the app still does not do due dates or full mixed new/review
+          orchestration.
         </p>
       </header>
 
