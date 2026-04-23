@@ -3,7 +3,7 @@ import { canonicalKanjiDeck } from '../src/data/canonicalDeck';
 import { getManualSeenIntakeEntries } from '../src/domain/progress/manualSeenIntake';
 
 describe('getManualSeenIntakeEntries', () => {
-  it('returns only unseen entries and filters by kanji or meaning', () => {
+  it('returns only unseen entries and filters by kanji, meaning, or reading', () => {
     const [firstEntry, secondEntry, thirdEntry] = canonicalKanjiDeck;
 
     if (!firstEntry || !secondEntry || !thirdEntry) {
@@ -32,5 +32,21 @@ describe('getManualSeenIntakeEntries', () => {
     );
 
     expect(kanjiMatch.map((entry) => entry.kanji)).toEqual([secondEntry.kanji]);
+    const uniqueReading = secondEntry.kunyomi.find(
+      (reading) =>
+        ![firstEntry, thirdEntry].some((entry) =>
+          [...entry.onyomi, ...entry.kunyomi].includes(reading),
+        ),
+    );
+
+    expect(uniqueReading).toBeDefined();
+
+    const readingMatch = getManualSeenIntakeEntries(
+      canonicalKanjiDeck.slice(0, 3),
+      {},
+      uniqueReading,
+    );
+
+    expect(readingMatch.map((entry) => entry.kanji)).toEqual([secondEntry.kanji]);
   });
 });

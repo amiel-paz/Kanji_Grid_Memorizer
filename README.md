@@ -65,10 +65,11 @@ What each script does:
 - Faded recall uses a reveal-first review loop: try recall, reveal readings and meanings, then grade with `Again` or `Good`.
 - Blind recall uses the same reveal-first flow, but the cue stays hidden at `0%` before and after grading.
 - In Faded recall, cue opacity is session-owned and follows the ladder `100% -> 66% -> 33% -> 0%` on `Good`. `Again` raises it one step.
-- Saved progress now seeds only the starting cue support for a new Faded recall session: `new` or unseen starts at `100%`, `learning` starts at `66%`, and `familiar` starts at `33%`.
+- Faded recall now starts each new session at `100%` cue visibility, even if durable progress already exists for that kanji.
 - Saved progress is also the durable source for whether a kanji has been seen before and whether it already consumed one of today's local new-item slots.
 - Saved progress now also carries the explicit review-bank boundary: a kanji becomes a persistent review-bank candidate the first time a `Good` finishes a faded step onto `0%`.
 - Readings and meanings live in a separate details block. In recall modes they are currently hidden until reveal rather than shown as a blurred preview.
+- Seen-library and manual-intake cards now use the same white-center-over-grid cue presentation as the study card, just at a smaller preview size.
 - Explicit review grading writes local progress. Reveal-only actions, drill switching, and Learn-mode navigation do not persist anything.
 - Saved progress does not own live queue position, reveal state, attempts, or answer flow after a session starts. Learn stays full-cue and Blind recall stays cue-hidden regardless of saved progress.
 - Progress confidence and review-bank membership are now separate signals: a later `Again` can drop starting cue support back to `learning` without pushing an already-graduated kanji back into unfinished-new carryover.
@@ -76,9 +77,9 @@ What each script does:
 - The UI now also shows the current batch mix and today's remaining fresh-new allowance so the
   local rules are legible instead of hidden behind the shell.
 - A separate seen-library view lists only kanji that durable learner progress has already marked as
-  seen, alongside each item's stable grid and meanings.
-- A manual-intake view lists not-yet-seen kanji and can explicitly add one to durable learner
-  progress so later study flows treat it as encountered.
+  seen, alongside each item's stable grid, meanings, and on/kun readings.
+- A manual-intake view lists not-yet-seen kanji with meanings and readings and can explicitly add
+  one to durable learner progress so later study flows treat it as encountered.
 
 ## Current Scope
 
@@ -94,7 +95,7 @@ What each script does:
 - No weighted requeue based on repeated misses. `Again` changes cue opacity, but the queue still rotates simply.
 - No due scheduling after a successful zero-cue pass beyond retiring the card for the rest of the current run and recording durable review-bank candidacy.
 - No backend, API, auth, sync, or cloud persistence.
-- No broader Jinmeiyo import yet beyond the small explicit supplemental subset currently in the repo.
+- No broader post-MVP content expansion beyond the current full Joyo plus full Jinmeiyo deck.
 
 ## Resume Map
 
@@ -105,7 +106,7 @@ Start here when reopening the repo:
 - [`src/pages/ManualSeenIntakePage.tsx`](src/pages/ManualSeenIntakePage.tsx): explicit local intake surface for marking outside encounters as seen.
 - [`src/data/canonicalDeck.ts`](src/data/canonicalDeck.ts): real deck manifest, canonical source-set versions, Joyo-first overlap policy, and stable `KanjiEntry` materialization.
 - [`src/data/canonicalSources/joyo/kanjidic2_2026_112.ts`](src/data/canonicalSources/joyo/kanjidic2_2026_112.ts): full imported Joyo source records plus provenance and normalization metadata.
-- [`src/data/canonicalSources/jinmeiyo/kanjidic2_2026_112_subset.ts`](src/data/canonicalSources/jinmeiyo/kanjidic2_2026_112_subset.ts): small real imported Jinmeiyo supplemental slice with its own version metadata.
+- [`src/data/canonicalSources/jinmeiyo/kanjidic2_2026_112.ts`](src/data/canonicalSources/jinmeiyo/kanjidic2_2026_112.ts): full imported Jinmeiyo source records with their own provenance and normalization metadata.
 - [`src/data/mockKanji.ts`](src/data/mockKanji.ts): development-only mock fixture data and its separate assignment/source versions.
 - [`src/domain/session/session.ts`](src/domain/session/session.ts): session creation, queue movement, and cue opacity rules.
 - [`src/domain/progress/seenLibrary.ts`](src/domain/progress/seenLibrary.ts): pure selector that turns durable progress plus canonical entries into read-only seen-library items.
@@ -120,26 +121,27 @@ Start here when reopening the repo:
 
 ## After This Audit
 
-The numbered worktree plan in [`docs/worktrees.md`](docs/worktrees.md) is now complete.
-
-Future work can still stay split into small reviewable rows, but there is no remaining numbered
-worktree left in the current plan.
+The original local-first MVP plan is complete, but the numbered worktree plan now continues with a
+small set of post-MVP follow-ons in [`docs/worktrees.md`](docs/worktrees.md).
 
 ## Remaining Numbered Worktrees
 
-The remaining plan is now post-MVP only:
+The remaining plan is now:
 
-- None. The current numbered worktree plan is complete.
+- `work/review-priority-fail-history`: make near-future review frequency respond to repeated
+  misses in faded/blind recall using durable learner history.
+- `work/drill-reading-mcq`: add a local readings-to-kanji multiple-choice drill with intentionally
+  confusable distractors chosen by one explicit distance metric.
 
 ## Real Data And Saved State
 
 - Full real `joyo` content now lives in the app deck through an explicit imported source-set version.
 - The current Joyo source-set version is `joyo-kanjidic2-2026-112`, with upstream/license details
   recorded beside the imported source file.
-- `jinmeiyo` now has an explicit imported supplemental source path at
-  `jinmeiyo-kanjidic2-2026-112-subset-v1`, kept separate from Joyo ownership.
-- The current real deck is the 2136-entry Joyo import plus a 12-entry Jinmeiyo supplemental subset,
-  both materialized from versioned in-repo source files and manifests.
+- `jinmeiyo` now has an explicit full imported supplemental source path at
+  `jinmeiyo-kanjidic2-2026-112`, kept separate from Joyo ownership.
+- The current real deck is the 2136-entry Joyo import plus the full 863-entry Jinmeiyo import,
+  for 2999 total canonical entries materialized from versioned in-repo source files and manifests.
 - Local learner progress is already saved today through localStorage after explicit review grading.
 - That current save path is intentionally small: it is not session restore, cross-device sync, or
   backend-backed production persistence.

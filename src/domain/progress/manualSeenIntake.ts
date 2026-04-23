@@ -22,6 +22,12 @@ function matchesSearchTerm(entry: KanjiEntry, normalizedSearchTerm: string): boo
 
   return (
     entry.kanji.includes(normalizedSearchTerm) ||
+    entry.onyomi.some((reading) =>
+      reading.toLocaleLowerCase().includes(normalizedSearchTerm),
+    ) ||
+    entry.kunyomi.some((reading) =>
+      reading.toLocaleLowerCase().includes(normalizedSearchTerm),
+    ) ||
     entry.meanings.some((meaning) =>
       meaning.toLocaleLowerCase().includes(normalizedSearchTerm),
     )

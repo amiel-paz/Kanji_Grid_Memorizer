@@ -34,8 +34,8 @@ Current source-set IDs:
 - `joyo`: the first real canonical source set. The current app deck is materialized from a full
   versioned in-repo Joyo import file plus an explicit import manifest.
 - `jinmeiyo`: the second canonical source set path. It remains explicit and separate so name-use
-  expansion does not get folded invisibly into Joyo. The current repo includes a small real
-  supplemental Jinmeiyo subset import rather than an empty reservation.
+  expansion does not get folded invisibly into Joyo. The current repo includes a full real
+  supplemental Jinmeiyo import rather than an empty reservation.
 
 Canonical source-set priority is Joyo, then Jinmeiyo. If a future import has to choose one owner for
 a character or variant relationship that appears to touch both lists, classify it as Joyo and keep
@@ -43,11 +43,11 @@ Jinmeiyo supplemental. That keeps common-use kanji ownership stable before name-
 
 Canonical manifests should document how imported Joyo/Jinmeiyo files map to source-set versions and
 how exact duplicates, variants, and source-list overlaps are resolved under the Joyo-first priority
-rule. In the current repo, Jinmeiyo is a small explicit second import path rather than being merged
+rule. In the current repo, Jinmeiyo is a full explicit second import path rather than being merged
 into the Joyo deck.
 
 The current Joyo source-set version is `joyo-kanjidic2-2026-112`, and the current Jinmeiyo
-supplemental source-set version is `jinmeiyo-kanjidic2-2026-112-subset-v1`. Each has a companion
+supplemental source-set version is `jinmeiyo-kanjidic2-2026-112`. Each has a companion
 import manifest that records the upstream KANJIDIC2 version, entry count, and normalization notes
 used to materialize the in-repo canonical source files.
 
@@ -65,7 +65,7 @@ assignment version explicitly references the imported source-set version IDs it 
 There are now two visible assignment tracks:
 
 - `mock-joyo-fixture-assignment-v1`: development-only fixture assignment for `mock-joyo`.
-- `canonical-joyo-kanjidic2-2026-112-plus-jinmeiyo-kanjidic2-2026-112-subset-v1-assignment-v1`:
+- `canonical-joyo-kanjidic2-2026-112-plus-jinmeiyo-kanjidic2-2026-112-assignment-v1`:
   the current canonical deck assignment, tied to both imported canonical source-set versions.
 
 Future Joyo+Jinmeiyo assignment versions should keep naming the source-set versions they were built
@@ -87,8 +87,7 @@ Progress can eventually answer questions like:
 - Has this kanji already graduated into the first review-bank candidate path?
 - Was this kanji first seen on today's local date?
 
-It can seed a new session's starting cue support from the durable confidence bucket, and it can
-also tell session creation whether a kanji is truly new today for the explicit daily new-item cap,
+It can tell session creation whether a kanji is truly new today for the explicit daily new-item cap,
 whether it must be re-offered as unfinished carryover before replacement new items are admitted, or
 whether it already belongs to the first review-bank candidate pool after graduating out of the new
 path. It should not carry the live cue opacity for an active drill. Session state owns that.
@@ -122,9 +121,9 @@ Session cue opacity is narrowed to the review ladder: `100%`, `66%`, `33%`, and 
 This is intentionally disposable. A finished session may inform `UserProgress`, but the next
 session should be able to compute its own cue state from the drill and progress inputs.
 
-The current seeding rule is intentionally small and deterministic: Faded recall starts unseen or
-`new` items at `100%`, `learning` items at `66%`, and `familiar` items at `33%`. Learn still
-starts at full cue, and Blind recall still starts hidden.
+The current starting rule is intentionally small and deterministic: every new Faded recall session
+starts at `100%` cue visibility, Learn still starts at full cue, and Blind recall still starts
+hidden.
 
 The current daily new-item rule is intentionally small and deterministic too: a newly created
 session can admit at most 5 fresh truly new kanji per local day based on durable progress. Items

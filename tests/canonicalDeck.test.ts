@@ -7,16 +7,16 @@ import {
 import {
   jinmeiyoImportManifest,
   jinmeiyoSourceVersion,
-} from '../src/data/canonicalSources/jinmeiyo/kanjidic2_2026_112_subset';
+} from '../src/data/canonicalSources/jinmeiyo/kanjidic2_2026_112';
 import { joyoImportManifest, joyoSourceVersion } from '../src/data/canonicalSources/joyo/kanjidic2_2026_112';
 import { SOURCE_SET_IDS } from '../src/domain/content/types';
 import { KANJI_CODE_SPACE_SIZE, base8StablePermutationAssignment } from '../src/domain/encoding/assignment';
 
 describe('canonical deck', () => {
   it('materializes the real app deck from explicit Joyo and Jinmeiyo source inputs', () => {
-    expect(canonicalKanjiDeck).toHaveLength(2148);
+    expect(canonicalKanjiDeck).toHaveLength(2999);
     expect(canonicalKanjiDeck.filter((entry) => entry.sourceSet === SOURCE_SET_IDS.JOYO)).toHaveLength(2136);
-    expect(canonicalKanjiDeck.filter((entry) => entry.sourceSet === SOURCE_SET_IDS.JINMEIYO)).toHaveLength(12);
+    expect(canonicalKanjiDeck.filter((entry) => entry.sourceSet === SOURCE_SET_IDS.JINMEIYO)).toHaveLength(863);
     expect(canonicalKanjiDeck.slice(0, 2136).every((entry) => entry.sourceSetVersionId === joyoSourceVersion.versionId)).toBe(
       true,
     );
@@ -30,34 +30,40 @@ describe('canonical deck', () => {
     ).toBe(true);
     expect(canonicalKanjiDeck.every((entry) => !entry.tags.includes('mock'))).toBe(true);
     expect(canonicalKanjiDeck[0]?.canonicalIndex).toBe(1);
-    expect(canonicalKanjiDeck.at(-1)?.canonicalIndex).toBe(2148);
+    expect(canonicalKanjiDeck.at(-1)?.canonicalIndex).toBe(2999);
   });
 
-  it('proves the app deck is no longer a tiny hand-entered starter slice and now includes real Jinmeiyo entries', () => {
+  it('proves the app deck is no longer a tiny hand-entered starter slice and now includes the full real Jinmeiyo set', () => {
     expect(canonicalKanjiDeck.find((entry) => entry.kanji === '亜')).toMatchObject({
       canonicalIndex: 1,
       sourceSet: SOURCE_SET_IDS.JOYO,
       sourceSetVersionId: joyoSourceVersion.versionId,
       tags: ['joyo', 'grade-8'],
     });
+    expect(canonicalKanjiDeck.find((entry) => entry.kanji === '娃')).toMatchObject({
+      canonicalIndex: 2137,
+      sourceSet: SOURCE_SET_IDS.JINMEIYO,
+      sourceSetVersionId: jinmeiyoSourceVersion.versionId,
+      tags: ['jinmeiyo', 'grade-9'],
+    });
     expect(canonicalKanjiDeck.find((entry) => entry.kanji === '瀧')).toMatchObject({
-      canonicalIndex: 2144,
+      canonicalIndex: 2455,
       sourceSet: SOURCE_SET_IDS.JINMEIYO,
       sourceSetVersionId: jinmeiyoSourceVersion.versionId,
       tags: ['jinmeiyo', 'grade-10', 'variant'],
     });
-    expect(canonicalKanjiDeck.find((entry) => entry.kanji === '凜')).toMatchObject({
-      canonicalIndex: 2148,
+    expect(canonicalKanjiDeck.find((entry) => entry.kanji === '響')).toMatchObject({
+      canonicalIndex: 2999,
       sourceSet: SOURCE_SET_IDS.JINMEIYO,
       sourceSetVersionId: jinmeiyoSourceVersion.versionId,
-      tags: ['jinmeiyo', 'grade-9'],
+      tags: ['jinmeiyo', 'grade-10', 'variant'],
     });
   });
 
   it('keeps canonical source provenance and Joyo-first expansion rules explicit', () => {
     expect(canonicalDeckManifest).toMatchObject({
       id: 'canonical-content-v2',
-      label: 'Joyo-first canonical deck with supplemental Jinmeiyo subset',
+      label: 'Joyo-first canonical deck with full Jinmeiyo supplemental import',
       sourceSetPriority: [SOURCE_SET_IDS.JOYO, SOURCE_SET_IDS.JINMEIYO],
       assignmentVersion: canonicalAssignmentVersion,
       overlapPolicy: 'higher-priority-source-wins',
@@ -85,7 +91,7 @@ describe('canonical deck', () => {
 
   it('ties the canonical assignment version to the exact imported Joyo and Jinmeiyo source versions', () => {
     expect(canonicalAssignmentVersion).toMatchObject({
-      id: 'canonical-joyo-kanjidic2-2026-112-plus-jinmeiyo-kanjidic2-2026-112-subset-v1-assignment-v1',
+      id: 'canonical-joyo-kanjidic2-2026-112-plus-jinmeiyo-kanjidic2-2026-112-assignment-v1',
       sourceSetVersions: expect.arrayContaining([
         {
           sourceSet: SOURCE_SET_IDS.JOYO,

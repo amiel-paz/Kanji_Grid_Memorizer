@@ -29,8 +29,8 @@ A drill session owns changing study behavior:
 Opacity must be derived from drill, session, or progress state at render time. It should not be
 stored on `KanjiEntry`.
 
-Saved learner progress may seed the starting cue support for a new session, but once the run
-starts, live cue opacity, reveal state, attempts, and answer flow still belong to session state.
+Saved learner progress may shape which kanji enter a new session, but once the run starts, live cue
+opacity, reveal state, attempts, and answer flow still belong to session state.
 
 Saved learner progress is also the durable source for whether a kanji has been seen before. Session
 creation may use that saved record to cap how many truly new kanji enter a local day's new batch
@@ -60,7 +60,7 @@ product target for now.
 ## Version 1 Scope
 
 - local web app
-- full Joyo canonical deck plus a small explicit Jinmeiyo supplemental import path, both with in-repo provenance and source-set version metadata
+- full Joyo canonical deck plus a full explicit Jinmeiyo supplemental import path, both with in-repo provenance and source-set version metadata
 - mock kanji fixtures kept for development and tests
 - learn, faded recall, and blind recall modes represented in code
 - simple session-state-driven cue opacity
@@ -76,8 +76,8 @@ truthful local study loop rather than placeholder controls pretending a schedule
 
 ## Out Of Scope For Now
 
-- canonical dataset coverage beyond the explicit in-repo full Joyo import path plus the small supplemental Jinmeiyo slice
-- advanced scheduling
+- canonical dataset coverage beyond the explicit in-repo full Joyo import path plus the full Jinmeiyo supplemental import
+- broad long-horizon scheduling beyond the next planned post-MVP review-priority pass
 - cloud sync
 - accounts
 - mobile app
@@ -85,6 +85,11 @@ truthful local study loop rather than placeholder controls pretending a schedule
 - handwriting recognition
 - generated mnemonics
 - replacing the explicit Joyo-first ownership rule with an ambiguous merged source
+
+Near-term planned follow-ons after the current MVP:
+
+- repeated-miss-aware review priority for future faded/blind recall sessions
+- a readings-to-kanji multiple-choice drill with intentionally close distractors
 
 ## Product Questions To Preserve
 

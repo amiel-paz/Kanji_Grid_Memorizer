@@ -78,10 +78,10 @@ Suggested top-level shape:
   },
   "exportedAt": "2026-04-23T07:00:00.000Z",
   "contentHint": {
-    "assignmentVersion": "canonical-joyo-kanjidic2-2026-112-plus-jinmeiyo-kanjidic2-2026-112-subset-v1-assignment-v1",
+    "assignmentVersion": "canonical-joyo-kanjidic2-2026-112-plus-jinmeiyo-kanjidic2-2026-112-assignment-v1",
     "sourceSetVersions": {
       "joyo": "joyo-kanjidic2-2026-112",
-      "jinmeiyo": "jinmeiyo-kanjidic2-2026-112-subset-v1"
+      "jinmeiyo": "jinmeiyo-kanjidic2-2026-112"
     }
   },
   "bootstrapSnapshot": {

@@ -7,16 +7,23 @@ interface KanjiCueCardProps {
   code: KanjiCode;
   opacity: number;
   label?: string;
+  size?: 'sm' | 'lg';
 }
 
-export function KanjiCueCard({ kanji, code, opacity, label }: KanjiCueCardProps) {
+export function KanjiCueCard({
+  kanji,
+  code,
+  opacity,
+  label,
+  size = 'lg',
+}: KanjiCueCardProps) {
   validateTileOpacity(opacity);
   const cells = getKanjiCodeCells(code);
 
   return (
     <div
       aria-label={label ?? `${kanji} color cue card`}
-      className="kanji-cue-card"
+      className={`kanji-cue-card ${size === 'sm' ? 'kanji-cue-card-sm' : ''}`}
       role="img"
       style={{ '--cue-opacity': opacity } as CSSProperties}
     >
@@ -25,7 +32,7 @@ export function KanjiCueCard({ kanji, code, opacity, label }: KanjiCueCardProps)
           <div key={cell.position} style={{ backgroundColor: cell.color }} />
         ))}
       </div>
-      <div aria-hidden="true" className="kanji-cue-center">
+      <div aria-hidden="true" className={`kanji-cue-center ${size === 'sm' ? 'kanji-cue-center-sm' : ''}`}>
         {kanji}
       </div>
       <div className="sr-only">Code digits {code.join(' ')}</div>

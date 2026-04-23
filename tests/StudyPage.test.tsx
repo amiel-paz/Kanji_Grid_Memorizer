@@ -186,7 +186,7 @@ describe('StudyPage', () => {
     });
   });
 
-  it('seeds faded recall from durable progress while keeping live session counts fresh', () => {
+  it('starts faded recall at full cue even when durable progress already exists', () => {
     const sessionOptions = {
       id: 'seeded-study-page-session',
       random: () => 0,
@@ -215,7 +215,7 @@ describe('StudyPage', () => {
     render(<StudyPage sessionOptions={sessionOptions} />);
 
     expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
-    expect(screen.getByText('Cue visible at 33%')).toBeInTheDocument();
+    expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
     expect(screen.getByText('0 good / 0 attempts')).toBeInTheDocument();
   });
 
@@ -271,7 +271,7 @@ describe('StudyPage', () => {
     expect(screen.queryByRole('button', { name: 'Good' })).not.toBeInTheDocument();
   });
 
-  it('recreates faded-recall session state from saved progress instead of carrying live cue opacity across drill switches', () => {
+  it('recreates faded-recall session state at full cue instead of carrying live cue opacity across drill switches', () => {
     const sessionOptions = {
       id: 'stable-seeded-session',
       random: () => 0,
@@ -299,7 +299,7 @@ describe('StudyPage', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Faded recall/i }));
 
     expect(screen.getByText(/^Now studying /)).toBeInTheDocument();
-    expect(screen.getByText('Cue visible at 66%')).toBeInTheDocument();
+    expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
     expect(screen.getByText('0 good / 0 attempts')).toBeInTheDocument();
     expect(screen.queryByText(getPrimaryRevealText(firstEntry))).not.toBeInTheDocument();
   });
