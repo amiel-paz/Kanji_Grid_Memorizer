@@ -83,12 +83,14 @@ Progress can eventually answer questions like:
 - How often has the learner answered correctly?
 - Is the kanji new, learning, or familiar?
 - If this kanji was already introduced, does it still belong to the unfinished new-item carryover path?
+- Has this kanji already graduated into the first review-bank candidate path?
 - Was this kanji first seen on today's local date?
 
 It can seed a new session's starting cue support from the durable confidence bucket, and it can
 also tell session creation whether a kanji is truly new today for the explicit daily new-item cap
-or whether it must be re-offered as unfinished carryover before replacement new items are admitted.
-It should not carry the live cue opacity for an active drill. Session state owns that.
+whether it must be re-offered as unfinished carryover before replacement new items are admitted, or
+whether it already belongs to the first review-bank candidate pool after graduating out of the new
+path. It should not carry the live cue opacity for an active drill. Session state owns that.
 
 TODO: Decide the minimum progress fields needed before building real scheduling.
 
@@ -127,16 +129,18 @@ starts at full cue, and Blind recall still starts hidden.
 
 The current daily new-item rule is intentionally small and deterministic too: a newly created
 session can admit at most 5 fresh truly new kanji per local day based on durable progress. Items
-with seen durable progress that are not yet `familiar` are treated as unfinished carryover and are
-re-offered before fresh replacement new items are admitted. Older carryover reduces that day's
-fresh-new allowance, while same-day carryover does not double-count because `firstSeenAt` already
-consumed today's slot. Previously seen `familiar` kanji may still fill the rest of the batch. If
-the current app does not have enough seen kanji to backfill the drill's nominal size, the batch
-may simply be smaller until later review-bank and orchestration work lands.
+with seen durable progress that have not yet graduated into the review bank are treated as
+unfinished carryover and are re-offered before fresh replacement new items are admitted. Older
+carryover reduces that day's fresh-new allowance, while same-day carryover does not double-count
+because `firstSeenAt` already consumed today's slot. Graduated review-bank candidates may still
+fill the rest of the batch. If the current app does not have enough review-bank material to
+backfill the drill's nominal size, the batch may simply be smaller until later orchestration work
+lands.
 
 The starter review loop keeps queue movement inside session state. Session creation can randomize
-which kanji enter the current run, while answering or advancing still rotates the active kanji to
-the back of the current run queue without mutating stable content.
+which kanji enter the current run, while answering or advancing still reorders the active kanji
+inside the current run queue without mutating stable content. A clean zero-cue pass may retire the
+card from the rest of that run, but that remains session-owned behavior.
 
 TODO: Replace the starter rotation queue with a simple weighted queue after the first randomized
 session selector is in place.

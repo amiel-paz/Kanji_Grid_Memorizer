@@ -28,6 +28,7 @@ describe('progressStore', () => {
           firstSeenAt: '2026-04-20T00:00:00.000Z',
           lastSeenAt: '2026-04-20T00:00:00.000Z',
           confidence: 'learning',
+          reviewBankCandidate: true,
         },
       }),
     );
@@ -40,6 +41,7 @@ describe('progressStore', () => {
         firstSeenAt: '2026-04-20T00:00:00.000Z',
         lastSeenAt: '2026-04-20T00:00:00.000Z',
         confidence: 'learning',
+        reviewBankCandidate: true,
       },
     });
   });
@@ -99,6 +101,7 @@ describe('progressStore', () => {
         firstSeenAt: '2026-04-21T12:00:00.000Z',
         lastSeenAt: '2026-04-21T12:00:00.000Z',
         confidence: 'familiar',
+        reviewBankCandidate: true,
       },
     });
   });
@@ -174,6 +177,7 @@ describe('progressStore', () => {
         firstSeenAt: '2026-04-21T12:10:00.000Z',
         lastSeenAt: '2026-04-21T12:10:00.000Z',
         confidence: 'familiar',
+        reviewBankCandidate: true,
       },
     });
     expect(reviewedProgress).toBeDefined();
@@ -183,6 +187,7 @@ describe('progressStore', () => {
       'goodCount',
       'kanji',
       'lastSeenAt',
+      'reviewBankCandidate',
       'seenCount',
     ]);
     expect(storage.length).toBe(1);

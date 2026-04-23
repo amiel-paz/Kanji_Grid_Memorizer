@@ -51,6 +51,7 @@ describe('StudyPage', () => {
     expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
     expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
     expect(screen.getByText(/started-but-unfinished new kanji carry forward before fresh replacements/i)).toBeInTheDocument();
+    expect(screen.getByText(/clear the new-item fade ladder persist as review-bank candidates/i)).toBeInTheDocument();
     expect(screen.getAllByText('Hidden until reveal')).toHaveLength(2);
   });
 
@@ -299,6 +300,43 @@ describe('StudyPage', () => {
     expect(screen.getByText('Cue visible at 66%')).toBeInTheDocument();
     expect(screen.getByText('0 good / 0 attempts')).toBeInTheDocument();
     expect(screen.queryByText(getPrimaryRevealText(firstEntry))).not.toBeInTheDocument();
+  });
+
+  it('treats durable review-bank candidates as later-session backfill instead of unfinished carryover', () => {
+    const [firstEntry, secondEntry] = canonicalKanjiDeck;
+
+    if (!firstEntry || !secondEntry) {
+      throw new Error('Expected canonical deck data.');
+    }
+
+    storage.setItem(
+      'kanji-grid-progress-v0',
+      JSON.stringify({
+        [firstEntry.kanji]: {
+          kanji: firstEntry.kanji,
+          seenCount: 5,
+          goodCount: 3,
+          firstSeenAt: '2026-04-20T12:00:00.000Z',
+          lastSeenAt: '2026-04-21T11:00:00.000Z',
+          confidence: 'learning',
+          reviewBankCandidate: true,
+        },
+      }),
+    );
+
+    render(
+      <StudyPage
+        sessionOptions={{
+          id: 'review-bank-study-page-session',
+          dailyNewLimit: 1,
+          random: createDeterministicRandom([0, 0]),
+        }}
+      />,
+    );
+
+    expect(screen.getByText(`Now studying ${secondEntry.kanji}`)).toBeInTheDocument();
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
+    expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
   });
 
   it('keeps blind recall cue-hidden before and after grading', () => {

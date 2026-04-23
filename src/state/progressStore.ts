@@ -83,6 +83,13 @@ function isUserProgress(value: unknown): value is UserProgress {
     return false;
   }
 
+  if (
+    value.reviewBankCandidate !== undefined &&
+    typeof value.reviewBankCandidate !== 'boolean'
+  ) {
+    return false;
+  }
+
   return value.confidence === 'new' || value.confidence === 'learning' || value.confidence === 'familiar';
 }
 

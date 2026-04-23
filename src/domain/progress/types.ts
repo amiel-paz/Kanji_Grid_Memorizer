@@ -7,4 +7,5 @@ export interface UserProgress {
   readonly firstSeenAt?: string;
   readonly lastSeenAt?: string;
   readonly confidence: ProgressConfidence;
+  readonly reviewBankCandidate?: boolean;
 }

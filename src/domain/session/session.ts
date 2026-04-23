@@ -1,7 +1,11 @@
 import type { KanjiEntry } from '../content/types';
 import { getDrillById } from '../drills/configs';
 import type { DrillConfig, ReviewGrade } from '../drills/types';
-import { hasSeenProgress, isUnfinishedNewItemProgress } from '../progress/progress';
+import {
+  hasSeenProgress,
+  isReviewBankCandidateProgress,
+  isUnfinishedNewItemProgress,
+} from '../progress/progress';
 import {
   CUE_OPACITY_LADDER,
   DEFAULT_DAILY_NEW_KANJI_LIMIT,
@@ -81,10 +85,9 @@ export function selectSessionEntries(
   const carryoverEntries = entries.filter((entry) =>
     isUnfinishedNewItemProgress(progressByKanji[entry.kanji]),
   );
-  const seenBackfillEntries = entries.filter((entry) => {
-    const progress = progressByKanji[entry.kanji];
-    return hasSeenProgress(progress) && !isUnfinishedNewItemProgress(progress);
-  });
+  const reviewBankEntries = entries.filter((entry) =>
+    isReviewBankCandidateProgress(progressByKanji[entry.kanji]),
+  );
   const trulyNewEntries = entries.filter((entry) => !hasSeenProgress(progressByKanji[entry.kanji]));
   const carryoverSelection = selectRandomEntries(carryoverEntries, selectionSize, random);
   const olderCarryoverCount = carryoverSelection.filter((entry) => {
@@ -102,13 +105,13 @@ export function selectSessionEntries(
     Math.min(remainingDeckSlots, remainingDailyNewAllowance),
     random,
   );
-  const seenBackfillSelection = selectRandomEntries(
-    seenBackfillEntries,
+  const reviewBankSelection = selectRandomEntries(
+    reviewBankEntries,
     remainingDeckSlots - freshNewSelection.length,
     random,
   );
 
-  return [...carryoverSelection, ...freshNewSelection, ...seenBackfillSelection];
+  return [...carryoverSelection, ...freshNewSelection, ...reviewBankSelection];
 }
 
 export function initialOpacityForDrill(
