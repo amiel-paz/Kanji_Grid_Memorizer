@@ -120,7 +120,6 @@ exchange, an API-boundary decision review, and learner-library follow-ons.
 
 The remaining plan is now post-MVP only:
 
-- `work/progress-sync-file-exchange`
 - `work/api-boundary-review`
 - `work/progress-seen-library`
 - `work/progress-manual-seen-intake`
@@ -141,8 +140,8 @@ The remaining plan is now post-MVP only:
   a local daily cap for truly new items without moving live session state into progress.
 - Local learner progress now also records whether a kanji has graduated out of the unfinished
   new-item path into the first durable review-bank candidate pool.
-- `work/progress-sync-file-exchange` is a post-MVP step for portable learner state while staying
-  local-first and account-free.
+- [`docs/progress-sync-file-exchange.md`](docs/progress-sync-file-exchange.md) now records the
+  post-MVP decision for portable learner state while staying local-first and account-free.
 - `work/api-boundary-review` is only a later decision point about whether any backend or API work
   is warranted at all.
 - `work/progress-seen-library` and `work/progress-manual-seen-intake` are post-MVP UI follow-ons

@@ -67,7 +67,6 @@ The local-first MVP path through row 31 is now complete.
 
 At this point the remaining numbered worktrees are:
 
-- `work/progress-sync-file-exchange`
 - `work/api-boundary-review`
 - `work/progress-seen-library`
 - `work/progress-manual-seen-intake`
@@ -124,9 +123,10 @@ Completed local-first MVP path:
 
 Suggested post-MVP follow-on worktrees:
 
-- `work/progress-sync-file-exchange`: define a file-based, account-free path for moving learner
-  state across personal devices, ideally through versioned per-device event logs rather than raw
-  merged counters.
+- `work/progress-sync-file-exchange`: complete. See
+  [`docs/progress-sync-file-exchange.md`](docs/progress-sync-file-exchange.md) for the file-based,
+  account-free learner-state exchange spec built around per-device logs plus a one-time bootstrap
+  snapshot for migrating today's local store.
 - `work/api-boundary-review`: revisit whether any backend or API work is justified only after the
   local-first MVP proves its value.
 - `work/progress-seen-library`: add a place to browse all learner-seen kanji with their grids and
