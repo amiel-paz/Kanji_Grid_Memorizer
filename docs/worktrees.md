@@ -67,7 +67,6 @@ The local-first MVP path through row 31 is now complete.
 
 At this point the remaining numbered worktrees are:
 
-- `work/progress-seen-library`
 - `work/progress-manual-seen-intake`
 
 Clarify the saved-state milestone boundaries:
@@ -130,8 +129,8 @@ Suggested post-MVP follow-on worktrees:
   [`docs/api-boundary-review.md`](docs/api-boundary-review.md) for the decision to keep the app
   local-first until file exchange and learner-library follow-ons prove that a hosted boundary is
   actually needed.
-- `work/progress-seen-library`: add a place to browse all learner-seen kanji with their grids and
-  meanings using durable progress plus stable content records.
+- `work/progress-seen-library`: complete. It adds a learner-facing read-only library driven by
+  durable progress plus stable content records without moving live session state into progress.
 - `work/progress-manual-seen-intake`: add a place to browse not-yet-seen kanji and explicitly
   mark one as encountered so it enters later learner-state-driven study flows.
 

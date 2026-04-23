@@ -37,6 +37,22 @@ select {
 }
 
 @layer components {
+  .app-nav {
+    @apply sticky top-0 z-10 border-b border-gray-200 bg-white/95 backdrop-blur;
+  }
+
+  .app-nav-inner {
+    @apply mx-auto flex max-w-5xl gap-3 px-5 py-3 sm:px-6 lg:px-8;
+  }
+
+  .app-nav-button {
+    @apply rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-950;
+  }
+
+  .app-nav-button-active {
+    @apply border-gray-900 bg-gray-950 text-white hover:bg-gray-900 hover:text-white;
+  }
+
   .app-page {
     @apply mx-auto flex min-h-screen max-w-5xl flex-col gap-8 px-5 py-8 sm:px-6 sm:py-10 lg:px-8;
   }
@@ -275,5 +291,55 @@ select {
 
   .study-answer-empty {
     @apply flex flex-col gap-2 rounded-2xl border border-dashed border-gray-300 bg-white/70 p-4;
+  }
+
+  .seen-library-section {
+    @apply flex flex-col gap-5;
+  }
+
+  .seen-library-empty {
+    @apply flex flex-col gap-4 border-dashed;
+  }
+
+  .seen-library-grid {
+    @apply grid gap-4 lg:grid-cols-2;
+  }
+
+  .seen-library-card {
+    @apply flex flex-col gap-5;
+  }
+
+  .seen-library-card-top {
+    @apply flex gap-4;
+  }
+
+  .seen-library-card-copy {
+    @apply flex min-w-0 flex-1 flex-col gap-2;
+  }
+
+  .seen-library-heading-row {
+    @apply flex flex-wrap items-start justify-between gap-3;
+  }
+
+  .seen-library-kanji {
+    @apply text-4xl font-semibold leading-none text-gray-950;
+    font-family:
+      'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif CJK JP', serif;
+  }
+
+  .seen-library-confidence {
+    @apply inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-gray-700;
+  }
+
+  .seen-library-meta {
+    @apply grid gap-3 border-t border-gray-200 pt-4 text-sm md:grid-cols-3;
+  }
+
+  .seen-library-meta dt {
+    @apply text-xs font-semibold uppercase tracking-[0.18em] text-gray-500;
+  }
+
+  .seen-library-meta dd {
+    @apply mt-1 text-sm text-gray-900;
   }
 }

@@ -67,6 +67,7 @@ product target for now.
 - local progress persistence after explicit reveal-first grading
 - a small local daily loop with a 5-kanji fresh-new cap, unfinished carryover, and simple
   review-bank backfill
+- a learner-facing seen library sourced from durable progress plus stable content lookup
 - small tests around the core idea
 
 The current MVP is intentionally small, but it is no longer just a mock shell. It should present a
