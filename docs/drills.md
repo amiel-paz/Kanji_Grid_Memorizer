@@ -8,8 +8,8 @@ learning system. Recall drills are the useful path; grid-to-kanji matching drill
 3. Blind recall: show kanji without cue support.
 
 Inside the current study shell, Learn can advance to the next kanji without grading. Review modes
-keep the reveal-then-grade order, rotate through the selected session queue, and only persist local
-progress after an explicit `Again` or `Good`.
+keep the reveal-then-grade order, usually rotate through the selected session queue, retire a card
+after a clean zero-cue pass, and only persist local progress after an explicit `Again` or `Good`.
 
 ## Cue Policy
 
@@ -35,7 +35,7 @@ This example shapes the architecture:
 - reveal meanings plus all known on and kun readings before grading
 - correct answers reduce opacity along the `100% -> 66% -> 33% -> 0%` ladder
 - misses may raise opacity one ladder step again
-- zero-cue successes still stay in the rotating session queue for the rest of the run
+- a clean zero-cue pass retires the card from the rest of the current run
 - this behavior belongs in session/drill logic
 
 The current code demonstrates randomized session selection, opacity transitions, and local progress
@@ -59,8 +59,9 @@ own mastery rule.
   truly new items, derived from durable saved progress rather than from mutable session fields.
 - Started-but-unfinished new kanji now carry over before fresh replacement new items are admitted
   on a later session creation.
-- The current pass still stops there. It does not yet backfill with due-card logic, create a real
-  review bank, or promise a finished daily scheduler.
+- Kanji that clear the faded ladder onto `0%` now become durable review-bank candidates, but the
+  current pass still stops there. It does not yet add due-card logic or promise a finished daily
+  scheduler.
 - A kanji can be treated as learned for the "new item" path once it successfully progresses
   through the full cue-opacity ladder, rather than by copying a generic fixed review-count rule.
 - Learned items should later reappear through persistent recall drills driven by saved progress,

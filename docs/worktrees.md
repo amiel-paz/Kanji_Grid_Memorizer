@@ -65,7 +65,6 @@ follow-on tracks, not implied scope to absorb into the first usable release.
 
 At this point the remaining numbered worktrees are:
 
-- `work/review-bank-v1`
 - `work/review-session-orchestration`
 - `work/local-mvp-polish`
 - `work/local-mvp-ship-audit`
@@ -86,8 +85,11 @@ Clarify the saved-state milestone boundaries:
   can enter a newly created session based on durable saved progress.
 - Row 27 adds the first carryover rule: started-but-unfinished new kanji are re-offered before
   fresh replacements are admitted, while live queue behavior still stays session-owned.
-- Rows 28 and 29 are where the rest of the first actually useful daily study loop becomes concrete
-  while still preserving stable content ownership versus session ownership versus durable learner state.
+- Row 28 adds the first durable review-bank boundary: once a kanji clears the faded new-item
+  ladder onto `0%`, progress can keep it in a persistent review-bank candidate pool without moving
+  live session state into progress.
+- Row 29 is where the rest of the first actually useful daily study loop becomes concrete while
+  still preserving stable content ownership versus session ownership versus durable learner state.
 - Row 31 is the intended local-first MVP stop point for something you'd be willing to ship to
   yourself or a friend.
 - Row 32 is for portable learner-state exchange across devices after the local MVP is already
@@ -116,8 +118,6 @@ What the product should build toward on the path to the first local MVP:
 
 Suggested follow-on worktrees after the current v1 scaffold:
 
-- `work/progress-daily-new-limit`: decide the daily new-item allowance.
-- `work/review-bank-v1`: create the first durable review pool for graduated items.
 - `work/review-session-orchestration`: turn the separate parts into one coherent daily local study
   loop.
 - `work/local-mvp-polish`: make the loop pleasant and legible enough for daily personal use.

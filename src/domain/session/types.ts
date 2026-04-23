@@ -19,6 +19,7 @@ export interface SessionProgressSeed {
   readonly confidence: ProgressConfidence;
   readonly seenCount?: number;
   readonly firstSeenAt?: string;
+  readonly reviewBankCandidate?: boolean;
 }
 
 export type SessionProgressSeedByKanji = Readonly<Record<string, SessionProgressSeed>>;

@@ -3,6 +3,7 @@ import {
   applyReviewOutcome,
   createInitialProgress,
   hasSeenProgress,
+  isReviewBankCandidateProgress,
   isUnfinishedNewItemProgress,
   recordSeen,
 } from '../src/domain/progress/progress';
@@ -65,15 +66,34 @@ describe('progress helpers', () => {
 
   it('derives durable seen and unfinished-new carryover signals from progress', () => {
     expect(hasSeenProgress(undefined)).toBe(false);
+    expect(isReviewBankCandidateProgress(undefined)).toBe(false);
     expect(isUnfinishedNewItemProgress(undefined)).toBe(false);
     expect(hasSeenProgress({ confidence: 'new' })).toBe(false);
+    expect(isReviewBankCandidateProgress({ confidence: 'new' })).toBe(false);
     expect(isUnfinishedNewItemProgress({ confidence: 'new' })).toBe(false);
     expect(hasSeenProgress({ seenCount: 1, confidence: 'new' })).toBe(true);
+    expect(isReviewBankCandidateProgress({ seenCount: 1, confidence: 'new' })).toBe(false);
     expect(isUnfinishedNewItemProgress({ seenCount: 1, confidence: 'new' })).toBe(true);
     expect(hasSeenProgress({ seenCount: 2, confidence: 'learning' })).toBe(true);
+    expect(isReviewBankCandidateProgress({ seenCount: 2, confidence: 'learning' })).toBe(false);
     expect(isUnfinishedNewItemProgress({ seenCount: 2, confidence: 'learning' })).toBe(true);
     expect(hasSeenProgress({ seenCount: 4, confidence: 'familiar' })).toBe(true);
+    expect(isReviewBankCandidateProgress({ seenCount: 4, confidence: 'familiar' })).toBe(true);
     expect(isUnfinishedNewItemProgress({ seenCount: 4, confidence: 'familiar' })).toBe(false);
+    expect(
+      isReviewBankCandidateProgress({
+        seenCount: 4,
+        confidence: 'learning',
+        reviewBankCandidate: true,
+      }),
+    ).toBe(true);
+    expect(
+      isUnfinishedNewItemProgress({
+        seenCount: 4,
+        confidence: 'learning',
+        reviewBankCandidate: true,
+      }),
+    ).toBe(false);
   });
 
   it('counts every review as seen and increments goodCount only for good answers', () => {
@@ -161,6 +181,7 @@ describe('progress helpers', () => {
       seenCount: 4,
       goodCount: 3,
       confidence: 'familiar',
+      reviewBankCandidate: true,
     });
   });
 
@@ -217,6 +238,7 @@ describe('progress helpers', () => {
       seenCount: 4,
       goodCount: 3,
       confidence: 'familiar' as const,
+      reviewBankCandidate: true,
     };
 
     expect(
@@ -231,6 +253,7 @@ describe('progress helpers', () => {
       seenCount: 5,
       goodCount: 3,
       confidence: 'learning',
+      reviewBankCandidate: true,
     });
   });
 
