@@ -29,6 +29,9 @@ A drill session owns changing study behavior:
 Opacity must be derived from drill, session, or progress state at render time. It should not be
 stored on `KanjiEntry`.
 
+Saved learner progress may seed the starting cue support for a new session, but once the run
+starts, live cue opacity, reveal state, attempts, and answer flow still belong to session state.
+
 ## Differentiation
 
 This project is not a generic flashcard app, a WaniKani-style mnemonic text system, a heatmap, or

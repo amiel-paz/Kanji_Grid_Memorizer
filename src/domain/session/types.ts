@@ -1,4 +1,5 @@
 import type { DrillConfig, ReviewGrade } from '../drills/types';
+import type { ProgressConfidence } from '../progress/types';
 
 export const CUE_OPACITY_LADDER = [1, 0.66, 0.33, 0] as const;
 
@@ -11,6 +12,13 @@ export interface SessionKanjiState {
   readonly againCount: number;
   readonly cueOpacity: CueOpacity;
 }
+
+export interface SessionProgressSeed {
+  readonly kanji: string;
+  readonly confidence: ProgressConfidence;
+}
+
+export type SessionProgressSeedByKanji = Readonly<Record<string, SessionProgressSeed>>;
 
 export interface SessionState {
   readonly id: string;

@@ -63,7 +63,6 @@ follow-on tracks, not implied scope to absorb into the first usable release.
 
 At this point the remaining numbered worktrees are:
 
-- `work/progress-session-seeding-v1`
 - `work/progress-daily-new-limit`
 - `work/progress-carryover-v1`
 - `work/review-bank-v1`
@@ -79,7 +78,9 @@ Clarify the saved-state milestone boundaries:
 - Row 23 is where the full real `joyo` deck replaces the old tiny canonical slice.
 - Row 24 landed a small real-data `jinmeiyo` supplemental import path without reclassifying
   Joyo-owned entries.
-- Rows 25 through 29 are where the first actually useful daily study loop becomes concrete while
+- Row 25 lets durable progress seed the starting cue support for a new session while still leaving
+  live session opacity, reveal state, attempts, and queue behavior with session ownership.
+- Rows 26 through 29 are where the first actually useful daily study loop becomes concrete while
   still preserving stable content ownership versus session ownership versus durable learner state.
 - Row 31 is the intended local-first MVP stop point for something you'd be willing to ship to
   yourself or a friend.
@@ -106,8 +107,6 @@ What the product should build toward on the path to the first local MVP:
 
 Suggested follow-on worktrees after the current v1 scaffold:
 
-- `work/progress-session-seeding-v1`: let saved progress influence new-session inputs without
-  moving live cue state out of session ownership.
 - `work/progress-daily-new-limit`: decide the daily new-item allowance.
 - `work/progress-carryover-v1`: keep unfinished new items from being silently dropped.
 - `work/review-bank-v1`: create the first durable review pool for graduated items.
