@@ -57,9 +57,10 @@ What each script does:
 - Faded recall uses a reveal-first review loop: try recall, reveal readings and meanings, then grade with `Again` or `Good`.
 - Blind recall uses the same reveal-first flow, but the cue stays hidden at `0%` before and after grading.
 - In Faded recall, cue opacity is session-owned and follows the ladder `100% -> 66% -> 33% -> 0%` on `Good`. `Again` raises it one step.
+- Saved progress now seeds only the starting cue support for a new Faded recall session: `new` or unseen starts at `100%`, `learning` starts at `66%`, and `familiar` starts at `33%`.
 - Readings and meanings live in a separate details block. In recall modes they are currently hidden until reveal rather than shown as a blurred preview.
 - Explicit review grading writes local progress. Reveal-only actions, drill switching, and Learn-mode navigation do not persist anything.
-- Saved progress is loaded from localStorage, but it does not currently seed a new session's live cue opacity or queue.
+- Saved progress does not own live queue position, reveal state, attempts, or answer flow after a session starts. Learn stays full-cue and Blind recall stays cue-hidden regardless of saved progress.
 - Progress confidence becomes `familiar` only when a `Good` completes a faded step onto `0%`. An `Again` drops `familiar` back to `learning`.
 - The UI shows a stable deck slot within the selected 10-card batch, not completion through the session.
 

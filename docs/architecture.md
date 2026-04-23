@@ -29,8 +29,9 @@ Session code can be simple at first. It should still make the ownership boundary
 may decide what happens next, but it does not rewrite the deck.
 
 The current v1 queue is intentionally simple rotation within one selected session batch. A review
-answer moves the active item to the back; it does not remove cards after a zero-cue pass, shape a
-due queue, or seed a future session from saved progress.
+answer moves the active item to the back; it does not shape a due queue or add broader scheduling.
+New session creation may seed the starting cue for a selected kanji from saved progress, but queue
+position, reveal state, attempts, answer flow, and post-start opacity changes stay session-owned.
 
 Session types live in `src/domain/session/types.ts`.
 
@@ -38,6 +39,9 @@ Session types live in `src/domain/session/types.ts`.
 
 `UserProgress` is the long-lived learner record. It can eventually summarize outcomes across
 sessions, but it should stay smaller than a scheduler until the app has a real learning loop.
+
+In the current pass, progress can seed only the initial cue support of a new session. It does not
+store live session opacity, queue position, reveal state, or active attempts.
 
 Progress types live in `src/domain/progress/types.ts`.
 

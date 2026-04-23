@@ -1,13 +1,21 @@
 import type { KanjiEntry } from '../content/types';
 import { getDrillById } from '../drills/configs';
 import type { DrillConfig, ReviewGrade } from '../drills/types';
-import { CUE_OPACITY_LADDER, type CueOpacity, type SessionAnswerResult, type SessionState } from './types';
+import {
+  CUE_OPACITY_LADDER,
+  type CueOpacity,
+  type SessionAnswerResult,
+  type SessionProgressSeed,
+  type SessionProgressSeedByKanji,
+  type SessionState,
+} from './types';
 
 export type SessionRandomSource = () => number;
 
 export interface CreateSessionOptions {
   readonly random?: SessionRandomSource;
   readonly id?: string;
+  readonly seedProgressByKanji?: SessionProgressSeedByKanji;
 }
 
 export function createSession(
@@ -17,6 +25,7 @@ export function createSession(
 ): SessionState {
   const selected = selectSessionEntries(entries, drillConfig.deckSize, options.random);
   const active = selected[0];
+  const seedProgressByKanji = options.seedProgressByKanji ?? {};
 
   if (!active) {
     throw new Error('Cannot create a study session without kanji entries.');
@@ -36,7 +45,7 @@ export function createSession(
           attempts: 0,
           goodCount: 0,
           againCount: 0,
-          cueOpacity: initialOpacityForDrill(drillConfig),
+          cueOpacity: initialOpacityForDrill(drillConfig, seedProgressByKanji[entry.kanji]),
         },
       ]),
     ),
@@ -66,9 +75,16 @@ export function selectSessionEntries(
   return selected;
 }
 
-export function initialOpacityForDrill(drillConfig: DrillConfig): CueOpacity {
+export function initialOpacityForDrill(
+  drillConfig: DrillConfig,
+  progressSeed?: SessionProgressSeed,
+): CueOpacity {
   if (drillConfig.cuePolicy === 'hidden') {
     return 0;
+  }
+
+  if (drillConfig.cuePolicy === 'session-dim') {
+    return initialSessionDimOpacity(progressSeed);
   }
 
   return 1;
@@ -285,4 +301,16 @@ function nextCueOpacity(
     : Math.max(0, safeIndex - 1);
 
   return CUE_OPACITY_LADDER[nextIndex] ?? 0;
+}
+
+function initialSessionDimOpacity(progressSeed?: SessionProgressSeed): CueOpacity {
+  switch (progressSeed?.confidence) {
+    case 'learning':
+      return 0.66;
+    case 'familiar':
+      return 0.33;
+    case 'new':
+    default:
+      return 1;
+  }
 }

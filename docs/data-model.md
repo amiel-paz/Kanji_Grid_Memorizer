@@ -83,7 +83,8 @@ Progress can eventually answer questions like:
 - How often has the learner answered correctly?
 - Is the kanji new, learning, or familiar?
 
-It should not carry the live cue opacity for an active drill. Session state owns that.
+It can seed a new session's starting cue support from the durable confidence bucket, but it should
+not carry the live cue opacity for an active drill. Session state owns that.
 
 TODO: Decide the minimum progress fields needed before building real scheduling.
 
@@ -115,6 +116,10 @@ Session cue opacity is narrowed to the review ladder: `100%`, `66%`, `33%`, and 
 
 This is intentionally disposable. A finished session may inform `UserProgress`, but the next
 session should be able to compute its own cue state from the drill and progress inputs.
+
+The current seeding rule is intentionally small and deterministic: Faded recall starts unseen or
+`new` items at `100%`, `learning` items at `66%`, and `familiar` items at `33%`. Learn still
+starts at full cue, and Blind recall still starts hidden.
 
 The starter review loop keeps queue movement inside session state. Session creation can randomize
 which kanji enter the current run, while answering or advancing still rotates the active kanji to

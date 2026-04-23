@@ -139,7 +139,7 @@ describe('StudyPage', () => {
     });
   });
 
-  it('starts faded recall from fresh live session state even when stored progress already exists', () => {
+  it('seeds faded recall from durable progress while keeping live session counts fresh', () => {
     const { firstEntry } = getExpectedStudyPageEntries();
 
     storage.setItem(
@@ -158,7 +158,7 @@ describe('StudyPage', () => {
     render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
 
     expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
-    expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
+    expect(screen.getByText('Cue visible at 33%')).toBeInTheDocument();
     expect(screen.getByText('0 good / 0 attempts')).toBeInTheDocument();
   });
 
@@ -218,10 +218,14 @@ describe('StudyPage', () => {
     expect(screen.queryByRole('button', { name: 'Good' })).not.toBeInTheDocument();
   });
 
-  it('recreates faded-recall session state instead of carrying live cue opacity across drill switches', () => {
-    const { firstEntry, secondEntry } = getExpectedStudyPageEntries();
+  it('recreates faded-recall session state from saved progress instead of carrying live cue opacity across drill switches', () => {
+    const sessionOptions = {
+      id: 'stable-seeded-session',
+      random: () => 0,
+    };
+    const { firstEntry, secondEntry } = getExpectedStudyPageEntries(sessionOptions);
 
-    render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
+    render(<StudyPage sessionOptions={sessionOptions} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Reveal readings and meanings' }));
     fireEvent.click(screen.getByRole('button', { name: 'Good' }));
@@ -241,7 +245,7 @@ describe('StudyPage', () => {
     fireEvent.click(screen.getByRole('radio', { name: /Faded recall/i }));
 
     expect(screen.getByText(/^Now studying /)).toBeInTheDocument();
-    expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
+    expect(screen.getByText('Cue visible at 66%')).toBeInTheDocument();
     expect(screen.getByText('0 good / 0 attempts')).toBeInTheDocument();
     expect(screen.queryByText(getPrimaryRevealText(firstEntry))).not.toBeInTheDocument();
   });
@@ -290,7 +294,7 @@ function createStudyPageSessionOptions() {
   };
 }
 
-function getExpectedStudyPageEntries(): {
+function getExpectedStudyPageEntries(sessionOptions = createStudyPageSessionOptions()): {
   readonly firstEntry: KanjiEntry;
   readonly secondEntry: KanjiEntry;
   readonly selectedEntries: readonly KanjiEntry[];
@@ -298,7 +302,7 @@ function getExpectedStudyPageEntries(): {
   const session = createSession(
     canonicalKanjiDeck,
     getDrillById('faded-recall'),
-    createStudyPageSessionOptions(),
+    sessionOptions,
   );
 
   const selectedEntries = session.selectedKanji.map((kanji) => {

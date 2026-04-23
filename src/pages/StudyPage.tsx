@@ -20,16 +20,17 @@ interface StudyPageProps {
 
 export function StudyPage({ sessionOptions }: StudyPageProps) {
   const sessionRandomRef = useRef<SessionRandomSource>(sessionOptions?.random ?? Math.random);
+  const progressByKanjiRef = useRef(loadProgressRecords());
   const [drillId, setDrillId] = useState(STARTER_DRILLS[0]?.id ?? 'learn');
   const drill = getDrillById(drillId);
-  const [session, setSession] = useState(() =>
-    createSession(canonicalKanjiDeck, drill, {
+  const createPageSession = (nextDrill = drill) =>
+    createSession(canonicalKanjiDeck, nextDrill, {
       ...sessionOptions,
       random: sessionRandomRef.current,
-    }),
-  );
+      seedProgressByKanji: progressByKanjiRef.current,
+    });
+  const [session, setSession] = useState(() => createPageSession(drill));
   const [readingsRevealed, setReadingsRevealed] = useState(drill.mode === 'learn');
-  const progressByKanjiRef = useRef(loadProgressRecords());
   const isSessionComplete = session.queue.length === 0 || session.activeKanji === null;
 
   const activeEntry = useMemo(
@@ -71,22 +72,12 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
     setDrillId(nextDrillId);
-    setSession(
-      createSession(canonicalKanjiDeck, nextDrill, {
-        ...sessionOptions,
-        random: sessionRandomRef.current,
-      }),
-    );
+    setSession(createPageSession(nextDrill));
     setReadingsRevealed(nextDrill.mode === 'learn');
   }
 
   function handleRestartDrill() {
-    setSession(
-      createSession(canonicalKanjiDeck, drill, {
-        ...sessionOptions,
-        random: sessionRandomRef.current,
-      }),
-    );
+    setSession(createPageSession(drill));
     setReadingsRevealed(drill.mode === 'learn');
   }
 

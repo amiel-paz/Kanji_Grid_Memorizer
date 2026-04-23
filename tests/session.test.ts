@@ -55,6 +55,75 @@ describe('session cue opacity', () => {
     expect(getCueOpacity(blindSession, blindSession.activeKanji ?? '')).toBe(0);
   });
 
+  it('seeds faded-recall starting cue support from saved progress confidence while leaving live run counts fresh', () => {
+    const drill = getDrillById('faded-recall');
+    const [newEntry, learningEntry, familiarEntry] = mockKanji;
+
+    if (!newEntry || !learningEntry || !familiarEntry) {
+      throw new Error('Expected mock kanji data.');
+    }
+
+    const session = createSession([newEntry, learningEntry, familiarEntry], drill, {
+      id: 'seeded-session',
+      random: createDeterministicRandom([0, 0, 0]),
+      seedProgressByKanji: {
+        [learningEntry.kanji]: {
+          kanji: learningEntry.kanji,
+          confidence: 'learning',
+        },
+        [familiarEntry.kanji]: {
+          kanji: familiarEntry.kanji,
+          confidence: 'familiar',
+        },
+      },
+    });
+
+    expect(session.selectedKanji).toEqual([newEntry.kanji, learningEntry.kanji, familiarEntry.kanji]);
+    expect(session.itemStateByKanji[newEntry.kanji]).toMatchObject({
+      attempts: 0,
+      goodCount: 0,
+      againCount: 0,
+      cueOpacity: 1,
+    });
+    expect(session.itemStateByKanji[learningEntry.kanji]).toMatchObject({
+      attempts: 0,
+      goodCount: 0,
+      againCount: 0,
+      cueOpacity: 0.66,
+    });
+    expect(session.itemStateByKanji[familiarEntry.kanji]).toMatchObject({
+      attempts: 0,
+      goodCount: 0,
+      againCount: 0,
+      cueOpacity: 0.33,
+    });
+  });
+
+  it('keeps learn and blind-recall starting cue policies explicit even when saved progress exists', () => {
+    const entry = mockKanji[0];
+
+    if (!entry) {
+      throw new Error('Expected mock kanji data.');
+    }
+
+    const seedProgressByKanji = {
+      [entry.kanji]: {
+        kanji: entry.kanji,
+        confidence: 'familiar' as const,
+      },
+    };
+
+    const learnSession = createSession([entry], getDrillById('learn'), {
+      seedProgressByKanji,
+    });
+    const blindSession = createSession([entry], getDrillById('blind-recall'), {
+      seedProgressByKanji,
+    });
+
+    expect(getCueOpacity(learnSession, entry.kanji)).toBe(1);
+    expect(getCueOpacity(blindSession, entry.kanji)).toBe(0);
+  });
+
   it('selects session entries deterministically without duplicates and caps the selection at the available entries', () => {
     const selected = selectSessionEntries(
       mockKanji.slice(0, 4),
