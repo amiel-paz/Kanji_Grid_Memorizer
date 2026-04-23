@@ -51,7 +51,7 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 26 | `work/progress-daily-new-limit` | Make the first daily study allowance explicit. | A local-first daily cap for new kanji, wired into session creation and tested without adding cloud/backend work. |
 | 27 | `work/progress-carryover-v1` | Avoid silently dropping unfinished new items. | Carryover rules that re-offer started-but-unfinished kanji before introducing replacements on a later day. |
 | 28 | `work/review-bank-v1` | Create the first durable review pool for graduated items. | Progress-derived review-bank records and selection helpers that preserve the content-versus-progress boundary. |
-| 29 | `work/review-session-orchestration` | Turn the shell into a coherent daily study loop. | One app-level local study flow that can mix due review items with today's new-item allowance and carryover, without adding backend or sync work. |
+| 29 | `work/review-session-orchestration` | Turn the shell into a coherent daily study loop. | One app-level local study flow that can mix review-bank backfill with today's new-item allowance and carryover, without adding backend or sync work. |
 | 30 | `work/local-mvp-polish` | Make the local-first study loop comfortable enough to use daily. | Empty states, settings/copy clarity, responsiveness, accessibility, and UX cleanup scoped to the real-data local MVP. |
 | 31 | `work/local-mvp-ship-audit` | End on an honest MVP you'd be willing to ship to yourself or a friend. | Final regression pass, README/runbook updates, scope audit, and a clean stop point for the first truly usable local release. |
 | 32 | `work/progress-sync-file-exchange` | Plan a serverless multi-device path after the local MVP is already useful. | Decision doc plus file-format spec for per-device learner-state exchange, including event-log shape, device IDs, schema versioning, import/export or shared-folder merge rules, and explicit preservation of the stable-content versus learner-state boundary. No cloud account system or backend implementation. |
@@ -113,7 +113,7 @@ What the product should build toward on the path to the first local MVP:
   remaining `N - M` are offered again before introducing replacements.
 - Promotion from "new" into a persistent review bank after the learner successfully moves through
   the full cue-opacity ladder for that item.
-- Review sessions that can mix due review items with the day's new-item allowance without
+- Review sessions that can mix review-bank backfill with the day's new-item allowance without
   rewriting stable content records.
 
 Suggested follow-on worktrees after the current v1 scaffold:

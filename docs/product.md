@@ -37,6 +37,8 @@ creation may use that saved record to cap how many truly new kanji enter a local
 and to carry started-but-not-yet-familiar new kanji forward before fresh replacements are admitted,
 while a separate durable review-bank signal marks when a kanji has fully left that unfinished
 new-item path. That still does not move live queue or answer ownership out of session state.
+The current local orchestration rule stays intentionally small: unfinished carryover first, then
+today's allowed truly new kanji, then simple review-bank backfill. That is not due scheduling.
 
 ## Differentiation
 

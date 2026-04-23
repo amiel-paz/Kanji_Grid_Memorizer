@@ -33,8 +33,10 @@ answer moves the active item to the back; it does not shape a due queue or add b
 New session creation may seed the starting cue for a selected kanji from saved progress and may
 also cap how many truly new kanji can enter that day's batch while carrying unfinished new-path
 items forward before fresh replacements. It may also backfill from the durable review-bank
-candidate pool once an item has graduated out of the unfinished new path, but queue position,
-reveal state, attempts, answer flow, and post-start opacity changes stay session-owned.
+candidate pool once an item has graduated out of the unfinished new path. The current local rule
+is explicit and non-due-based: carryover first, fresh new second, review-bank backfill last, while
+queue position, reveal state, attempts, answer flow, and post-start opacity changes stay
+session-owned.
 
 Session types live in `src/domain/session/types.ts`.
 

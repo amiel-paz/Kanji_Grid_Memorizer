@@ -52,8 +52,9 @@ What each script does:
 
 - The default drill is Faded recall.
 - A fresh session still aims for a 10-card batch, but newly created sessions can admit only up to 5 truly new kanji per local day from durable saved progress.
-- Started-but-unfinished new kanji now carry forward into later session creation before fresh replacement new kanji are admitted. Older carryover reduces that day's fresh-new allowance; same-day carryover does not double-count because `firstSeenAt` already consumed today's slot.
-- Kanji that have already cleared the new-item fade ladder now persist as review-bank candidates in durable progress and can still fill the rest of the batch. If there is not enough review-bank material yet, the current app can honestly return a smaller batch instead of implying a fuller scheduler already exists.
+- Newly created sessions now use one simple local orchestration rule: unfinished new-item carryover first, then today's allowed truly new kanji, then durable review-bank candidates as simple backfill.
+- Older carryover reduces that day's fresh-new allowance; same-day carryover does not double-count because `firstSeenAt` already consumed today's slot.
+- Kanji that have already cleared the new-item fade ladder now persist as review-bank candidates in durable progress and can fill the rest of the batch. If there is not enough review-bank material yet, the app can honestly return a smaller batch instead of implying a fuller scheduler already exists.
 - Switching drills recreates the session for the chosen mode and resets reveal state. Live cue opacity does not carry across drill switches.
 - Learn keeps the full cue, meanings, onyomi, and kunyomi visible and uses `Next kanji` to move through the current session without grading.
 - Faded recall uses a reveal-first review loop: try recall, reveal readings and meanings, then grade with `Again` or `Good`.
@@ -77,7 +78,7 @@ What each script does:
 
 ## Not Built Yet
 
-- No due-card logic or full mixed new/review orchestration beyond the durable review-bank candidate boundary.
+- No due-card logic, spaced-repetition scheduling, calendar scheduling, or weighted historical review selection. Review-bank backfill is just simple available-review fill at session creation time.
 - The only daily pacing rule landed so far is the explicit local-first cap of 5 truly new kanji per day at session creation time.
 - No weighted requeue based on repeated misses. `Again` changes cue opacity, but the queue still rotates simply.
 - No due scheduling after a successful zero-cue pass beyond retiring the card for the rest of the current run and recording durable review-bank candidacy.

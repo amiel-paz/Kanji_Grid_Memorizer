@@ -133,9 +133,9 @@ with seen durable progress that have not yet graduated into the review bank are 
 unfinished carryover and are re-offered before fresh replacement new items are admitted. Older
 carryover reduces that day's fresh-new allowance, while same-day carryover does not double-count
 because `firstSeenAt` already consumed today's slot. Graduated review-bank candidates may still
-fill the rest of the batch. If the current app does not have enough review-bank material to
-backfill the drill's nominal size, the batch may simply be smaller until later orchestration work
-lands.
+fill the rest of the batch as simple available-review backfill. This pass still does not add due
+dates or a scheduler; if there is not enough review-bank material to fill the drill's nominal
+size, the batch may simply be smaller.
 
 The starter review loop keeps queue movement inside session state. Session creation can randomize
 which kanji enter the current run, while answering or advancing still reorders the active kanji

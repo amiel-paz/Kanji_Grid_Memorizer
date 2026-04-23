@@ -59,9 +59,10 @@ own mastery rule.
   truly new items, derived from durable saved progress rather than from mutable session fields.
 - Started-but-unfinished new kanji now carry over before fresh replacement new items are admitted
   on a later session creation.
-- Kanji that clear the faded ladder onto `0%` now become durable review-bank candidates, but the
-  current pass still stops there. It does not yet add due-card logic or promise a finished daily
-  scheduler.
+- Kanji that clear the faded ladder onto `0%` now become durable review-bank candidates, and the
+  current pass uses those candidates only as simple backfill when a new local session batch still
+  has open slots after carryover and today's allowed fresh-new items. It still does not add due-card
+  logic or promise a finished daily scheduler.
 - A kanji can be treated as learned for the "new item" path once it successfully progresses
   through the full cue-opacity ladder, rather than by copying a generic fixed review-count rule.
 - Learned items should later reappear through persistent recall drills driven by saved progress,

@@ -173,6 +173,45 @@ describe('session cue opacity', () => {
     ]);
   });
 
+  it('builds one local batch from carryover first, then fresh new, then review-bank backfill', () => {
+    const entries = mockKanji.slice(0, 5);
+    const selected = selectSessionEntries(entries, 5, {
+      createdAt: '2026-04-21T12:00:00.000Z',
+      dailyNewLimit: 3,
+      progressByKanji: {
+        [entries[0]!.kanji]: {
+          kanji: entries[0]!.kanji,
+          confidence: 'learning',
+          seenCount: 2,
+          firstSeenAt: '2026-04-20T10:00:00.000Z',
+        },
+        [entries[1]!.kanji]: {
+          kanji: entries[1]!.kanji,
+          confidence: 'learning',
+          seenCount: 5,
+          firstSeenAt: '2026-04-18T10:00:00.000Z',
+          reviewBankCandidate: true,
+        },
+        [entries[2]!.kanji]: {
+          kanji: entries[2]!.kanji,
+          confidence: 'learning',
+          seenCount: 4,
+          firstSeenAt: '2026-04-19T10:00:00.000Z',
+          reviewBankCandidate: true,
+        },
+      },
+      random: createDeterministicRandom([0, 0, 0, 0, 0]),
+    });
+
+    expect(selected.map((entry) => entry.kanji)).toEqual([
+      entries[0]!.kanji,
+      entries[3]!.kanji,
+      entries[4]!.kanji,
+      entries[1]!.kanji,
+      entries[2]!.kanji,
+    ]);
+  });
+
   it('keeps review-bank items out of unfinished carryover even if later confidence falls back to learning', () => {
     const entries = mockKanji.slice(0, 4);
     const selected = selectSessionEntries(entries, 4, {

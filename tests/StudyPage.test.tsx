@@ -50,8 +50,8 @@ describe('StudyPage', () => {
     expect(screen.getByText('1 / 5')).toBeInTheDocument();
     expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
     expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
-    expect(screen.getByText(/started-but-unfinished new kanji carry forward before fresh replacements/i)).toBeInTheDocument();
-    expect(screen.getByText(/clear the new-item fade ladder persist as review-bank candidates/i)).toBeInTheDocument();
+    expect(screen.getByText(/unfinished carryover first, then today's allowed truly new kanji/i)).toBeInTheDocument();
+    expect(screen.getByText(/review-bank backfill\..*not due scheduling/i)).toBeInTheDocument();
     expect(screen.getAllByText('Hidden until reveal')).toHaveLength(2);
   });
 
