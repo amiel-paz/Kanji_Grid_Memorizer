@@ -6,6 +6,11 @@ import type { KanjiEntry } from '../domain/content/types';
 import { getDrillById, STARTER_DRILLS } from '../domain/drills/configs';
 import type { DrillMode, ReviewGrade } from '../domain/drills/types';
 import {
+  hasSeenProgress,
+  isReviewBankCandidateProgress,
+  isUnfinishedNewItemProgress,
+} from '../domain/progress/progress';
+import {
   advanceSessionItem,
   answerSessionReview,
   type CreateSessionOptions,
@@ -14,10 +19,25 @@ import {
   getCueOpacity,
   type SessionRandomSource,
 } from '../domain/session/session';
+import type { SessionState } from '../domain/session/types';
 import { loadProgressRecords, persistReviewEventToProgressStore } from '../state/progressStore';
+import type { ProgressByKanji } from '../state/progressStore';
 
 interface StudyPageProps {
   readonly sessionOptions?: CreateSessionOptions;
+}
+
+interface SessionBatchSummary {
+  readonly carryoverCount: number;
+  readonly freshNewCount: number;
+  readonly reviewBackfillCount: number;
+  readonly dailyNewLimit: number;
+  readonly remainingDailyNewAllowance: number;
+}
+
+interface StudyRunState {
+  readonly session: SessionState;
+  readonly batchSummary: SessionBatchSummary;
 }
 
 export function StudyPage({ sessionOptions }: StudyPageProps) {
@@ -25,20 +45,35 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
   const progressByKanjiRef = useRef(loadProgressRecords());
   const [drillId, setDrillId] = useState(STARTER_DRILLS[0]?.id ?? 'learn');
   const drill = getDrillById(drillId);
-  const createPageSession = (
+  const createStudyRun = (
     nextDrill = drill,
     entries: readonly KanjiEntry[] = canonicalKanjiDeck,
     random: SessionRandomSource = sessionRandomRef.current,
-  ) =>
-    createSession(entries, nextDrill, {
+  ): StudyRunState => {
+    const createdAt = sessionOptions?.createdAt ?? new Date().toISOString();
+    const session = createSession(entries, nextDrill, {
       ...sessionOptions,
-      createdAt: sessionOptions?.createdAt ?? new Date().toISOString(),
+      createdAt,
       random,
       seedProgressByKanji: progressByKanjiRef.current,
     });
-  const [session, setSession] = useState(() => createPageSession(drill));
+    return {
+      session,
+      batchSummary: summarizeSessionBatch(
+        session.selectedKanji,
+        progressByKanjiRef.current,
+        createdAt,
+        sessionOptions?.dailyNewLimit,
+      ),
+    };
+  };
+  const [studyRun, setStudyRun] = useState(() => createStudyRun(drill));
+  const session = studyRun.session;
+  const batchSummary = studyRun.batchSummary;
   const [readingsRevealed, setReadingsRevealed] = useState(drill.mode === 'learn');
-  const isSessionComplete = session.queue.length === 0 || session.activeKanji === null;
+  const isSessionEmpty = session.selectedKanji.length === 0;
+  const isSessionComplete = !isSessionEmpty && (session.queue.length === 0 || session.activeKanji === null);
+  const isSessionInactive = isSessionEmpty || isSessionComplete;
 
   const activeEntry = useMemo(
     () =>
@@ -48,7 +83,7 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
     [session.activeKanji],
   );
 
-  if (!isSessionComplete && !activeEntry) {
+  if (!isSessionInactive && !activeEntry) {
     return <main className="p-8">No kanji data available.</main>;
   }
 
@@ -56,11 +91,15 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
   const opacity = activeKanji === null ? null : getCueOpacity(session, activeKanji);
   const isReviewMode = drill.mode !== 'learn';
   const showReadings = !isReviewMode || readingsRevealed;
-  const activeIndex = activeKanji === null ? session.selectedKanji.length - 1 : session.selectedKanji.indexOf(activeKanji);
+  const activeIndex = isSessionEmpty
+    ? -1
+    : activeKanji === null
+      ? session.selectedKanji.length - 1
+      : session.selectedKanji.indexOf(activeKanji);
   const activeItemState = activeKanji === null ? null : session.itemStateByKanji[activeKanji] ?? null;
   const answerPanelId = 'study-answer-panel';
 
-  if (!isSessionComplete && !activeItemState) {
+  if (!isSessionInactive && !activeItemState) {
     throw new Error(`Active kanji is missing from session state: ${activeKanji}`);
   }
 
@@ -68,20 +107,22 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
     drillMode: drill.mode,
     cueOpacity: opacity ?? 0,
   });
-  const answerStateSummary = isSessionComplete
+  const answerStateSummary = isSessionEmpty
+    ? 'Nothing queued'
+    : isSessionComplete
     ? 'Complete'
     : isReviewMode
-    ? readingsRevealed
-      ? 'Answer revealed'
-      : 'Hidden until reveal'
+      ? readingsRevealed
+        ? 'Answer revealed'
+        : 'Hidden until reveal'
     : 'Always visible';
 
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
     const currentSessionEntries = getSelectedEntriesForSession(session.selectedKanji);
     setDrillId(nextDrillId);
-    setSession(
-      createPageSession(
+    setStudyRun(
+      createStudyRun(
         nextDrill,
         currentSessionEntries.length > 0 ? currentSessionEntries : canonicalKanjiDeck,
         currentSessionEntries.length > 0 ? () => 0 : sessionRandomRef.current,
@@ -91,7 +132,7 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
   }
 
   function handleRestartDrill() {
-    setSession(createPageSession(drill));
+    setStudyRun(createStudyRun(drill));
     setReadingsRevealed(drill.mode === 'learn');
   }
 
@@ -111,7 +152,10 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
       event,
       new Date().toISOString(),
     );
-    setSession(nextSession);
+    setStudyRun((current) => ({
+      ...current,
+      session: nextSession,
+    }));
     setReadingsRevealed(false);
   }
 
@@ -120,20 +164,22 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
       return;
     }
 
-    setSession((current) => advanceSessionItem(current, activeKanji));
+    setStudyRun((current) => ({
+      ...current,
+      session: advanceSessionItem(current.session, activeKanji),
+    }));
   }
 
   return (
     <main className="app-page">
       <header className="page-header">
         <p className="eyebrow">Study</p>
-        <h1 className="page-title">Study one kanji at a time</h1>
+        <h1 className="page-title">A small local kanji loop that stays honest</h1>
         <p className="body-copy">
-          Choose a drill, work through the current session, and reveal meanings and readings only
-          when you need them. Truly new kanji are capped at {DEFAULT_DAILY_NEW_KANJI_LIMIT} per
-          local day from saved progress. New sessions build one local batch by taking unfinished
-          carryover first, then today&apos;s allowed truly new kanji, then durable review-bank
-          backfill. That review backfill is still simple available-review fill, not due scheduling.
+          Choose a drill, work through one local batch, and reveal meanings and readings only when
+          you need them. This MVP keeps the rules explicit: unfinished carryover first, then
+          today&apos;s allowed truly new kanji, then durable review-bank backfill. That backfill is
+          still simple available-review fill, not due scheduling.
         </p>
       </header>
 
@@ -149,12 +195,19 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
             <div className="section-heading">
               <p className="section-kicker">Session</p>
               <h2 className="section-title" id="session-overview-title">
-                {isSessionComplete ? 'Session complete' : `Now studying ${activeKanji}`}
+                {isSessionEmpty
+                  ? 'Nothing queued right now'
+                  : isSessionComplete
+                    ? 'Session complete'
+                    : `Now studying ${activeKanji}`}
               </h2>
             </div>
             <p aria-atomic="true" aria-live="polite" className="sr-only" role="status">
-              {drill.label}. Item {Math.min(activeIndex + 1, session.selectedKanji.length)} of{' '}
-              {session.selectedKanji.length}. Cue opacity{' '}
+              {drill.label}. Item{' '}
+              {session.selectedKanji.length === 0
+                ? 0
+                : Math.min(activeIndex + 1, session.selectedKanji.length)}{' '}
+              of {session.selectedKanji.length}. Cue opacity{' '}
               {opacity === null ? 'not applicable' : `${Math.round(opacity * 100)} percent`}.{' '}
               {answerStateSummary}.
             </p>
@@ -165,20 +218,32 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
             <div className="study-overview-row">
               <span>Position in session</span>
               <strong>
-                {Math.min(activeIndex + 1, session.selectedKanji.length)} / {session.selectedKanji.length}
+                {session.selectedKanji.length === 0
+                  ? '0 / 0'
+                  : `${Math.min(activeIndex + 1, session.selectedKanji.length)} / ${session.selectedKanji.length}`}
               </strong>
             </div>
             <div className="study-overview-row">
               <span>Cue opacity</span>
-              <strong>{opacity === null ? 'Completed' : `${Math.round(opacity * 100)}%`}</strong>
+              <strong>
+                {isSessionEmpty ? 'No active card' : opacity === null ? 'Completed' : `${Math.round(opacity * 100)}%`}
+              </strong>
             </div>
             <div className="study-overview-row">
               <span>Answer state</span>
               <strong>{answerStateSummary}</strong>
             </div>
             <div className="study-overview-row">
+              <span>Batch mix</span>
+              <strong>{formatBatchMix(batchSummary)}</strong>
+            </div>
+            <div className="study-overview-row">
+              <span>Today&apos;s new allowance</span>
+              <strong>{formatDailyAllowanceSummary(batchSummary)}</strong>
+            </div>
+            <div className="study-overview-row">
               <span>Source set</span>
-              <strong>{activeEntry?.sourceSet ?? 'Session complete'}</strong>
+              <strong>{activeEntry?.sourceSet ?? 'No active card'}</strong>
             </div>
           </section>
         </aside>
@@ -188,21 +253,31 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
             <div className="section-heading">
               <p className="section-kicker">Study surface</p>
               <h2 className="section-title" id="study-stage-title">
-                {isSessionComplete ? `${drill.label} complete` : drill.label}
+                {isSessionEmpty ? `${drill.label} waiting` : isSessionComplete ? `${drill.label} complete` : drill.label}
               </h2>
               <p className="body-copy">
-                {isSessionComplete
+                {isSessionEmpty
+                  ? emptyStateDescriptionForMode(drill.mode, batchSummary.dailyNewLimit)
+                  : isSessionComplete
                   ? completionDescriptionForMode(drill.mode)
                   : modePresentation.stageDescription}
               </p>
             </div>
 
-            {isSessionComplete || activeEntry === null || activeKanji === null ? (
-              <div className="study-complete-card">
-                <p className="section-kicker">Session complete</p>
-                <p className="section-title">This batch is clear</p>
+            {isSessionInactive || activeEntry === null || activeKanji === null ? (
+              <div
+                aria-live="polite"
+                className={`study-status-card ${isSessionEmpty ? 'study-status-card-empty' : 'study-status-card-complete'}`}
+                role="status"
+              >
+                <p className="section-kicker">{isSessionEmpty ? 'Nothing queued' : 'Session complete'}</p>
+                <p className="section-title">
+                  {isSessionEmpty ? 'No cards are waiting in this batch' : 'This batch is clear'}
+                </p>
                 <p className="fine-print">
-                  Good answers at zero cue leave the recall batch for the rest of this run.
+                  {isSessionEmpty
+                    ? `This local MVP only starts cards when carryover, today's fresh-new allowance, or review-bank backfill is available.`
+                    : 'Good answers at zero cue leave the recall batch for the rest of this run.'}
                 </p>
               </div>
             ) : (
@@ -217,16 +292,24 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
             <dl className="study-stage-meta" aria-label="Mode summary">
               <div>
                 <dt>Focus</dt>
-                <dd>{isSessionComplete ? completionFocusLabel(drill.mode) : modePresentation.focusLabel}</dd>
+                <dd>
+                  {isSessionEmpty
+                    ? 'Wait for the next local batch or restart after progress changes.'
+                    : isSessionComplete
+                      ? completionFocusLabel(drill.mode)
+                      : modePresentation.focusLabel}
+                </dd>
               </div>
               <div>
                 <dt>Support</dt>
-                <dd>{isSessionComplete ? 'No active review card' : modePresentation.supportSummary}</dd>
+                <dd>{isSessionInactive ? 'No active review card' : modePresentation.supportSummary}</dd>
               </div>
               <div>
                 <dt>Session counts</dt>
                 <dd>
-                  {isSessionComplete || activeItemState === null
+                  {isSessionEmpty
+                    ? `0 selected from a ${batchSummary.dailyNewLimit}-new daily cap`
+                    : isSessionComplete || activeItemState === null
                     ? `${session.selectedKanji.length - session.queue.length} cleared / ${session.selectedKanji.length} selected`
                     : `${activeItemState.goodCount} good / ${activeItemState.attempts} attempts`}
                 </dd>
@@ -239,17 +322,28 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
               <div className="section-heading">
                 <p className="section-kicker">Answer</p>
                 <h3 className="section-title" id="study-actions-title">
-                  {isSessionComplete ? 'Session complete' : modePresentation.answerPanelTitle}
+                  {isSessionInactive ? 'Session status' : modePresentation.answerPanelTitle}
                 </h3>
                 <p className="fine-print">
-                  {isSessionComplete
+                  {isSessionEmpty
+                    ? 'Restart the drill after you study more today, or switch modes to compare the same empty shell honestly.'
+                    : isSessionComplete
                     ? 'Start the drill again if you want a fresh batch, or switch modes to compare the shell.'
                     : modePresentation.answerPanelCopy}
                 </p>
               </div>
 
               <div aria-live="polite" className="study-answer-panel" id={answerPanelId}>
-                {isSessionComplete ? (
+                {isSessionEmpty ? (
+                  <div className="study-answer-empty">
+                    <p className="fine-print">
+                      No active card is queued yet. Fresh-new slots left today: {formatDailyAllowanceCount(batchSummary)}.
+                    </p>
+                    <p className="fine-print">
+                      A later session can still start if carryover or review-bank cards become available.
+                    </p>
+                  </div>
+                ) : isSessionComplete ? (
                   <p className="fine-print">
                     This session has no active card left in the queue.
                   </p>
@@ -305,7 +399,7 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
                 )}
               </div>
 
-              {isSessionComplete ? (
+              {isSessionInactive ? (
                 <div className="study-action-row">
                   <button className="btn btn-primary" type="button" onClick={handleRestartDrill}>
                     Restart this drill
@@ -466,4 +560,90 @@ function completionFocusLabel(drillMode: DrillMode): string {
     default:
       return 'Session complete.';
   }
+}
+
+function summarizeSessionBatch(
+  selectedKanji: readonly string[],
+  progressByKanji: ProgressByKanji,
+  createdAt: string,
+  dailyNewLimit = DEFAULT_DAILY_NEW_KANJI_LIMIT,
+): SessionBatchSummary {
+  let carryoverCount = 0;
+  let freshNewCount = 0;
+  let reviewBackfillCount = 0;
+
+  for (const kanji of selectedKanji) {
+    const progress = progressByKanji[kanji];
+
+    if (isUnfinishedNewItemProgress(progress)) {
+      carryoverCount += 1;
+      continue;
+    }
+
+    if (isReviewBankCandidateProgress(progress)) {
+      reviewBackfillCount += 1;
+      continue;
+    }
+
+    if (!hasSeenProgress(progress)) {
+      freshNewCount += 1;
+    }
+  }
+
+  const todayKey = toLocalDateKey(createdAt);
+  const consumedTodayCount = Object.values(progressByKanji).filter(
+    (progress) =>
+      hasSeenProgress(progress) &&
+      progress.firstSeenAt !== undefined &&
+      toLocalDateKey(progress.firstSeenAt) === todayKey,
+  ).length;
+
+  return {
+    carryoverCount,
+    freshNewCount,
+    reviewBackfillCount,
+    dailyNewLimit,
+    remainingDailyNewAllowance: Math.max(0, dailyNewLimit - consumedTodayCount),
+  };
+}
+
+function formatBatchMix(summary: SessionBatchSummary): string {
+  return `${summary.carryoverCount} carryover, ${summary.freshNewCount} new, ${summary.reviewBackfillCount} review`;
+}
+
+function formatDailyAllowanceSummary(summary: SessionBatchSummary): string {
+  if (summary.remainingDailyNewAllowance === 0) {
+    return `0 of ${summary.dailyNewLimit} fresh slots left`;
+  }
+
+  return `${summary.remainingDailyNewAllowance} of ${summary.dailyNewLimit} fresh slots left`;
+}
+
+function formatDailyAllowanceCount(summary: SessionBatchSummary): string {
+  return `${summary.remainingDailyNewAllowance} of ${summary.dailyNewLimit}`;
+}
+
+function emptyStateDescriptionForMode(drillMode: DrillMode, dailyNewLimit: number): string {
+  switch (drillMode) {
+    case 'learn':
+      return `This drill is ready, but nothing is queued yet. The current local rules only admit carryover, up to ${dailyNewLimit} truly new kanji per day, or review-bank backfill.`;
+    case 'blind-recall':
+      return `There is no blind-recall batch queued right now. The current local rules only admit carryover, up to ${dailyNewLimit} truly new kanji per day, or review-bank backfill.`;
+    case 'faded-recall':
+    default:
+      return `There is no faded-recall batch queued right now. The current local rules only admit carryover, up to ${dailyNewLimit} truly new kanji per day, or review-bank backfill.`;
+  }
+}
+
+function toLocalDateKey(timestamp: string): string {
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.valueOf())) {
+    return '';
+  }
+
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${date.getFullYear()}-${month}-${day}`;
 }
