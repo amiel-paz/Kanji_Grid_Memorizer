@@ -46,7 +46,7 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 21 | `work/v1-readme-runbook` | Make the project easy to resume. | README has setup, scripts, architecture, and next-task suggestions. |
 | 22 | `work/v1-final-audit` | Review scope creep and remove accidental false completeness. | Clean v1 scaffold that still leaves real learning work to the project owner. |
 | 23 | `work/data-canonical-joyo-import-full` | Replace the tiny canonical slice with the full real Joyo deck. | Explicit Joyo source file(s), provenance/version metadata, stable `KanjiEntry` materialization, and tests proving the app is no longer running on a tiny hand-entered subset. |
-| 24 | `work/data-canonical-jinmeiyo-import` | Add Jinmeiyo as a second explicit source path without reclassifying Joyo-owned kanji. | Jinmeiyo source file(s), source-set versioning, Joyo-first overlap handling, and a union manifest that keeps common-use ownership stable. |
+| 24 | `work/data-canonical-jinmeiyo-import` | Add Jinmeiyo as a second explicit source path without reclassifying Joyo-owned kanji. | Small real-data Jinmeiyo source file(s), source-set versioning, Joyo-first overlap handling, and a union manifest that keeps common-use ownership stable. |
 | 25 | `work/progress-session-seeding-v1` | Let durable learner progress shape a new session without breaking ownership boundaries. | Session creation can read saved progress to choose initial cue state and selection inputs while session state still owns live per-run behavior. |
 | 26 | `work/progress-daily-new-limit` | Make the first daily study allowance explicit. | A local-first daily cap for new kanji, wired into session creation and tested without adding cloud/backend work. |
 | 27 | `work/progress-carryover-v1` | Avoid silently dropping unfinished new items. | Carryover rules that re-offer started-but-unfinished kanji before introducing replacements on a later day. |
@@ -63,7 +63,6 @@ follow-on tracks, not implied scope to absorb into the first usable release.
 
 At this point the remaining numbered worktrees are:
 
-- `work/data-canonical-jinmeiyo-import`
 - `work/progress-session-seeding-v1`
 - `work/progress-daily-new-limit`
 - `work/progress-carryover-v1`
@@ -78,8 +77,8 @@ Clarify the saved-state milestone boundaries:
 
 - Row 17 already introduced local progress persistence after explicit review grading.
 - Row 23 is where the full real `joyo` deck replaces the old tiny canonical slice.
-- Row 24 is where `jinmeiyo` should arrive as the second explicit source-set path without
-  reclassifying Joyo-owned entries.
+- Row 24 landed a small real-data `jinmeiyo` supplemental import path without reclassifying
+  Joyo-owned entries.
 - Rows 25 through 29 are where the first actually useful daily study loop becomes concrete while
   still preserving stable content ownership versus session ownership versus durable learner state.
 - Row 31 is the intended local-first MVP stop point for something you'd be willing to ship to
@@ -107,8 +106,6 @@ What the product should build toward on the path to the first local MVP:
 
 Suggested follow-on worktrees after the current v1 scaffold:
 
-- `work/data-canonical-jinmeiyo-import`: add Jinmeiyo as a separate canonical source path with
-  Joyo-first ownership rules for overlaps.
 - `work/progress-session-seeding-v1`: let saved progress influence new-session inputs without
   moving live cue state out of session ownership.
 - `work/progress-daily-new-limit`: decide the daily new-item allowance.

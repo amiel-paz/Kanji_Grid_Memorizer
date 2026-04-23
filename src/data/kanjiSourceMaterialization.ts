@@ -1,5 +1,6 @@
 import type {
   AssignmentVersion,
+  CanonicalSourceSet,
   KanjiEntry,
   KanjiMetadata,
   SourceSetVersion,
@@ -24,13 +25,18 @@ export interface KanjiSourceImport {
 export function materializeKanjiEntries({
   sources,
   assignmentVersion,
+  sourceSetPriority,
 }: {
   readonly sources: readonly KanjiSourceImport[];
   readonly assignmentVersion: AssignmentVersion;
+  readonly sourceSetPriority?: readonly CanonicalSourceSet[];
 }): readonly KanjiEntry[] {
   const entries: KanjiEntry[] = [];
   const ownerByKanji = new Map<string, SourceSetVersion>();
   const kanjiByCanonicalIndex = new Map<number, string>();
+  const sourcePriority = new Map(
+    sourceSetPriority?.map((sourceSet, index) => [sourceSet, index]) ?? [],
+  );
 
   for (const source of sources) {
     for (const record of source.entries) {
@@ -38,9 +44,16 @@ export function materializeKanjiEntries({
 
       const existingOwner = ownerByKanji.get(record.kanji);
       if (existingOwner) {
-        throw new Error(
-          `Duplicate canonical kanji ${record.kanji} appears in ${source.version.sourceSet} after ${existingOwner.sourceSet}. Resolve overlap before materialization so Joyo-first ownership stays explicit.`,
-        );
+        if (
+          shouldKeepExistingOwner({
+            existingOwner,
+            incomingOwner: source.version,
+            kanji: record.kanji,
+            sourcePriority,
+          })
+        ) {
+          continue;
+        }
       }
 
       const existingKanji = kanjiByCanonicalIndex.get(record.canonicalIndex);
@@ -85,4 +98,51 @@ function assertAssignmentVersionSupportsSource(
       `Assignment version ${assignmentVersion.id} does not include ${sourceVersion.sourceSet}@${sourceVersion.versionId}, so ${kanji} cannot be materialized against it.`,
     );
   }
+}
+
+function shouldKeepExistingOwner({
+  existingOwner,
+  incomingOwner,
+  kanji,
+  sourcePriority,
+}: {
+  readonly existingOwner: SourceSetVersion;
+  readonly incomingOwner: SourceSetVersion;
+  readonly kanji: string;
+  readonly sourcePriority: ReadonlyMap<CanonicalSourceSet, number>;
+}): boolean {
+  if (incomingOwner.sourceSet === existingOwner.sourceSet) {
+    throw new Error(
+      `Duplicate canonical kanji ${kanji} appears more than once in ${incomingOwner.sourceSet}@${incomingOwner.versionId}. Imported source data must deduplicate within one source set before materialization.`,
+    );
+  }
+
+  if (sourcePriority.size === 0) {
+    throw new Error(
+      `Duplicate canonical kanji ${kanji} appears in ${incomingOwner.sourceSet} after ${existingOwner.sourceSet}. Provide explicit canonical source priority to preserve ownership boundaries.`,
+    );
+  }
+
+  const existingPriority = sourcePriority.get(existingOwner.sourceSet as CanonicalSourceSet);
+  const incomingPriority = sourcePriority.get(incomingOwner.sourceSet as CanonicalSourceSet);
+
+  if (existingPriority === undefined || incomingPriority === undefined) {
+    throw new Error(
+      `Duplicate canonical kanji ${kanji} cannot be resolved because ${existingOwner.sourceSet} or ${incomingOwner.sourceSet} is missing from the canonical source priority list.`,
+    );
+  }
+
+  if (incomingPriority > existingPriority) {
+    return true;
+  }
+
+  if (incomingPriority < existingPriority) {
+    throw new Error(
+      `Canonical kanji ${kanji} is owned by higher-priority ${incomingOwner.sourceSet}@${incomingOwner.versionId}, so ${existingOwner.sourceSet}@${existingOwner.versionId} must be materialized after it and treated as supplemental only.`,
+    );
+  }
+
+  throw new Error(
+    `Canonical kanji ${kanji} appears in multiple source sets at the same priority, so ownership must be resolved explicitly before materialization.`,
+  );
 }

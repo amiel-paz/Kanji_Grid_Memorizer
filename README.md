@@ -12,7 +12,7 @@ already exists.
 ## What This Repo Is Today
 
 - A Vite + React + TypeScript web app with a single study page.
-- A full real Joyo canonical deck materialized from explicit in-repo source inputs.
+- A Joyo-first canonical deck materialized from explicit in-repo Joyo and Jinmeiyo source inputs.
 - Mock kanji fixture data kept separately for development and tests.
 - Three drill shells: Learn, Faded recall, and Blind recall.
 - Session-owned cue opacity and a simple rotating queue.
@@ -76,15 +76,16 @@ What each script does:
 - No weighted requeue based on repeated misses. `Again` changes cue opacity, but the queue still rotates simply.
 - No removal from the current recall batch after a successful zero-cue pass. Cards stay in the session queue for the rest of the run.
 - No backend, API, auth, sync, or cloud persistence.
-- No Jinmeiyo coverage yet beyond the explicit empty reservation path and separate future import worktree.
+- No full Jinmeiyo import yet beyond the small explicit supplemental subset landed in this worktree.
 
 ## Resume Map
 
 Start here when reopening the repo:
 
 - [`src/pages/StudyPage.tsx`](src/pages/StudyPage.tsx): current study shell behavior and drill switching.
-- [`src/data/canonicalDeck.ts`](src/data/canonicalDeck.ts): real deck manifest, canonical source-set versions, and stable `KanjiEntry` materialization.
+- [`src/data/canonicalDeck.ts`](src/data/canonicalDeck.ts): real deck manifest, canonical source-set versions, Joyo-first overlap policy, and stable `KanjiEntry` materialization.
 - [`src/data/canonicalSources/joyo/kanjidic2_2026_112.ts`](src/data/canonicalSources/joyo/kanjidic2_2026_112.ts): full imported Joyo source records plus provenance and normalization metadata.
+- [`src/data/canonicalSources/jinmeiyo/kanjidic2_2026_112_subset.ts`](src/data/canonicalSources/jinmeiyo/kanjidic2_2026_112_subset.ts): small real imported Jinmeiyo supplemental slice with its own version metadata.
 - [`src/data/mockKanji.ts`](src/data/mockKanji.ts): development-only mock fixture data and its separate assignment/source versions.
 - [`src/domain/session/session.ts`](src/domain/session/session.ts): session creation, queue movement, and cue opacity rules.
 - [`src/state/progressStore.ts`](src/state/progressStore.ts): local progress load/save boundary.
@@ -110,7 +111,6 @@ The remaining plan is now split into two stages.
 
 Local-first MVP path:
 
-- `work/data-canonical-jinmeiyo-import`
 - `work/progress-session-seeding-v1`
 - `work/progress-daily-new-limit`
 - `work/progress-carryover-v1`
@@ -129,10 +129,10 @@ Post-MVP follow-ons:
 - Full real `joyo` content now lives in the app deck through an explicit imported source-set version.
 - The current Joyo source-set version is `joyo-kanjidic2-2026-112`, with upstream/license details
   recorded beside the imported source file.
-- `jinmeiyo` follows at `work/data-canonical-jinmeiyo-import` under the same explicit source-set
-  and assignment-version model.
-- The current real deck is the full 2136-entry Joyo import materialized from a versioned in-repo
-  source file and manifest.
+- `jinmeiyo` now has an explicit imported supplemental source path at
+  `jinmeiyo-kanjidic2-2026-112-subset-v1`, kept separate from Joyo ownership.
+- The current real deck is the 2136-entry Joyo import plus a 12-entry Jinmeiyo supplemental subset,
+  both materialized from versioned in-repo source files and manifests.
 - Local learner progress is already saved today through localStorage after explicit review grading.
 - That current save path is intentionally small: it is not session restore, cross-device sync, or
   backend-backed production persistence.
