@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { ManualSeenIntakePage } from '../pages/ManualSeenIntakePage';
 import { SeenLibraryPage } from '../pages/SeenLibraryPage';
 import { StudyPage } from '../pages/StudyPage';
 
-type AppView = 'study' | 'seen-library';
+type AppView = 'study' | 'seen-library' | 'manual-intake';
 
 export function App() {
   const [view, setView] = useState<AppView>('study');
@@ -27,10 +28,24 @@ export function App() {
           >
             Seen library
           </button>
+          <button
+            aria-pressed={view === 'manual-intake'}
+            className={`app-nav-button ${view === 'manual-intake' ? 'app-nav-button-active' : ''}`}
+            type="button"
+            onClick={() => setView('manual-intake')}
+          >
+            Manual intake
+          </button>
         </div>
       </nav>
 
-      {view === 'study' ? <StudyPage /> : <SeenLibraryPage />}
+      {view === 'study' ? (
+        <StudyPage />
+      ) : view === 'seen-library' ? (
+        <SeenLibraryPage />
+      ) : (
+        <ManualSeenIntakePage />
+      )}
     </>
   );
 }

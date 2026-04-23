@@ -30,8 +30,8 @@ export function SeenLibraryPage() {
               Your learner library is still empty
             </h2>
             <p className="fine-print">
-              Graded review results will add kanji here. Manual intake for outside encounters is a
-              later planned worktree, so this page stays read-only for now.
+              Graded review results will add kanji here. You can also use Manual intake for outside
+              encounters, but this page itself stays read-only.
             </p>
           </div>
         </section>

@@ -10,7 +10,7 @@ while still being explicit about what is and is not implemented.
 
 ## What This Repo Is Today
 
-- A Vite + React + TypeScript web app with a study view plus a learner-facing seen-library view.
+- A Vite + React + TypeScript web app with Study, Seen library, and Manual intake views.
 - A Joyo-first canonical deck materialized from explicit in-repo Joyo and Jinmeiyo source inputs.
 - Mock kanji fixture data kept separately for development and tests.
 - Three drill shells: Learn, Faded recall, and Blind recall.
@@ -19,6 +19,8 @@ while still being explicit about what is and is not implemented.
 - A small daily study loop: unfinished carryover first, then today's truly new allowance, then
   durable review-bank backfill.
 - A read-only seen library sourced from durable learner progress plus stable canonical content.
+- A manual intake view for marking an outside encounter as seen without pretending that it is
+  already learned.
 - Honest empty and completion states when a new local batch cannot or does not need to queue cards.
 - Tests around the current study shell, session rules, progress helpers, and local store behavior.
 
@@ -75,6 +77,8 @@ What each script does:
   local rules are legible instead of hidden behind the shell.
 - A separate seen-library view lists only kanji that durable learner progress has already marked as
   seen, alongside each item's stable grid and meanings.
+- A manual-intake view lists not-yet-seen kanji and can explicitly add one to durable learner
+  progress so later study flows treat it as encountered.
 
 ## Current Scope
 
@@ -90,7 +94,6 @@ What each script does:
 - No weighted requeue based on repeated misses. `Again` changes cue opacity, but the queue still rotates simply.
 - No due scheduling after a successful zero-cue pass beyond retiring the card for the rest of the current run and recording durable review-bank candidacy.
 - No backend, API, auth, sync, or cloud persistence.
-- No manual "mark as encountered" intake flow yet.
 - No broader Jinmeiyo import yet beyond the small explicit supplemental subset currently in the repo.
 
 ## Resume Map
@@ -99,12 +102,14 @@ Start here when reopening the repo:
 
 - [`src/pages/StudyPage.tsx`](src/pages/StudyPage.tsx): current study shell behavior and drill switching.
 - [`src/pages/SeenLibraryPage.tsx`](src/pages/SeenLibraryPage.tsx): learner-facing seen-library view sourced from durable progress plus canonical deck entries.
+- [`src/pages/ManualSeenIntakePage.tsx`](src/pages/ManualSeenIntakePage.tsx): explicit local intake surface for marking outside encounters as seen.
 - [`src/data/canonicalDeck.ts`](src/data/canonicalDeck.ts): real deck manifest, canonical source-set versions, Joyo-first overlap policy, and stable `KanjiEntry` materialization.
 - [`src/data/canonicalSources/joyo/kanjidic2_2026_112.ts`](src/data/canonicalSources/joyo/kanjidic2_2026_112.ts): full imported Joyo source records plus provenance and normalization metadata.
 - [`src/data/canonicalSources/jinmeiyo/kanjidic2_2026_112_subset.ts`](src/data/canonicalSources/jinmeiyo/kanjidic2_2026_112_subset.ts): small real imported Jinmeiyo supplemental slice with its own version metadata.
 - [`src/data/mockKanji.ts`](src/data/mockKanji.ts): development-only mock fixture data and its separate assignment/source versions.
 - [`src/domain/session/session.ts`](src/domain/session/session.ts): session creation, queue movement, and cue opacity rules.
 - [`src/domain/progress/seenLibrary.ts`](src/domain/progress/seenLibrary.ts): pure selector that turns durable progress plus canonical entries into read-only seen-library items.
+- [`src/domain/progress/manualSeenIntake.ts`](src/domain/progress/manualSeenIntake.ts): pure selector for not-yet-seen intake candidates.
 - [`src/state/progressStore.ts`](src/state/progressStore.ts): local progress load/save boundary.
 - [`src/domain/progress/progress.ts`](src/domain/progress/progress.ts): minimal progress updates plus the durable carryover-versus-review-bank boundary.
 - [`tests/StudyPage.test.tsx`](tests/StudyPage.test.tsx): expected UI behavior for the shell.
@@ -115,17 +120,16 @@ Start here when reopening the repo:
 
 ## After This Audit
 
-This pass is the intended stopping point for the first shippable local-first MVP.
+The numbered worktree plan in [`docs/worktrees.md`](docs/worktrees.md) is now complete.
 
-Future work stays split in [`docs/worktrees.md`](docs/worktrees.md) so the repo does not imply a
-single automatic next step. The remaining work is now one narrow learner-library follow-on:
-manual seen intake.
+Future work can still stay split into small reviewable rows, but there is no remaining numbered
+worktree left in the current plan.
 
 ## Remaining Numbered Worktrees
 
 The remaining plan is now post-MVP only:
 
-- `work/progress-manual-seen-intake`
+- None. The current numbered worktree plan is complete.
 
 ## Real Data And Saved State
 
@@ -149,6 +153,6 @@ The remaining plan is now post-MVP only:
   API boundary is still unnecessary after the local-first MVP.
 - The app now includes a learner-facing seen library built from durable progress plus stable
   canonical content.
-- `work/progress-manual-seen-intake` remains the next UI follow-on for explicitly adding outside
-  encounters without moving stable content or live session state out of their current ownership
-  boundaries.
+- The app now also includes manual seen intake for explicitly adding outside encounters to durable
+  learner progress without moving stable content or live session state out of their current
+  ownership boundaries.

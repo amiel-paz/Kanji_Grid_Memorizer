@@ -63,11 +63,12 @@ Treat row 22 as the stopping point for the original v1 shell. Rows 23 through 31
 path from honest shell to shippable local-first MVP. Rows 32 and 33 are intentionally post-MVP
 follow-on tracks, not implied scope to absorb into the first usable release.
 
-The local-first MVP path through row 31 is now complete.
+The local-first MVP path through row 31 is now complete, and the planned post-MVP follow-ons
+through row 35 are complete too.
 
 At this point the remaining numbered worktrees are:
 
-- `work/progress-manual-seen-intake`
+- None. The current numbered worktree plan is complete.
 
 Clarify the saved-state milestone boundaries:
 
@@ -131,8 +132,9 @@ Suggested post-MVP follow-on worktrees:
   actually needed.
 - `work/progress-seen-library`: complete. It adds a learner-facing read-only library driven by
   durable progress plus stable content records without moving live session state into progress.
-- `work/progress-manual-seen-intake`: add a place to browse not-yet-seen kanji and explicitly
-  mark one as encountered so it enters later learner-state-driven study flows.
+- `work/progress-manual-seen-intake`: complete. It adds a local intake surface for not-yet-seen
+  kanji and writes only durable learner progress so later study flows can treat those kanji as
+  encountered.
 
 Keep the mastery rule product-specific:
 
