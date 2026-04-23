@@ -82,13 +82,10 @@ export function selectSessionEntries(
   const progressByKanji = options.progressByKanji ?? {};
   const selectionSize = Math.min(deckSize, entries.length);
   const todayKey = toLocalDateKey(options.createdAt ?? new Date().toISOString());
-  const carryoverEntries = entries.filter((entry) =>
-    isUnfinishedNewItemProgress(progressByKanji[entry.kanji]),
+  const { carryoverEntries, reviewBankEntries, trulyNewEntries } = partitionEntriesForSessionCreation(
+    entries,
+    progressByKanji,
   );
-  const reviewBankEntries = entries.filter((entry) =>
-    isReviewBankCandidateProgress(progressByKanji[entry.kanji]),
-  );
-  const trulyNewEntries = entries.filter((entry) => !hasSeenProgress(progressByKanji[entry.kanji]));
   const carryoverSelection = selectRandomEntries(carryoverEntries, selectionSize, random);
   const olderCarryoverCount = carryoverSelection.filter((entry) => {
     const progress = progressByKanji[entry.kanji];
@@ -352,6 +349,46 @@ function initialSessionDimOpacity(progressSeed?: SessionProgressSeed): CueOpacit
     default:
       return 1;
   }
+}
+
+// Local session creation stays intentionally small and non-due-based:
+// unfinished new-item carryover first, then today's remaining truly new allowance,
+// then durable review-bank candidates as simple backfill.
+function partitionEntriesForSessionCreation(
+  entries: readonly KanjiEntry[],
+  progressByKanji: SessionProgressSeedByKanji,
+): {
+  readonly carryoverEntries: readonly KanjiEntry[];
+  readonly reviewBankEntries: readonly KanjiEntry[];
+  readonly trulyNewEntries: readonly KanjiEntry[];
+} {
+  const carryoverEntries: KanjiEntry[] = [];
+  const reviewBankEntries: KanjiEntry[] = [];
+  const trulyNewEntries: KanjiEntry[] = [];
+
+  for (const entry of entries) {
+    const progress = progressByKanji[entry.kanji];
+
+    if (isUnfinishedNewItemProgress(progress)) {
+      carryoverEntries.push(entry);
+      continue;
+    }
+
+    if (isReviewBankCandidateProgress(progress)) {
+      reviewBankEntries.push(entry);
+      continue;
+    }
+
+    if (!hasSeenProgress(progress)) {
+      trulyNewEntries.push(entry);
+    }
+  }
+
+  return {
+    carryoverEntries,
+    reviewBankEntries,
+    trulyNewEntries,
+  };
 }
 
 function selectRandomEntries(
