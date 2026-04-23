@@ -56,6 +56,8 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 31 | `work/local-mvp-ship-audit` | End on an honest MVP you'd be willing to ship to yourself or a friend. | Final regression pass, README/runbook updates, scope audit, and a clean stop point for the first truly usable local release. |
 | 32 | `work/progress-sync-file-exchange` | Plan a serverless multi-device path after the local MVP is already useful. | Decision doc plus file-format spec for per-device learner-state exchange, including event-log shape, device IDs, schema versioning, import/export or shared-folder merge rules, and explicit preservation of the stable-content versus learner-state boundary. No cloud account system or backend implementation. |
 | 33 | `work/api-boundary-review` | Revisit whether the app needs REST or another backend boundary only after the local MVP proves itself. | Decision doc only: current local-first posture, triggers for REST/API work, candidate resources, and boundaries to preserve. No backend implementation. |
+| 34 | `work/progress-seen-library` | Add a learner-facing browser for kanji already encountered. | A local page or panel that lists seen kanji with their stable grids and meanings, sourced from durable learner progress without moving live session state into content or progress. |
+| 35 | `work/progress-manual-seen-intake` | Let the learner mark a not-yet-seen kanji as encountered outside the app. | A local unlearned-kanji browser with an explicit action to create or update durable learner progress so those kanji can enter future study flows, without mutating stable `KanjiEntry` ownership. |
 
 Treat row 22 as the stopping point for the current v1 shell. Rows 23 through 31 are the planned
 path from honest shell to shippable local-first MVP. Rows 32 and 33 are intentionally post-MVP
@@ -71,6 +73,8 @@ At this point the remaining numbered worktrees are:
 - `work/local-mvp-ship-audit`
 - `work/progress-sync-file-exchange`
 - `work/api-boundary-review`
+- `work/progress-seen-library`
+- `work/progress-manual-seen-intake`
 
 Clarify the saved-state milestone boundaries:
 
@@ -88,6 +92,9 @@ Clarify the saved-state milestone boundaries:
   useful, not backend/cloud persistence.
 - Row 33 is a later decision review about whether an API boundary is needed at all, not a
   commitment to build one.
+- Rows 34 and 35 are learner-library follow-ons: they expose durable learner progress in the UI and
+  allow explicit manual intake of encountered kanji, but they should still leave stable content
+  ownership with `KanjiEntry` and live drill behavior with session state.
 
 ## Long-Term Study Loop Notes
 
@@ -122,6 +129,10 @@ Suggested post-MVP follow-on worktrees:
   merged counters.
 - `work/api-boundary-review`: revisit whether any backend or API work is justified only after the
   local-first MVP proves its value.
+- `work/progress-seen-library`: add a place to browse all learner-seen kanji with their grids and
+  meanings using durable progress plus stable content records.
+- `work/progress-manual-seen-intake`: add a place to browse not-yet-seen kanji and explicitly
+  mark one as encountered so it enters later learner-state-driven study flows.
 
 Keep the mastery rule product-specific:
 
