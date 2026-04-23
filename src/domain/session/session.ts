@@ -3,6 +3,7 @@ import { getDrillById } from '../drills/configs';
 import type { DrillConfig, ReviewGrade } from '../drills/types';
 import {
   CUE_OPACITY_LADDER,
+  DEFAULT_DAILY_NEW_KANJI_LIMIT,
   type CueOpacity,
   type SessionAnswerResult,
   type SessionProgressSeed,
@@ -10,12 +11,22 @@ import {
   type SessionState,
 } from './types';
 
+export { DEFAULT_DAILY_NEW_KANJI_LIMIT } from './types';
 export type SessionRandomSource = () => number;
 
 export interface CreateSessionOptions {
   readonly random?: SessionRandomSource;
   readonly id?: string;
   readonly seedProgressByKanji?: SessionProgressSeedByKanji;
+  readonly createdAt?: string;
+  readonly dailyNewLimit?: number;
+}
+
+export interface SelectSessionEntriesOptions {
+  readonly random?: SessionRandomSource;
+  readonly progressByKanji?: SessionProgressSeedByKanji;
+  readonly createdAt?: string;
+  readonly dailyNewLimit?: number;
 }
 
 export function createSession(
@@ -23,11 +34,16 @@ export function createSession(
   drillConfig: DrillConfig,
   options: CreateSessionOptions = {},
 ): SessionState {
-  const selected = selectSessionEntries(entries, drillConfig.deckSize, options.random);
-  const active = selected[0];
   const seedProgressByKanji = options.seedProgressByKanji ?? {};
+  const selected = selectSessionEntries(entries, drillConfig.deckSize, {
+    random: options.random,
+    progressByKanji: seedProgressByKanji,
+    createdAt: options.createdAt,
+    dailyNewLimit: options.dailyNewLimit,
+  });
+  const active = selected[0];
 
-  if (!active) {
+  if (entries.length === 0) {
     throw new Error('Cannot create a study session without kanji entries.');
   }
 
@@ -36,7 +52,7 @@ export function createSession(
     drillConfigId: drillConfig.id,
     selectedKanji: selected.map((entry) => entry.kanji),
     queue: selected.map((entry) => entry.kanji),
-    activeKanji: active.kanji,
+    activeKanji: active?.kanji ?? null,
     itemStateByKanji: Object.fromEntries(
       selected.map((entry) => [
         entry.kanji,
@@ -55,13 +71,20 @@ export function createSession(
 export function selectSessionEntries(
   entries: readonly KanjiEntry[],
   deckSize: number,
-  random: SessionRandomSource = Math.random,
+  options: SelectSessionEntriesOptions = {},
 ): readonly KanjiEntry[] {
+  const random = options.random ?? Math.random;
+  const progressByKanji = options.progressByKanji ?? {};
   const remainingEntries = [...entries];
   const selected: KanjiEntry[] = [];
+  let remainingDailyNewAllowance = getRemainingDailyNewAllowance(
+    progressByKanji,
+    options.createdAt,
+    options.dailyNewLimit,
+  );
   const selectionSize = Math.min(deckSize, remainingEntries.length);
 
-  while (selected.length < selectionSize) {
+  while (selected.length < selectionSize && remainingEntries.length > 0) {
     const selectedIndex = Math.floor(random() * remainingEntries.length);
     const [entry] = remainingEntries.splice(selectedIndex, 1);
 
@@ -69,7 +92,15 @@ export function selectSessionEntries(
       throw new Error(`Session selection produced an invalid index: ${selectedIndex}`);
     }
 
-    selected.push(entry);
+    if (hasSeenProgress(progressByKanji[entry.kanji])) {
+      selected.push(entry);
+      continue;
+    }
+
+    if (remainingDailyNewAllowance > 0) {
+      selected.push(entry);
+      remainingDailyNewAllowance -= 1;
+    }
   }
 
   return selected;
@@ -313,4 +344,42 @@ function initialSessionDimOpacity(progressSeed?: SessionProgressSeed): CueOpacit
     default:
       return 1;
   }
+}
+
+function getRemainingDailyNewAllowance(
+  progressByKanji: SessionProgressSeedByKanji,
+  createdAt: string | undefined,
+  dailyNewLimit: number | undefined,
+): number {
+  const todayKey = toLocalDateKey(createdAt ?? new Date().toISOString());
+  const consumedTodayCount = Object.values(progressByKanji).filter((progress) =>
+    isFirstSeenOnLocalDate(progress, todayKey),
+  ).length;
+
+  return Math.max(0, (dailyNewLimit ?? DEFAULT_DAILY_NEW_KANJI_LIMIT) - consumedTodayCount);
+}
+
+function hasSeenProgress(progress: SessionProgressSeed | undefined): boolean {
+  if (!progress) {
+    return false;
+  }
+
+  return (progress.seenCount ?? 0) > 0 || progress.confidence !== 'new';
+}
+
+function isFirstSeenOnLocalDate(progress: SessionProgressSeed, localDateKey: string): boolean {
+  return hasSeenProgress(progress) && progress.firstSeenAt !== undefined && toLocalDateKey(progress.firstSeenAt) === localDateKey;
+}
+
+function toLocalDateKey(timestamp: string): string {
+  const date = new Date(timestamp);
+
+  if (Number.isNaN(date.valueOf())) {
+    return '';
+  }
+
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+
+  return `${date.getFullYear()}-${month}-${day}`;
 }

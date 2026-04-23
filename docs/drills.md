@@ -52,11 +52,13 @@ the shell stops being the main thing under review.
 
 ## Future Daily Flow
 
-The intended long-term product flow is compatible with Anki-like daily pacing, but should use this
-project's own mastery rule.
+The intended product flow is compatible with Anki-like daily pacing, but should use this project's
+own mastery rule.
 
-- New kanji should be introduced through a daily allowance instead of exposing the whole deck at
-  once.
+- New kanji now enter newly created sessions through an explicit local-first daily allowance of 5
+  truly new items, derived from durable saved progress rather than from mutable session fields.
+- The current pass stops there. It does not yet backfill with due-card logic or promise a finished
+  daily scheduler.
 - If a learner does not finish all of the day's new kanji, the unfinished items should carry over
   before more new items are introduced.
 - A kanji can be treated as learned for the "new item" path once it successfully progresses

@@ -70,6 +70,13 @@ function isUserProgress(value: unknown): value is UserProgress {
   }
 
   if (
+    value.firstSeenAt !== undefined &&
+    typeof value.firstSeenAt !== 'string'
+  ) {
+    return false;
+  }
+
+  if (
     value.lastSeenAt !== undefined &&
     typeof value.lastSeenAt !== 'string'
   ) {

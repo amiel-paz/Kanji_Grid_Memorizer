@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { mockKanji } from '../src/data/mockKanji';
 import { getDrillById } from '../src/domain/drills/configs';
 import {
+  DEFAULT_DAILY_NEW_KANJI_LIMIT,
   advanceSessionItem,
   answerSessionReview,
   createSession,
@@ -46,9 +47,9 @@ describe('session cue opacity', () => {
       random: createDeterministicRandom([0.9, 0.1, 0.5, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.05]),
     });
 
-    expect(fadedSession.selectedKanji).toHaveLength(10);
-    expect(new Set(fadedSession.selectedKanji)).toHaveLength(10);
-    expect(fadedSession.selectedKanji).toEqual(['力', '月', '人', '水', '耳', '山', '足', '川', '口', '日']);
+    expect(fadedSession.selectedKanji).toHaveLength(DEFAULT_DAILY_NEW_KANJI_LIMIT);
+    expect(new Set(fadedSession.selectedKanji)).toHaveLength(DEFAULT_DAILY_NEW_KANJI_LIMIT);
+    expect(fadedSession.selectedKanji).toEqual(['力', '月', '人', '水', '耳']);
     expect(fadedSession.queue).toEqual(fadedSession.selectedKanji);
     expect(fadedSession.activeKanji).toBe(fadedSession.queue[0]);
     expect(getCueOpacity(fadedSession, fadedSession.activeKanji ?? '')).toBe(1);
@@ -128,11 +129,59 @@ describe('session cue opacity', () => {
     const selected = selectSessionEntries(
       mockKanji.slice(0, 4),
       10,
-      createDeterministicRandom([0.75, 0.5, 0.9, 0]),
+      {
+        random: createDeterministicRandom([0.75, 0.5, 0.9, 0]),
+      },
     );
 
     expect(selected.map((entry) => entry.kanji)).toEqual(['水', '月', '火', '日']);
     expect(new Set(selected.map((entry) => entry.kanji))).toHaveLength(4);
+  });
+
+  it('caps truly new kanji by the remaining daily allowance while still allowing already-seen items', () => {
+    const entries = mockKanji.slice(0, 6);
+    const selected = selectSessionEntries(entries, 6, {
+      createdAt: '2026-04-21T12:00:00.000Z',
+      dailyNewLimit: 2,
+      progressByKanji: {
+        [entries[0]!.kanji]: {
+          kanji: entries[0]!.kanji,
+          confidence: 'learning',
+          seenCount: 2,
+          firstSeenAt: '2026-04-20T10:00:00.000Z',
+        },
+        [entries[1]!.kanji]: {
+          kanji: entries[1]!.kanji,
+          confidence: 'familiar',
+          seenCount: 4,
+          firstSeenAt: '2026-04-19T10:00:00.000Z',
+        },
+        [entries[2]!.kanji]: {
+          kanji: entries[2]!.kanji,
+          confidence: 'learning',
+          seenCount: 1,
+          firstSeenAt: '2026-04-21T08:00:00.000Z',
+        },
+      },
+      random: createDeterministicRandom([0, 0, 0, 0, 0]),
+    });
+
+    expect(selected.map((entry) => entry.kanji)).toEqual([
+      entries[0]!.kanji,
+      entries[1]!.kanji,
+      entries[2]!.kanji,
+      entries[3]!.kanji,
+    ]);
+  });
+
+  it('returns a smaller session batch when the daily new allowance is exhausted and there is no backfill yet', () => {
+    const selected = selectSessionEntries(mockKanji.slice(0, 4), 4, {
+      createdAt: '2026-04-21T12:00:00.000Z',
+      dailyNewLimit: 0,
+      random: createDeterministicRandom([0]),
+    });
+
+    expect(selected).toEqual([]);
   });
 
   it('dims the cue along the review ladder after correct answers without changing kanji data', () => {
@@ -168,7 +217,8 @@ describe('session cue opacity', () => {
       createDeterministicRandom([0.9]),
     );
 
-    expect(session.selectedKanji).toHaveLength(10);
+    expect(session.selectedKanji).toHaveLength(DEFAULT_DAILY_NEW_KANJI_LIMIT);
+    expect(session.selectedKanji).toEqual(['力', '月', '人', '水', '耳']);
     expect(session.activeKanji).toBe('力');
     expect(event).toEqual({
       type: 'review-answer',
@@ -177,7 +227,7 @@ describe('session cue opacity', () => {
       previousCueOpacity: 1,
       nextCueOpacity: 0.66,
       queueBefore: session.queue,
-      queueAfter: ['月', '人', '水', '耳', '山', '足', '川', '口', '日', '力'],
+      queueAfter: ['月', '人', '水', '耳', '力'],
       nextActiveKanji: '月',
     });
     expect(nextSession.queue).toEqual(event.queueAfter);
@@ -201,7 +251,7 @@ describe('session cue opacity', () => {
 
     expect(nextKanji).toBeDefined();
     expect(nextSession.selectedKanji).toEqual(session.selectedKanji);
-    expect(nextSession.queue).toEqual(['月', '人', '水', '耳', '山', '足', '川', '口', '日', '力']);
+    expect(nextSession.queue).toEqual(['月', '人', '水', '耳', '力']);
     expect(nextSession.activeKanji).toBe(nextKanji);
     expect(nextSession.itemStateByKanji[answeredKanji]).toMatchObject({
       attempts: 1,

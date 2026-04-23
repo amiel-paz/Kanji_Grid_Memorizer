@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react';
 import { DrillModePicker } from '../components/DrillModePicker';
 import { canonicalKanjiDeck } from '../data/canonicalDeck';
 import { KanjiCueCard } from '../components/KanjiCueCard';
+import type { KanjiEntry } from '../domain/content/types';
 import { getDrillById, STARTER_DRILLS } from '../domain/drills/configs';
 import type { DrillMode, ReviewGrade } from '../domain/drills/types';
 import {
@@ -9,6 +10,7 @@ import {
   answerSessionReview,
   type CreateSessionOptions,
   createSession,
+  DEFAULT_DAILY_NEW_KANJI_LIMIT,
   getCueOpacity,
   type SessionRandomSource,
 } from '../domain/session/session';
@@ -23,10 +25,15 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
   const progressByKanjiRef = useRef(loadProgressRecords());
   const [drillId, setDrillId] = useState(STARTER_DRILLS[0]?.id ?? 'learn');
   const drill = getDrillById(drillId);
-  const createPageSession = (nextDrill = drill) =>
-    createSession(canonicalKanjiDeck, nextDrill, {
+  const createPageSession = (
+    nextDrill = drill,
+    entries: readonly KanjiEntry[] = canonicalKanjiDeck,
+    random: SessionRandomSource = sessionRandomRef.current,
+  ) =>
+    createSession(entries, nextDrill, {
       ...sessionOptions,
-      random: sessionRandomRef.current,
+      createdAt: sessionOptions?.createdAt ?? new Date().toISOString(),
+      random,
       seedProgressByKanji: progressByKanjiRef.current,
     });
   const [session, setSession] = useState(() => createPageSession(drill));
@@ -71,8 +78,15 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
 
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
+    const currentSessionEntries = getSelectedEntriesForSession(session.selectedKanji);
     setDrillId(nextDrillId);
-    setSession(createPageSession(nextDrill));
+    setSession(
+      createPageSession(
+        nextDrill,
+        currentSessionEntries.length > 0 ? currentSessionEntries : canonicalKanjiDeck,
+        currentSessionEntries.length > 0 ? () => 0 : sessionRandomRef.current,
+      ),
+    );
     setReadingsRevealed(nextDrill.mode === 'learn');
   }
 
@@ -116,7 +130,9 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
         <h1 className="page-title">Study one kanji at a time</h1>
         <p className="body-copy">
           Choose a drill, work through the current session, and reveal meanings and readings only
-          when you need them.
+          when you need them. Truly new kanji are capped at {DEFAULT_DAILY_NEW_KANJI_LIMIT} per
+          local day from saved progress; the app does not yet backfill the rest with broader review
+          scheduling.
         </p>
       </header>
 
@@ -347,6 +363,12 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
       </div>
     </main>
   );
+}
+
+function getSelectedEntriesForSession(selectedKanji: readonly string[]): readonly KanjiEntry[] {
+  return selectedKanji
+    .map((kanji) => canonicalKanjiDeck.find((entry) => entry.kanji === kanji))
+    .filter((entry): entry is KanjiEntry => entry !== undefined);
 }
 
 function getModePresentation({

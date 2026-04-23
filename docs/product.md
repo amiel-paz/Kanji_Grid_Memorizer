@@ -32,6 +32,10 @@ stored on `KanjiEntry`.
 Saved learner progress may seed the starting cue support for a new session, but once the run
 starts, live cue opacity, reveal state, attempts, and answer flow still belong to session state.
 
+Saved learner progress is also the durable source for whether a kanji has been seen before. Session
+creation may use that saved record to cap how many truly new kanji enter a local day's new batch,
+but that does not move live queue or answer ownership out of session state.
+
 ## Differentiation
 
 This project is not a generic flashcard app, a WaniKani-style mnemonic text system, a heatmap, or

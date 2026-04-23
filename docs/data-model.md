@@ -82,9 +82,11 @@ Progress can eventually answer questions like:
 - Has the learner seen this kanji before?
 - How often has the learner answered correctly?
 - Is the kanji new, learning, or familiar?
+- Was this kanji first seen on today's local date?
 
-It can seed a new session's starting cue support from the durable confidence bucket, but it should
-not carry the live cue opacity for an active drill. Session state owns that.
+It can seed a new session's starting cue support from the durable confidence bucket, and it can
+also tell session creation whether a kanji is truly new today for the explicit daily new-item cap.
+It should not carry the live cue opacity for an active drill. Session state owns that.
 
 TODO: Decide the minimum progress fields needed before building real scheduling.
 
@@ -120,6 +122,12 @@ session should be able to compute its own cue state from the drill and progress 
 The current seeding rule is intentionally small and deterministic: Faded recall starts unseen or
 `new` items at `100%`, `learning` items at `66%`, and `familiar` items at `33%`. Learn still
 starts at full cue, and Blind recall still starts hidden.
+
+The current daily new-item rule is intentionally small and deterministic too: a newly created
+session can admit at most 5 truly new kanji per local day based on durable progress. Previously
+seen kanji may still fill the batch. If the current app does not have enough seen kanji to backfill
+the drill's nominal size, the batch may simply be smaller until later carryover and review
+orchestration work lands.
 
 The starter review loop keeps queue movement inside session state. Session creation can randomize
 which kanji enter the current run, while answering or advancing still rotates the active kanji to

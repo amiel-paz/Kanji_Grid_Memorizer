@@ -65,7 +65,6 @@ follow-on tracks, not implied scope to absorb into the first usable release.
 
 At this point the remaining numbered worktrees are:
 
-- `work/progress-daily-new-limit`
 - `work/progress-carryover-v1`
 - `work/review-bank-v1`
 - `work/review-session-orchestration`
@@ -84,7 +83,10 @@ Clarify the saved-state milestone boundaries:
   Joyo-owned entries.
 - Row 25 lets durable progress seed the starting cue support for a new session while still leaving
   live session opacity, reveal state, attempts, and queue behavior with session ownership.
-- Rows 26 through 29 are where the first actually useful daily study loop becomes concrete while
+- Row 26 lands the first explicit daily new-item boundary: up to 5 truly new kanji per local day
+  can enter a newly created session based on durable saved progress, with no broader scheduler yet.
+- Rows 27 through 29 are where the rest of the first actually useful daily study loop becomes
+  concrete while
   still preserving stable content ownership versus session ownership versus durable learner state.
 - Row 31 is the intended local-first MVP stop point for something you'd be willing to ship to
   yourself or a friend.

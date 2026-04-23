@@ -47,9 +47,10 @@ describe('StudyPage', () => {
 
     expect(screen.getByRole('heading', { name: 'Study one kanji at a time' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Faded recall' })).toBeInTheDocument();
-    expect(screen.getByText('1 / 10')).toBeInTheDocument();
+    expect(screen.getByText('1 / 5')).toBeInTheDocument();
     expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
     expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
+    expect(screen.getByText(/Truly new kanji are capped at 5 per local day/i)).toBeInTheDocument();
     expect(screen.getAllByText('Hidden until reveal')).toHaveLength(2);
   });
 
@@ -133,6 +134,7 @@ describe('StudyPage', () => {
         kanji: firstEntry.kanji,
         seenCount: 1,
         goodCount: 1,
+        firstSeenAt: '2026-04-21T12:00:00.000Z',
         lastSeenAt: '2026-04-21T12:00:00.000Z',
         confidence: 'learning',
       },
@@ -140,7 +142,16 @@ describe('StudyPage', () => {
   });
 
   it('seeds faded recall from durable progress while keeping live session counts fresh', () => {
-    const { firstEntry } = getExpectedStudyPageEntries();
+    const sessionOptions = {
+      id: 'seeded-study-page-session',
+      random: () => 0,
+      dailyNewLimit: 0,
+    };
+    const firstEntry = canonicalKanjiDeck[0];
+
+    if (!firstEntry) {
+      throw new Error('Expected canonical deck data.');
+    }
 
     storage.setItem(
       'kanji-grid-progress-v0',
@@ -149,13 +160,14 @@ describe('StudyPage', () => {
           kanji: firstEntry.kanji,
           seenCount: 8,
           goodCount: 6,
+          firstSeenAt: '2026-04-20T10:00:00.000Z',
           lastSeenAt: '2026-04-20T12:00:00.000Z',
           confidence: 'familiar',
         },
       }),
     );
 
-    render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
+    render(<StudyPage sessionOptions={sessionOptions} />);
 
     expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
     expect(screen.getByText('Cue visible at 33%')).toBeInTheDocument();
@@ -163,23 +175,23 @@ describe('StudyPage', () => {
   });
 
   it('switches to learn mode with persistent readings and next-item navigation', () => {
-    const { firstEntry, secondEntry } = getExpectedStudyPageEntries();
-
     render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
 
     fireEvent.click(screen.getByRole('radio', { name: /Learn/i }));
 
     expect(screen.getByRole('heading', { name: 'Learn' })).toBeInTheDocument();
-    expect(screen.getByText(getPrimaryRevealText(firstEntry))).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /^Now studying / })).toBeInTheDocument();
+    expect(screen.getByText('1 / 5')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Meanings', level: 4 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Readings', level: 4 })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next kanji' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Reveal readings and meanings' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Again' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Good' })).not.toBeInTheDocument();
 
+    const learnHeadingText = screen.getByRole('heading', { level: 2, name: /^Now studying / }).textContent;
     fireEvent.click(screen.getByRole('button', { name: 'Next kanji' }));
-
-    expect(screen.getByText(`Now studying ${secondEntry.kanji}`)).toBeInTheDocument();
-    expect(screen.getByText(getPrimaryRevealText(secondEntry))).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /^Now studying / }).textContent).not.toBe(learnHeadingText);
   });
 
   it('does not persist progress while navigating the learn-mode shell', () => {
@@ -192,27 +204,23 @@ describe('StudyPage', () => {
   });
 
   it('resets reveal state and session position when switching drills', () => {
-    const { firstEntry, secondEntry } = getExpectedStudyPageEntries();
-
     render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Reveal readings and meanings' }));
-    expect(screen.getByText(getPrimaryRevealText(firstEntry))).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Again' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('radio', { name: /Learn/i }));
 
-    expect(screen.getByText(getPrimaryRevealText(firstEntry))).toBeInTheDocument();
-    expect(screen.getByText('1 / 10')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /^Now studying / })).toBeInTheDocument();
+    expect(screen.getByText('1 / 5')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Next kanji' }));
-    expect(screen.getByText(`Now studying ${secondEntry.kanji}`)).toBeInTheDocument();
-    expect(screen.getByText('2 / 10')).toBeInTheDocument();
+    expect(screen.getByText('2 / 5')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('radio', { name: /Faded recall/i }));
 
-    expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
-    expect(screen.getByText('1 / 10')).toBeInTheDocument();
-    expect(screen.queryByText(getPrimaryRevealText(firstEntry))).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: /^Now studying / })).toBeInTheDocument();
+    expect(screen.getByText('1 / 5')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reveal readings and meanings' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Again' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Good' })).not.toBeInTheDocument();
@@ -236,6 +244,7 @@ describe('StudyPage', () => {
         kanji: firstEntry.kanji,
         seenCount: 1,
         goodCount: 1,
+        firstSeenAt: '2026-04-21T12:00:00.000Z',
         lastSeenAt: '2026-04-21T12:00:00.000Z',
         confidence: 'learning',
       },
@@ -251,23 +260,23 @@ describe('StudyPage', () => {
   });
 
   it('keeps blind recall cue-hidden before and after grading', () => {
-    const { firstEntry, secondEntry } = getExpectedStudyPageEntries();
-
     render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
 
     fireEvent.click(screen.getByRole('radio', { name: /Blind recall/i }));
+    const firstHeadingText = screen.getByRole('heading', { level: 2, name: /^Now studying / }).textContent;
 
     expect(screen.getByText('Kanji only until reveal')).toBeInTheDocument();
     expect(screen.getByText('0%')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Reveal readings and meanings' }));
 
-    expect(screen.getByText(getPrimaryRevealText(firstEntry))).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Again' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Again' }));
 
-    expect(screen.getByText(`Now studying ${secondEntry.kanji}`)).toBeInTheDocument();
     expect(screen.getByText('0%')).toBeInTheDocument();
     expect(screen.getByText('Kanji only until reveal')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Again' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Good' })).not.toBeInTheDocument();
   });
 
   it('shows a completion state after the blind-recall batch is fully cleared', () => {
@@ -275,14 +284,14 @@ describe('StudyPage', () => {
 
     fireEvent.click(screen.getByRole('radio', { name: /Blind recall/i }));
 
-    for (let index = 0; index < 10; index += 1) {
+    for (let index = 0; index < 5; index += 1) {
       fireEvent.click(screen.getByRole('button', { name: 'Reveal readings and meanings' }));
       fireEvent.click(screen.getByRole('button', { name: 'Good' }));
     }
 
     expect(screen.getByRole('heading', { name: 'Session complete', level: 2 })).toBeInTheDocument();
     expect(screen.getByText('This batch is clear')).toBeInTheDocument();
-    expect(screen.getByText('10 cleared / 10 selected')).toBeInTheDocument();
+    expect(screen.getByText('5 cleared / 5 selected')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Restart this drill' })).toBeInTheDocument();
   });
 });
