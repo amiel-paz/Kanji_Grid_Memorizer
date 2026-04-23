@@ -68,6 +68,7 @@ product target for now.
 - a small local daily loop with a 5-kanji fresh-new cap, unfinished carryover, and simple
   review-bank backfill
 - a learner-facing seen library sourced from durable progress plus stable content lookup
+- a manual seen-intake surface for outside encounters that updates durable learner progress only
 - small tests around the core idea
 
 The current MVP is intentionally small, but it is no longer just a mock shell. It should present a

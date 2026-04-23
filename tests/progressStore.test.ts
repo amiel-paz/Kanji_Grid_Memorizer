@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  applyManualSeenToProgressRecords,
   applyReviewEventToProgressRecords,
   loadProgressRecords,
+  persistManualSeenToProgressStore,
   persistReviewEventToProgressStore,
   progressStore,
 } from '../src/state/progressStore';
@@ -133,6 +135,62 @@ describe('progressStore', () => {
       },
     });
     expect(progressStore.load()).toEqual(nextProgress);
+  });
+
+  it('can persist a manual seen update without creating session-owned state', () => {
+    const nextProgress = persistManualSeenToProgressStore(
+      loadProgressRecords(),
+      '森',
+      '2026-04-21T12:15:00.000Z',
+    );
+
+    expect(nextProgress).toEqual({
+      森: {
+        kanji: '森',
+        seenCount: 1,
+        goodCount: 0,
+        firstSeenAt: '2026-04-21T12:15:00.000Z',
+        lastSeenAt: '2026-04-21T12:15:00.000Z',
+        confidence: 'learning',
+      },
+    });
+    expect(progressStore.load()).toEqual(nextProgress);
+  });
+
+  it('updates only durable learner progress when manual intake marks an item as encountered', () => {
+    expect(
+      applyManualSeenToProgressRecords(
+        {
+          月: {
+            kanji: '月',
+            seenCount: 2,
+            goodCount: 1,
+            firstSeenAt: '2026-04-20T10:00:00.000Z',
+            lastSeenAt: '2026-04-20T12:00:00.000Z',
+            confidence: 'learning',
+          },
+        },
+        '力',
+        '2026-04-21T12:20:00.000Z',
+      ),
+    ).toEqual({
+      月: {
+        kanji: '月',
+        seenCount: 2,
+        goodCount: 1,
+        firstSeenAt: '2026-04-20T10:00:00.000Z',
+        lastSeenAt: '2026-04-20T12:00:00.000Z',
+        confidence: 'learning',
+      },
+      力: {
+        kanji: '力',
+        seenCount: 1,
+        goodCount: 0,
+        firstSeenAt: '2026-04-21T12:20:00.000Z',
+        lastSeenAt: '2026-04-21T12:20:00.000Z',
+        confidence: 'learning',
+      },
+    });
   });
 
   it('updates only the reviewed kanji and keeps persistence scoped to the small learner record', () => {

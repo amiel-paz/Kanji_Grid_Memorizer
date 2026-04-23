@@ -1,4 +1,8 @@
-import { applyReviewOutcome, createInitialProgress } from '../domain/progress/progress';
+import {
+  applyReviewOutcome,
+  createInitialProgress,
+  recordSeen,
+} from '../domain/progress/progress';
 import type { UserProgress } from '../domain/progress/types';
 import type { SessionAnswerEvent } from '../domain/session/types';
 import { createLocalStore } from '../lib/localStore';
@@ -44,6 +48,33 @@ export function persistReviewEventToProgressStore(
   reviewedAt?: string,
 ): Record<string, UserProgress> {
   const nextProgressByKanji = applyReviewEventToProgressRecords(progressByKanji, event, reviewedAt);
+  progressStore.save(nextProgressByKanji);
+  return nextProgressByKanji;
+}
+
+export function applyManualSeenToProgressRecords(
+  progressByKanji: ProgressByKanji,
+  kanji: string,
+  seenAt?: string,
+): Record<string, UserProgress> {
+  const currentProgress = progressByKanji[kanji] ?? createInitialProgress(kanji);
+
+  return {
+    ...progressByKanji,
+    [kanji]: recordSeen(currentProgress, seenAt),
+  };
+}
+
+export function persistManualSeenToProgressStore(
+  progressByKanji: ProgressByKanji,
+  kanji: string,
+  seenAt?: string,
+): Record<string, UserProgress> {
+  const nextProgressByKanji = applyManualSeenToProgressRecords(
+    progressByKanji,
+    kanji,
+    seenAt,
+  );
   progressStore.save(nextProgressByKanji);
   return nextProgressByKanji;
 }

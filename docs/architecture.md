@@ -47,8 +47,8 @@ sessions, but it should stay smaller than a scheduler until the app has a real l
 
 In the current MVP, progress can seed only the initial cue support of a new session plus the
 session-creation boundary for truly new, unfinished carryover, and first review-bank-path kanji.
-That same durable boundary can also drive read-only learner-library views. It still does not store
-live session opacity, queue position, reveal state, or active attempts.
+That same durable boundary can also drive learner-library views and explicit manual-intake writes.
+It still does not store live session opacity, queue position, reveal state, or active attempts.
 
 Progress types live in `src/domain/progress/types.ts`.
 

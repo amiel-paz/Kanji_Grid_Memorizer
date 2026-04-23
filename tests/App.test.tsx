@@ -61,7 +61,31 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Seen library' }));
 
     expect(screen.getByRole('heading', { name: 'Your learner library is still empty' })).toBeInTheDocument();
-    expect(screen.getByText(/manual intake for outside encounters is a later planned worktree/i)).toBeInTheDocument();
+    expect(screen.getByText(/you can also use manual intake for outside encounters/i)).toBeInTheDocument();
+  });
+
+  it('lets the learner mark an outside encounter and then see it in the library', () => {
+    const firstEntry = canonicalKanjiDeck[0];
+
+    if (!firstEntry) {
+      throw new Error('Expected canonical deck data.');
+    }
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manual intake' }));
+
+    expect(screen.getByRole('heading', { name: 'Mark an outside encounter as seen' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Mark encountered' })[0]!);
+
+    expect(screen.getByText(/is now marked as encountered in durable learner progress/i)).toBeInTheDocument();
+    expect(storage.getItem('kanji-grid-progress-v0')).toContain(`"${firstEntry.kanji}"`);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Seen library' }));
+
+    expect(screen.getByText(firstEntry.kanji)).toBeInTheDocument();
+    expect(screen.getByText('1 review')).toBeInTheDocument();
   });
 });
 

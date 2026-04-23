@@ -342,4 +342,48 @@ select {
   .seen-library-meta dd {
     @apply mt-1 text-sm text-gray-900;
   }
+
+  .manual-intake-section {
+    @apply flex flex-col gap-5;
+  }
+
+  .manual-intake-filter {
+    @apply flex flex-col gap-2;
+  }
+
+  .manual-intake-filter-label {
+    @apply text-sm font-semibold text-gray-900;
+  }
+
+  .manual-intake-input {
+    @apply rounded-2xl border border-gray-300 bg-white px-4 py-3 text-base text-gray-900 shadow-sm;
+  }
+
+  .manual-intake-input::placeholder {
+    @apply text-gray-400;
+  }
+
+  .manual-intake-grid {
+    @apply grid gap-4 lg:grid-cols-2;
+  }
+
+  .manual-intake-card {
+    @apply flex flex-col gap-5;
+  }
+
+  .manual-intake-card-top {
+    @apply flex gap-4;
+  }
+
+  .manual-intake-card-copy {
+    @apply flex min-w-0 flex-1 flex-col gap-2;
+  }
+
+  .manual-intake-actions {
+    @apply flex flex-col gap-3 border-t border-gray-200 pt-4;
+  }
+
+  .manual-intake-empty {
+    @apply rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-5 py-6;
+  }
 }
