@@ -20,9 +20,12 @@ export function createInitialProgress(kanji: string): UserProgress {
 }
 
 export function recordSeen(progress: UserProgress, seenAt?: string): UserProgress {
+  const firstSeenAt = progress.firstSeenAt ?? seenAt;
+
   return {
     ...progress,
     seenCount: progress.seenCount + 1,
+    firstSeenAt,
     lastSeenAt: seenAt ?? progress.lastSeenAt,
     confidence: progress.confidence === 'familiar' ? 'familiar' : 'learning',
   };

@@ -18,6 +18,7 @@ describe('progress helpers', () => {
       kanji: '力',
       seenCount: 1,
       goodCount: 0,
+      firstSeenAt: '2026-04-20T00:00:00.000Z',
       lastSeenAt: '2026-04-20T00:00:00.000Z',
       confidence: 'learning',
     });
@@ -71,6 +72,7 @@ describe('progress helpers', () => {
       kanji: '力',
       seenCount: 1,
       goodCount: 1,
+      firstSeenAt: '2026-04-20T00:00:00.000Z',
       lastSeenAt: '2026-04-20T00:00:00.000Z',
       confidence: 'learning',
     });
@@ -87,7 +89,35 @@ describe('progress helpers', () => {
       kanji: '力',
       seenCount: 1,
       goodCount: 0,
+      firstSeenAt: '2026-04-20T00:05:00.000Z',
       lastSeenAt: '2026-04-20T00:05:00.000Z',
+      confidence: 'learning',
+    });
+  });
+
+  it('keeps the first-seen timestamp stable after later reviews', () => {
+    const learning = {
+      ...createInitialProgress('力'),
+      seenCount: 2,
+      goodCount: 1,
+      firstSeenAt: '2026-04-20T00:00:00.000Z',
+      lastSeenAt: '2026-04-20T01:00:00.000Z',
+      confidence: 'learning' as const,
+    };
+
+    expect(
+      applyReviewOutcome(learning, {
+        kanji: '力',
+        reviewGrade: 'good',
+        previousCueOpacity: 0.66,
+        nextCueOpacity: 0.33,
+        reviewedAt: '2026-04-21T00:00:00.000Z',
+      }),
+    ).toMatchObject({
+      seenCount: 3,
+      goodCount: 2,
+      firstSeenAt: '2026-04-20T00:00:00.000Z',
+      lastSeenAt: '2026-04-21T00:00:00.000Z',
       confidence: 'learning',
     });
   });
