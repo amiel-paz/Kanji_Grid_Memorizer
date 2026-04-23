@@ -50,8 +50,57 @@ describe('StudyPage', () => {
     expect(screen.getByText('1 / 5')).toBeInTheDocument();
     expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
     expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
-    expect(screen.getByText(/Truly new kanji are capped at 5 per local day/i)).toBeInTheDocument();
+    expect(screen.getByText(/started-but-unfinished new kanji carry forward before fresh replacements/i)).toBeInTheDocument();
     expect(screen.getAllByText('Hidden until reveal')).toHaveLength(2);
+  });
+
+  it('carries unfinished new kanji forward before admitting replacement new kanji', () => {
+    const [firstEntry, secondEntry] = canonicalKanjiDeck;
+
+    if (!firstEntry || !secondEntry) {
+      throw new Error('Expected canonical deck data.');
+    }
+
+    storage.setItem(
+      'kanji-grid-progress-v0',
+      JSON.stringify({
+        [firstEntry.kanji]: {
+          kanji: firstEntry.kanji,
+          seenCount: 1,
+          goodCount: 0,
+          firstSeenAt: '2026-04-20T12:00:00.000Z',
+          lastSeenAt: '2026-04-20T12:00:00.000Z',
+          confidence: 'learning',
+        },
+        [secondEntry.kanji]: {
+          kanji: secondEntry.kanji,
+          seenCount: 1,
+          goodCount: 0,
+          firstSeenAt: '2026-04-21T09:00:00.000Z',
+          lastSeenAt: '2026-04-21T09:00:00.000Z',
+          confidence: 'learning',
+        },
+      }),
+    );
+
+    render(
+      <StudyPage
+        sessionOptions={{
+          id: 'carryover-study-page-session',
+          dailyNewLimit: 2,
+          random: createDeterministicRandom([0, 0, 0.9]),
+        }}
+      />,
+    );
+
+    expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
+    expect(screen.getByText('1 / 2')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reveal readings and meanings' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Good' }));
+
+    expect(screen.getByText(`Now studying ${secondEntry.kanji}`)).toBeInTheDocument();
+    expect(screen.getByText('2 / 2')).toBeInTheDocument();
   });
 
   it('reveals readings before review grading actions and exposes reveal state accessibly', () => {
@@ -87,13 +136,13 @@ describe('StudyPage', () => {
   });
 
   it('writes progress only after an explicit review grade and reuses existing stored records', () => {
-    const { firstEntry, secondEntry } = getExpectedStudyPageEntries();
+    const { firstEntry } = getExpectedStudyPageEntries();
 
     storage.setItem(
       'kanji-grid-progress-v0',
       JSON.stringify({
-        [secondEntry.kanji]: {
-          kanji: secondEntry.kanji,
+        [firstEntry.kanji]: {
+          kanji: firstEntry.kanji,
           seenCount: 2,
           goodCount: 1,
           lastSeenAt: '2026-04-20T12:00:00.000Z',
@@ -104,14 +153,14 @@ describe('StudyPage', () => {
 
     render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
 
-    expect(storage.getItem('kanji-grid-progress-v0')).toContain(`"${secondEntry.kanji}"`);
+    expect(storage.getItem('kanji-grid-progress-v0')).toContain(`"${firstEntry.kanji}"`);
 
     fireEvent.click(screen.getByRole('button', { name: 'Reveal readings and meanings' }));
 
     expect(storage.getItem('kanji-grid-progress-v0')).toEqual(
       JSON.stringify({
-        [secondEntry.kanji]: {
-          kanji: secondEntry.kanji,
+        [firstEntry.kanji]: {
+          kanji: firstEntry.kanji,
           seenCount: 2,
           goodCount: 1,
           lastSeenAt: '2026-04-20T12:00:00.000Z',
@@ -123,17 +172,10 @@ describe('StudyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Good' }));
 
     expect(JSON.parse(storage.getItem('kanji-grid-progress-v0') ?? 'null')).toEqual({
-      [secondEntry.kanji]: {
-        kanji: secondEntry.kanji,
-        seenCount: 2,
-        goodCount: 1,
-        lastSeenAt: '2026-04-20T12:00:00.000Z',
-        confidence: 'learning',
-      },
       [firstEntry.kanji]: {
         kanji: firstEntry.kanji,
-        seenCount: 1,
-        goodCount: 1,
+        seenCount: 3,
+        goodCount: 2,
         firstSeenAt: '2026-04-21T12:00:00.000Z',
         lastSeenAt: '2026-04-21T12:00:00.000Z',
         confidence: 'learning',
@@ -263,7 +305,6 @@ describe('StudyPage', () => {
     render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
 
     fireEvent.click(screen.getByRole('radio', { name: /Blind recall/i }));
-    const firstHeadingText = screen.getByRole('heading', { level: 2, name: /^Now studying / }).textContent;
 
     expect(screen.getByText('Kanji only until reveal')).toBeInTheDocument();
     expect(screen.getByText('0%')).toBeInTheDocument();

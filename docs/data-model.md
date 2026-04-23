@@ -82,10 +82,12 @@ Progress can eventually answer questions like:
 - Has the learner seen this kanji before?
 - How often has the learner answered correctly?
 - Is the kanji new, learning, or familiar?
+- If this kanji was already introduced, does it still belong to the unfinished new-item carryover path?
 - Was this kanji first seen on today's local date?
 
 It can seed a new session's starting cue support from the durable confidence bucket, and it can
-also tell session creation whether a kanji is truly new today for the explicit daily new-item cap.
+also tell session creation whether a kanji is truly new today for the explicit daily new-item cap
+or whether it must be re-offered as unfinished carryover before replacement new items are admitted.
 It should not carry the live cue opacity for an active drill. Session state owns that.
 
 TODO: Decide the minimum progress fields needed before building real scheduling.
@@ -124,10 +126,13 @@ The current seeding rule is intentionally small and deterministic: Faded recall 
 starts at full cue, and Blind recall still starts hidden.
 
 The current daily new-item rule is intentionally small and deterministic too: a newly created
-session can admit at most 5 truly new kanji per local day based on durable progress. Previously
-seen kanji may still fill the batch. If the current app does not have enough seen kanji to backfill
-the drill's nominal size, the batch may simply be smaller until later carryover and review
-orchestration work lands.
+session can admit at most 5 fresh truly new kanji per local day based on durable progress. Items
+with seen durable progress that are not yet `familiar` are treated as unfinished carryover and are
+re-offered before fresh replacement new items are admitted. Older carryover reduces that day's
+fresh-new allowance, while same-day carryover does not double-count because `firstSeenAt` already
+consumed today's slot. Previously seen `familiar` kanji may still fill the rest of the batch. If
+the current app does not have enough seen kanji to backfill the drill's nominal size, the batch
+may simply be smaller until later review-bank and orchestration work lands.
 
 The starter review loop keeps queue movement inside session state. Session creation can randomize
 which kanji enter the current run, while answering or advancing still rotates the active kanji to
