@@ -33,7 +33,8 @@ Saved learner progress may seed the starting cue support for a new session, but 
 starts, live cue opacity, reveal state, attempts, and answer flow still belong to session state.
 
 Saved learner progress is also the durable source for whether a kanji has been seen before. Session
-creation may use that saved record to cap how many truly new kanji enter a local day's new batch,
+creation may use that saved record to cap how many truly new kanji enter a local day's new batch
+and to carry started-but-not-yet-familiar new kanji forward before fresh replacements are admitted,
 but that does not move live queue or answer ownership out of session state.
 
 ## Differentiation

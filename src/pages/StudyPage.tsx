@@ -131,7 +131,8 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
         <p className="body-copy">
           Choose a drill, work through the current session, and reveal meanings and readings only
           when you need them. Truly new kanji are capped at {DEFAULT_DAILY_NEW_KANJI_LIMIT} per
-          local day from saved progress; the app does not yet backfill the rest with broader review
+          local day from saved progress, and started-but-unfinished new kanji carry forward before
+          fresh replacements. The app still does not backfill the rest with broader review
           scheduling.
         </p>
       </header>

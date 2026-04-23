@@ -57,10 +57,10 @@ own mastery rule.
 
 - New kanji now enter newly created sessions through an explicit local-first daily allowance of 5
   truly new items, derived from durable saved progress rather than from mutable session fields.
-- The current pass stops there. It does not yet backfill with due-card logic or promise a finished
-  daily scheduler.
-- If a learner does not finish all of the day's new kanji, the unfinished items should carry over
-  before more new items are introduced.
+- Started-but-unfinished new kanji now carry over before fresh replacement new items are admitted
+  on a later session creation.
+- The current pass still stops there. It does not yet backfill with due-card logic, create a real
+  review bank, or promise a finished daily scheduler.
 - A kanji can be treated as learned for the "new item" path once it successfully progresses
   through the full cue-opacity ladder, rather than by copying a generic fixed review-count rule.
 - Learned items should later reappear through persistent recall drills driven by saved progress,

@@ -79,7 +79,7 @@ describe('session cue opacity', () => {
       },
     });
 
-    expect(session.selectedKanji).toEqual([newEntry.kanji, learningEntry.kanji, familiarEntry.kanji]);
+    expect(session.selectedKanji).toEqual([learningEntry.kanji, newEntry.kanji, familiarEntry.kanji]);
     expect(session.itemStateByKanji[newEntry.kanji]).toMatchObject({
       attempts: 0,
       goodCount: 0,
@@ -138,7 +138,7 @@ describe('session cue opacity', () => {
     expect(new Set(selected.map((entry) => entry.kanji))).toHaveLength(4);
   });
 
-  it('caps truly new kanji by the remaining daily allowance while still allowing already-seen items', () => {
+  it('re-offers unfinished carryover items before admitting replacement truly new kanji', () => {
     const entries = mockKanji.slice(0, 6);
     const selected = selectSessionEntries(entries, 6, {
       createdAt: '2026-04-21T12:00:00.000Z',
@@ -168,9 +168,30 @@ describe('session cue opacity', () => {
 
     expect(selected.map((entry) => entry.kanji)).toEqual([
       entries[0]!.kanji,
-      entries[1]!.kanji,
       entries[2]!.kanji,
-      entries[3]!.kanji,
+      entries[1]!.kanji,
+    ]);
+  });
+
+  it('does not double-count same-day carryover against the fresh-new allowance', () => {
+    const entries = mockKanji.slice(0, 4);
+    const selected = selectSessionEntries(entries, 4, {
+      createdAt: '2026-04-21T12:00:00.000Z',
+      dailyNewLimit: 2,
+      progressByKanji: {
+        [entries[0]!.kanji]: {
+          kanji: entries[0]!.kanji,
+          confidence: 'learning',
+          seenCount: 1,
+          firstSeenAt: '2026-04-21T08:00:00.000Z',
+        },
+      },
+      random: createDeterministicRandom([0, 0, 0]),
+    });
+
+    expect(selected.map((entry) => entry.kanji)).toEqual([
+      entries[0]!.kanji,
+      entries[1]!.kanji,
     ]);
   });
 
