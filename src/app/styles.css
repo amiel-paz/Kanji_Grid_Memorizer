@@ -285,12 +285,28 @@ select {
     @apply mt-1 text-gray-900;
   }
 
+  .study-prompt-card {
+    @apply flex w-full flex-col gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-5;
+  }
+
   .study-action-row {
     @apply flex max-w-[24rem] flex-wrap gap-3;
   }
 
   .study-grade-row {
     @apply grid max-w-[24rem] grid-cols-2 gap-3;
+  }
+
+  .study-choice-grid {
+    @apply grid max-w-[24rem] grid-cols-2 gap-3;
+  }
+
+  .study-choice-button {
+    @apply flex min-h-24 items-center justify-center;
+  }
+
+  .study-choice-kanji {
+    @apply text-4xl font-semibold;
   }
 
   .study-action-row .btn {

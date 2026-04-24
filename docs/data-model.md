@@ -105,8 +105,9 @@ Defines study behavior, such as mode and cue policy.
 `DrillConfig` is the right place to describe whether a drill shows the cue fully, lets the session
 dim it, or hides it.
 
-The active drill modes are Learn, Faded recall, and Blind recall. Review grading uses the explicit
-`again` / `good` choices from the Anki-like reveal-then-grade flow.
+The active drill modes are Learn, Faded recall, Blind recall, and Reading MCQ. Review grading uses
+the explicit `again` / `good` choices from the Anki-like reveal-then-grade flow, and Reading MCQ
+maps a correct choice to `good` and a wrong choice to `again`.
 
 ## SessionState
 
@@ -119,6 +120,7 @@ Ephemeral run-specific state:
 - active item
 - per-kanji attempts and `good` count for this run
 - per-kanji session opacity
+- per-kanji Reading MCQ option sets when that drill is active
 
 Session cue opacity is narrowed to the review ladder: `100%`, `66%`, `33%`, and `0%`.
 

@@ -10,6 +10,7 @@ describe('DrillModePicker', () => {
     expect(screen.getByText('Each mode changes how much support stays on screen. The current session deck stays the same.')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /Faded recall/i })).toBeChecked();
     expect(screen.getByRole('radio', { name: /Blind recall/i })).not.toBeChecked();
+    expect(screen.getByRole('radio', { name: /Reading MCQ/i })).not.toBeChecked();
     expect(screen.getByRole('radio', { name: /Learn/i })).not.toBeChecked();
     expect(
       screen.getByText(
@@ -18,6 +19,9 @@ describe('DrillModePicker', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText('Keep the color cue hidden and rely on recall from the kanji alone.'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('See the readings, then choose the matching kanji from four locally confusable options.'),
     ).toBeInTheDocument();
     expect(
       screen.getByText('Keep the cue, meanings, and readings visible for the whole pass.'),

@@ -73,6 +73,10 @@ zero-cue pass retires that card from the rest of the current run. Drill logic st
 cue support and retirement inside session state; it does not rewrite stable content or durable
 progress ownership.
 
+The Reading MCQ drill keeps its live answer options in session state too. Stable `KanjiEntry`
+records still own the readings, meanings, and code digits, while the session owns which four kanji
+choices are currently attached to a prompt.
+
 ## Module Boundaries
 
 - `domain/encoding`: base-8 code assignment and palette rules

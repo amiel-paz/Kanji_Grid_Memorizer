@@ -16,6 +16,13 @@ export const STARTER_DRILLS: DrillConfig[] = [
     cuePolicy: 'hidden',
   },
   {
+    id: 'reading-mcq',
+    label: 'Reading MCQ',
+    mode: 'reading-mcq',
+    deckSize: 10,
+    cuePolicy: 'hidden',
+  },
+  {
     id: 'learn',
     label: 'Learn',
     mode: 'learn',

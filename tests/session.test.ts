@@ -125,6 +125,34 @@ describe('session cue opacity', () => {
     expect(getCueOpacity(blindSession, entry.kanji)).toBe(0);
   });
 
+  it('builds reading-mcq sessions with four choices per prompt and reading-mcq review events', () => {
+    const drill = getDrillById('reading-mcq');
+    const entries = mockKanji.slice(0, 4);
+    const session = createSession(entries, drill, {
+      id: 'reading-mcq-session',
+      random: createDeterministicRandom([0, 0, 0, 0, 0, 0, 0, 0]),
+    });
+    const activeKanji = session.activeKanji;
+
+    if (!activeKanji) {
+      throw new Error('Expected an active kanji for reading MCQ.');
+    }
+
+    expect(session.choiceOptionsByKanji).toBeDefined();
+    expect(session.choiceOptionsByKanji?.[activeKanji]).toHaveLength(4);
+    expect(session.choiceOptionsByKanji?.[activeKanji]).toContain(activeKanji);
+    expect(new Set(session.choiceOptionsByKanji?.[activeKanji] ?? [])).toHaveLength(4);
+
+    const { event } = answerSessionReview(
+      session,
+      'good',
+      activeKanji,
+      createDeterministicRandom([0]),
+    );
+
+    expect(event.drillMode).toBe('reading-mcq');
+  });
+
   it('selects session entries deterministically without duplicates and caps the selection at the available entries', () => {
     const selected = selectSessionEntries(
       mockKanji.slice(0, 4),

@@ -1,12 +1,13 @@
 # Drills
 
-The app currently ships three starting drill modes. They form the first local MVP, not a finished
+The app currently ships four starting drill modes. They form the first local MVP, not a finished
 long-term learning system. Recall drills are the useful path; grid-to-kanji matching drills are
 out of scope.
 
 1. Learn: show kanji, full cue, readings, and meanings.
 2. Faded recall: show kanji with cue strength controlled by session state.
 3. Blind recall: show kanji without cue support.
+4. Reading MCQ: show the on and kun readings, then choose the correct kanji from 4 options.
 
 Inside the current study shell, Learn can advance to the next kanji without grading. Review modes
 keep the reveal-then-grade order, usually rotate through the selected session queue, retire a card
@@ -25,6 +26,19 @@ quietly fade back into a visible cue after an `Again`.
 
 The cue policy belongs to the drill configuration. The current opacity belongs to the session. The
 tile only renders what it receives.
+
+## Reading MCQ Metric
+
+The current Reading MCQ drill uses one explicit local confusability rule:
+
+- normalize each on/kun reading by lowercasing, converting katakana to hiragana, and removing
+  punctuation such as okurigana dots
+- score each candidate kanji by the summed smallest Levenshtein distance from each target reading
+  to that candidate's normalized readings
+- choose the three non-target kanji with the smallest score as distractors
+
+This is intentionally a local reading-similarity heuristic. The repo does not claim any stroke
+geometry or image-space distance for these distractors.
 
 ## Random 10; Dim On Success
 

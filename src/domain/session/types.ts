@@ -33,6 +33,7 @@ export interface SessionState {
   readonly queue: readonly string[];
   readonly activeKanji: string | null;
   readonly itemStateByKanji: Readonly<Record<string, SessionKanjiState>>;
+  readonly choiceOptionsByKanji?: Readonly<Record<string, readonly string[]>>;
 }
 
 export interface SessionAnswerEvent {

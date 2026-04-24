@@ -52,6 +52,8 @@ function descriptionForMode(mode: DrillConfig['mode']): string {
       return 'Reveal the answer after you try to recall it, then let session state fade the cue.';
     case 'blind-recall':
       return 'Keep the color cue hidden and rely on recall from the kanji alone.';
+    case 'reading-mcq':
+      return 'See the readings, then choose the matching kanji from four locally confusable options.';
     default:
       return 'Study shell mode.';
   }
