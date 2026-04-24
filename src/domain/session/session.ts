@@ -102,9 +102,10 @@ export function selectSessionEntries(
     Math.min(remainingDeckSlots, remainingDailyNewAllowance),
     random,
   );
-  const reviewBankSelection = selectRandomEntries(
+  const reviewBankSelection = selectPriorityReviewEntries(
     reviewBankEntries,
     remainingDeckSlots - freshNewSelection.length,
+    progressByKanji,
     random,
   );
 
@@ -183,6 +184,7 @@ export function answerSessionReview(
     event: {
       type: 'review-answer',
       kanji,
+      drillMode: getDrillById(session.drillConfigId).mode,
       reviewGrade,
       previousCueOpacity: itemState.cueOpacity,
       nextCueOpacity: nextOpacity,
@@ -344,7 +346,7 @@ function initialSessionDimOpacity(): CueOpacity {
 
 // Local session creation stays intentionally small and non-due-based:
 // unfinished new-item carryover first, then today's remaining truly new allowance,
-// then durable review-bank candidates as simple backfill.
+// then durable review-bank candidates with a small recent-miss priority boost.
 function partitionEntriesForSessionCreation(
   entries: readonly KanjiEntry[],
   progressByKanji: SessionProgressSeedByKanji,
@@ -380,6 +382,33 @@ function partitionEntriesForSessionCreation(
     reviewBankEntries,
     trulyNewEntries,
   };
+}
+
+function selectPriorityReviewEntries(
+  entries: readonly KanjiEntry[],
+  count: number,
+  progressByKanji: SessionProgressSeedByKanji,
+  random: SessionRandomSource,
+): readonly KanjiEntry[] {
+  if (count <= 0 || entries.length === 0) {
+    return [];
+  }
+
+  return [...entries]
+    .map((entry) => ({
+      entry,
+      recentReviewFailureCount: progressByKanji[entry.kanji]?.recentReviewFailureCount ?? 0,
+      lastReviewFailureAt: toSortableTimestamp(progressByKanji[entry.kanji]?.lastReviewFailureAt),
+      tieBreaker: random(),
+    }))
+    .sort(
+      (left, right) =>
+        right.recentReviewFailureCount - left.recentReviewFailureCount ||
+        right.lastReviewFailureAt - left.lastReviewFailureAt ||
+        left.tieBreaker - right.tieBreaker,
+    )
+    .slice(0, count)
+    .map(({ entry }) => entry);
 }
 
 function selectRandomEntries(
@@ -432,4 +461,14 @@ function toLocalDateKey(timestamp: string): string {
   const day = String(date.getDate()).padStart(2, '0');
 
   return `${date.getFullYear()}-${month}-${day}`;
+}
+
+function toSortableTimestamp(timestamp: string | undefined): number {
+  if (!timestamp) {
+    return Number.NEGATIVE_INFINITY;
+  }
+
+  const date = new Date(timestamp);
+
+  return Number.isNaN(date.valueOf()) ? Number.NEGATIVE_INFINITY : date.valueOf();
 }

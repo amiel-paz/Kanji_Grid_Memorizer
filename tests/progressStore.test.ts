@@ -86,6 +86,7 @@ describe('progressStore', () => {
         {
           type: 'review-answer',
           kanji: '力',
+          drillMode: 'faded-recall',
           reviewGrade: 'good',
           previousCueOpacity: 0.33,
           nextCueOpacity: 0,
@@ -114,6 +115,7 @@ describe('progressStore', () => {
       {
         type: 'review-answer',
         kanji: '力',
+        drillMode: 'faded-recall',
         reviewGrade: 'again',
         previousCueOpacity: 1,
         nextCueOpacity: 0.66,
@@ -208,6 +210,7 @@ describe('progressStore', () => {
       {
         type: 'review-answer',
         kanji: '力',
+        drillMode: 'faded-recall',
         reviewGrade: 'good',
         previousCueOpacity: 0.33,
         nextCueOpacity: 0,

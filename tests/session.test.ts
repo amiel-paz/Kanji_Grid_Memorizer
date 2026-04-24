@@ -212,6 +212,57 @@ describe('session cue opacity', () => {
     ]);
   });
 
+  it('prioritizes review-bank cards with more repeated recent recall misses before neutral backfill', () => {
+    const entries = mockKanji.slice(0, 4);
+    const selected = selectSessionEntries(entries, 3, {
+      createdAt: '2026-04-21T12:00:00.000Z',
+      dailyNewLimit: 0,
+      progressByKanji: {
+        [entries[0]!.kanji]: {
+          kanji: entries[0]!.kanji,
+          confidence: 'learning',
+          seenCount: 5,
+          firstSeenAt: '2026-04-19T10:00:00.000Z',
+          reviewBankCandidate: true,
+          recentReviewFailureCount: 1,
+          lastReviewFailureAt: '2026-04-20T08:00:00.000Z',
+        },
+        [entries[1]!.kanji]: {
+          kanji: entries[1]!.kanji,
+          confidence: 'learning',
+          seenCount: 6,
+          firstSeenAt: '2026-04-18T10:00:00.000Z',
+          reviewBankCandidate: true,
+          recentReviewFailureCount: 2,
+          lastReviewFailureAt: '2026-04-19T08:00:00.000Z',
+        },
+        [entries[2]!.kanji]: {
+          kanji: entries[2]!.kanji,
+          confidence: 'learning',
+          seenCount: 4,
+          firstSeenAt: '2026-04-17T10:00:00.000Z',
+          reviewBankCandidate: true,
+          recentReviewFailureCount: 2,
+          lastReviewFailureAt: '2026-04-20T09:00:00.000Z',
+        },
+        [entries[3]!.kanji]: {
+          kanji: entries[3]!.kanji,
+          confidence: 'learning',
+          seenCount: 3,
+          firstSeenAt: '2026-04-16T10:00:00.000Z',
+          reviewBankCandidate: true,
+        },
+      },
+      random: createDeterministicRandom([0.8, 0.4, 0.6, 0.2]),
+    });
+
+    expect(selected.map((entry) => entry.kanji)).toEqual([
+      entries[2]!.kanji,
+      entries[1]!.kanji,
+      entries[0]!.kanji,
+    ]);
+  });
+
   it('keeps review-bank items out of unfinished carryover even if later confidence falls back to learning', () => {
     const entries = mockKanji.slice(0, 4);
     const selected = selectSessionEntries(entries, 4, {
@@ -306,6 +357,7 @@ describe('session cue opacity', () => {
     expect(event).toEqual({
       type: 'review-answer',
       kanji: '力',
+      drillMode: 'faded-recall',
       reviewGrade: 'good',
       previousCueOpacity: 1,
       nextCueOpacity: 0.66,

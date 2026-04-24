@@ -31,6 +31,7 @@ interface SessionBatchSummary {
   readonly carryoverCount: number;
   readonly freshNewCount: number;
   readonly reviewBackfillCount: number;
+  readonly priorityReviewCount: number;
   readonly dailyNewLimit: number;
   readonly remainingDailyNewAllowance: number;
 }
@@ -178,8 +179,9 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
         <p className="body-copy">
           Choose a drill, work through one local batch, and reveal meanings and readings only when
           you need them. This MVP keeps the rules explicit: unfinished carryover first, then
-          today&apos;s allowed truly new kanji, then durable review-bank backfill. That backfill is
-          still simple available-review fill, not due scheduling.
+          today&apos;s allowed truly new kanji, then durable review-bank backfill. Within that
+          review-bank slice, cards with more recent repeated recall misses are chosen first. This
+          is still not due scheduling.
         </p>
       </header>
 
@@ -236,6 +238,10 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
             <div className="study-overview-row">
               <span>Batch mix</span>
               <strong>{formatBatchMix(batchSummary)}</strong>
+            </div>
+            <div className="study-overview-row">
+              <span>Priority review</span>
+              <strong>{formatPriorityReviewSummary(batchSummary)}</strong>
             </div>
             <div className="study-overview-row">
               <span>Today&apos;s new allowance</span>
@@ -571,6 +577,7 @@ function summarizeSessionBatch(
   let carryoverCount = 0;
   let freshNewCount = 0;
   let reviewBackfillCount = 0;
+  let priorityReviewCount = 0;
 
   for (const kanji of selectedKanji) {
     const progress = progressByKanji[kanji];
@@ -582,6 +589,9 @@ function summarizeSessionBatch(
 
     if (isReviewBankCandidateProgress(progress)) {
       reviewBackfillCount += 1;
+      if ((progress?.recentReviewFailureCount ?? 0) > 0) {
+        priorityReviewCount += 1;
+      }
       continue;
     }
 
@@ -602,6 +612,7 @@ function summarizeSessionBatch(
     carryoverCount,
     freshNewCount,
     reviewBackfillCount,
+    priorityReviewCount,
     dailyNewLimit,
     remainingDailyNewAllowance: Math.max(0, dailyNewLimit - consumedTodayCount),
   };
@@ -617,6 +628,18 @@ function formatDailyAllowanceSummary(summary: SessionBatchSummary): string {
   }
 
   return `${summary.remainingDailyNewAllowance} of ${summary.dailyNewLimit} fresh slots left`;
+}
+
+function formatPriorityReviewSummary(summary: SessionBatchSummary): string {
+  if (summary.priorityReviewCount === 0) {
+    return 'No recent-miss boost in this batch';
+  }
+
+  if (summary.priorityReviewCount === 1) {
+    return '1 recent-miss review card';
+  }
+
+  return `${summary.priorityReviewCount} recent-miss review cards`;
 }
 
 function formatDailyAllowanceCount(summary: SessionBatchSummary): string {

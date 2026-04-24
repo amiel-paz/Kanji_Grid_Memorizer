@@ -62,9 +62,15 @@ own mastery rule.
 - Started-but-unfinished new kanji now carry over before fresh replacement new items are admitted
   on a later session creation.
 - Kanji that clear the faded ladder onto `0%` now become durable review-bank candidates, and the
-  current MVP uses those candidates only as simple backfill when a new local session batch still
-  has open slots after carryover and today's allowed fresh-new items. It still does not add due-card
-  logic or promise a finished daily scheduler.
+  current MVP uses those candidates as the final session-creation slice after carryover and
+  today's allowed fresh-new items.
+- Within that review-bank slice, repeated recent recall misses on already-graduated items now
+  raise short-horizon selection priority by `recentReviewFailureCount`, with `lastReviewFailureAt`
+  breaking ties before random choice.
+- Because explicit grading writes durable progress immediately, that review priority can affect a
+  later session created on the same local day as well as later local days until later successful
+  reviews reduce it.
+- This still does not add due-card logic or promise a finished daily scheduler.
 - A kanji can be treated as learned for the "new item" path once it successfully progresses
   through the full cue-opacity ladder, rather than by copying a generic fixed review-count rule.
 - Learned items should later reappear through persistent recall drills driven by saved progress,

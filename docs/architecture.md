@@ -34,9 +34,10 @@ New session creation may use saved progress to shape which kanji enter a selecte
 also cap how many truly new kanji can enter that day's batch while carrying unfinished new-path
 items forward before fresh replacements. It may also backfill from the durable review-bank
 candidate pool once an item has graduated out of the unfinished new path. The current local rule
-is explicit and non-due-based: carryover first, fresh new second, review-bank backfill last, while
-queue position, reveal state, attempts, answer flow, and post-start opacity changes stay
-session-owned.
+is explicit and non-due-based: carryover first, fresh new second, review-bank backfill last, with
+that review-bank slice ordered by a small durable recent-miss signal before ties fall back to
+random choice. Queue position, reveal state, attempts, answer flow, and post-start opacity changes
+stay session-owned.
 
 Session types live in `src/domain/session/types.ts`.
 
@@ -46,7 +47,8 @@ Session types live in `src/domain/session/types.ts`.
 sessions, but it should stay smaller than a scheduler until the app has a real learning loop.
 
 In the current MVP, progress shapes only the session-creation boundary for truly new, unfinished
-carryover, and first review-bank-path kanji.
+carryover, first review-bank-path kanji, and a small recent-miss priority signal for already
+graduated review-bank items.
 That same durable boundary can also drive learner-library views and explicit manual-intake writes.
 It still does not store live session opacity, queue position, reveal state, or active attempts.
 
