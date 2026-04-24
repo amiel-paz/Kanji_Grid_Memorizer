@@ -202,11 +202,11 @@ select {
   }
 
   .study-stage {
-    @apply grid gap-6 xl:grid-cols-[minmax(19rem,24rem)_minmax(0,1fr)];
+    @apply grid gap-6 2xl:grid-cols-[minmax(24rem,1fr)_minmax(22rem,24rem)];
   }
 
   .study-stage-card {
-    @apply flex flex-col gap-6;
+    @apply flex min-w-0 flex-col gap-6;
   }
 
   .study-stage-card .kanji-cue-card {
@@ -226,7 +226,7 @@ select {
   }
 
   .study-stage-meta {
-    @apply grid w-full gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm md:grid-cols-3;
+    @apply grid w-full gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm sm:grid-cols-2;
   }
 
   .study-stage-meta dt {
@@ -238,7 +238,7 @@ select {
   }
 
   .study-stage-details {
-    @apply grid gap-4;
+    @apply grid min-w-0 gap-4;
   }
 
   .study-panel-block {
@@ -302,11 +302,11 @@ select {
   }
 
   .study-choice-button {
-    @apply flex min-h-24 items-center justify-center;
+    @apply overflow-hidden rounded-[1.5rem] border-0 bg-transparent p-0 text-left transition-transform hover:-translate-y-0.5;
   }
 
-  .study-choice-kanji {
-    @apply text-4xl font-semibold;
+  .study-choice-button .kanji-cue-card {
+    @apply max-w-none border-gray-300;
   }
 
   .study-action-row .btn {
