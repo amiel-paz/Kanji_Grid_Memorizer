@@ -1,5 +1,10 @@
 # API Boundary Review
 
+Historical note: this document captured the repo's posture before the later
+`work/backend-review-scheduler` pass. That newer pass adds a narrow hosted scheduling boundary
+only after the local-first loop and follow-on drills made the ownership split clearer. The cautions
+below still matter for everything the server should not own.
+
 This document revisits whether Kanji Grid Memorizer needs a backend or formal API boundary after
 the first local-first MVP has become real.
 

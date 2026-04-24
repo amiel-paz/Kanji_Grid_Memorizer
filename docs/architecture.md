@@ -54,6 +54,16 @@ It still does not store live session opacity, queue position, reveal state, or a
 
 Progress types live in `src/domain/progress/types.ts`.
 
+## Hosted Scheduler
+
+The repo now also has a separate backend scheduler pass under `server/src`. That server owns only
+durable hosted due records and scheduling intervals for a learner. It should not take over stable
+content ownership from `KanjiEntry`, and it should not take over live queue/reveal/cue behavior
+from session state.
+
+That means the backend may decide when a kanji is due again, but the client session still decides
+what happens inside an active run.
+
 ## Rendering
 
 React components receive stable code digits plus an opacity value. This keeps cue fading testable
@@ -84,6 +94,7 @@ choices are currently attached to a prompt.
 - `domain/drills`: drill mode configuration and placeholders for queues
 - `domain/session`: ephemeral per-run state and cue opacity behavior
 - `domain/progress`: persistent learner progress types
+- `server`: hosted scheduling API, file-backed learner review records, and due-plan generation
 - `components`: presentational React components
 - `pages`: screen composition
 - `lib`: infrastructure helpers
