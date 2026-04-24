@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "./server/dist",
+    "rootDir": ".",
+    "strict": true,
+    "noEmit": false,
+    "declaration": false,
+    "sourceMap": true,
+    "types": ["node"],
+    "esModuleInterop": true,
+    "verbatimModuleSyntax": true
+  },
+  "include": ["server/src/**/*.ts"]
+}
