@@ -412,11 +412,18 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
                     {activeChoiceEntries.map((choiceEntry) => (
                       <button
                         key={choiceEntry.kanji}
-                        className="btn btn-secondary study-choice-button"
+                        aria-label={choiceEntry.kanji}
+                        className="study-choice-button"
                         type="button"
                         onClick={() => handleReadingMcqChoice(choiceEntry.kanji)}
                       >
-                        <span className="study-choice-kanji">{choiceEntry.kanji}</span>
+                        <KanjiCueCard
+                          kanji={choiceEntry.kanji}
+                          code={choiceEntry.code}
+                          label={`${choiceEntry.kanji} reading MCQ choice card`}
+                          opacity={1}
+                          size="sm"
+                        />
                       </button>
                     ))}
                   </div>

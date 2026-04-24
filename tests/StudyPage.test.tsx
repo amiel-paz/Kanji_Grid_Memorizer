@@ -318,9 +318,17 @@ describe('StudyPage', () => {
     expect(screen.getByText('Not used in this drill')).toBeInTheDocument();
     expect(screen.getByText('Choices visible')).toBeInTheDocument();
     expect(screen.getByText('Reading prompt plus 4 kanji choices')).toBeInTheDocument();
+    const choiceGroup = screen.getByRole('group', { name: 'Reading MCQ choices' });
+    const choiceButtons = within(choiceGroup).getAllByRole('button');
+
+    expect(choiceButtons).toHaveLength(4);
+    expect(within(choiceButtons[0]!).getByRole('img')).toBeInTheDocument();
     expect(
-      within(screen.getByRole('group', { name: 'Reading MCQ choices' })).getAllByRole('button'),
-    ).toHaveLength(4);
+      within(choiceGroup).getByRole('img', { name: `${firstEntry.kanji} reading MCQ choice card` }),
+    ).toBeInTheDocument();
+    expect(
+      within(choiceGroup).getByRole('img', { name: `${firstEntry.kanji} reading MCQ choice card` }),
+    ).toHaveClass('kanji-cue-card-sm');
   });
 
   it('uses the existing progress flow when a reading MCQ answer is correct', () => {
