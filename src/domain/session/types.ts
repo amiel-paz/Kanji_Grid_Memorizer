@@ -1,4 +1,4 @@
-import type { DrillConfig, ReviewGrade } from '../drills/types';
+import type { DrillConfig, DrillMode, ReviewGrade } from '../drills/types';
 import type { ProgressConfidence } from '../progress/types';
 
 export const CUE_OPACITY_LADDER = [1, 0.66, 0.33, 0] as const;
@@ -20,6 +20,8 @@ export interface SessionProgressSeed {
   readonly seenCount?: number;
   readonly firstSeenAt?: string;
   readonly reviewBankCandidate?: boolean;
+  readonly recentReviewFailureCount?: number;
+  readonly lastReviewFailureAt?: string;
 }
 
 export type SessionProgressSeedByKanji = Readonly<Record<string, SessionProgressSeed>>;
@@ -36,6 +38,7 @@ export interface SessionState {
 export interface SessionAnswerEvent {
   readonly type: 'review-answer';
   readonly kanji: string;
+  readonly drillMode: DrillMode;
   readonly reviewGrade: ReviewGrade;
   readonly previousCueOpacity: CueOpacity;
   readonly nextCueOpacity: CueOpacity;

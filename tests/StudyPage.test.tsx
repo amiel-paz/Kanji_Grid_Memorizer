@@ -51,8 +51,9 @@ describe('StudyPage', () => {
     expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
     expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
     expect(screen.getByText(/unfinished carryover first, then today's allowed truly new kanji/i)).toBeInTheDocument();
-    expect(screen.getByText(/durable review-bank backfill\..*not due scheduling/i)).toBeInTheDocument();
+    expect(screen.getByText(/cards with more recent repeated recall misses are chosen first/i)).toBeInTheDocument();
     expect(screen.getByText('0 carryover, 5 new, 0 review')).toBeInTheDocument();
+    expect(screen.getByText('No recent-miss boost in this batch')).toBeInTheDocument();
     expect(screen.getByText('5 of 5 fresh slots left')).toBeInTheDocument();
     expect(screen.getAllByText('Hidden until reveal')).toHaveLength(2);
   });
@@ -339,6 +340,53 @@ describe('StudyPage', () => {
     expect(screen.getByText(`Now studying ${secondEntry.kanji}`)).toBeInTheDocument();
     expect(screen.getByText('1 / 2')).toBeInTheDocument();
     expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
+  });
+
+  it('shows when a selected review card was boosted by recent repeated misses', () => {
+    const [firstEntry, secondEntry] = canonicalKanjiDeck;
+
+    if (!firstEntry || !secondEntry) {
+      throw new Error('Expected canonical deck data.');
+    }
+
+    storage.setItem(
+      'kanji-grid-progress-v0',
+      JSON.stringify({
+        [firstEntry.kanji]: {
+          kanji: firstEntry.kanji,
+          seenCount: 5,
+          goodCount: 3,
+          firstSeenAt: '2026-04-18T12:00:00.000Z',
+          lastSeenAt: '2026-04-21T11:00:00.000Z',
+          confidence: 'learning',
+          reviewBankCandidate: true,
+          recentReviewFailureCount: 2,
+          lastReviewFailureAt: '2026-04-21T10:30:00.000Z',
+        },
+        [secondEntry.kanji]: {
+          kanji: secondEntry.kanji,
+          seenCount: 5,
+          goodCount: 4,
+          firstSeenAt: '2026-04-18T11:00:00.000Z',
+          lastSeenAt: '2026-04-21T10:00:00.000Z',
+          confidence: 'familiar',
+          reviewBankCandidate: true,
+        },
+      }),
+    );
+
+    render(
+      <StudyPage
+        sessionOptions={{
+          id: 'priority-review-study-page-session',
+          dailyNewLimit: 0,
+          random: createDeterministicRandom([0.9, 0.1]),
+        }}
+      />,
+    );
+
+    expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
+    expect(screen.getByText('1 recent-miss review card')).toBeInTheDocument();
   });
 
   it('keeps blind recall cue-hidden before and after grading', () => {

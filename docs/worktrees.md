@@ -66,11 +66,10 @@ path from honest shell to shippable local-first MVP. Rows 32 and 33 are intentio
 follow-on tracks, not implied scope to absorb into the first usable release.
 
 The local-first MVP path through row 31 is complete, and the planned post-MVP follow-ons through
-row 35 are complete too. Rows 36 and 37 are the current next numbered worktrees.
+row 36 are complete too. Row 37 is the current next numbered worktree.
 
 At this point the remaining numbered worktrees are:
 
-- `work/review-priority-fail-history`
 - `work/drill-reading-mcq`
 
 Clarify the saved-state milestone boundaries:
@@ -99,9 +98,9 @@ Clarify the saved-state milestone boundaries:
 - Rows 34 and 35 are learner-library follow-ons: they expose durable learner progress in the UI and
   allow explicit manual intake of encountered kanji, but they should still leave stable content
   ownership with `KanjiEntry` and live drill behavior with session state.
-- Row 36 is the first post-MVP pass that should let repeated misses influence near-future review
-  frequency without moving stable content facts into progress or turning the local app into a
-  backend-shaped scheduler.
+- Row 36 is complete. Repeated misses on already-graduated review-bank items now raise a small
+  durable short-horizon selection priority for future local review-bank backfill without moving
+  stable content facts into progress or turning the app into a backend-shaped scheduler.
 - Row 37 adds a new local multiple-choice drill that goes from readings to kanji and uses one
   explicit confusability metric for distractor choice rather than random filler options.
 
@@ -143,9 +142,6 @@ Suggested post-MVP follow-on worktrees:
 - `work/progress-manual-seen-intake`: complete. It adds a local intake surface for not-yet-seen
   kanji and writes only durable learner progress so later study flows can treat those kanji as
   encountered.
-- `work/review-priority-fail-history`: planned. It should deepen the local review loop so
-  tomorrow's faded/blind recall mix can prioritize items with recent repeated misses instead of
-  treating all review-bank candidates as equally urgent.
 - `work/drill-reading-mcq`: planned. It should add a local readings-to-kanji choice drill with
   three intentionally close distractors chosen by one documented distance or confusability rule.
 

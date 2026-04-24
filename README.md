@@ -17,7 +17,7 @@ while still being explicit about what is and is not implemented.
 - Session-owned cue opacity and a simple rotating queue.
 - Local-only progress persistence after explicit review grading.
 - A small daily study loop: unfinished carryover first, then today's truly new allowance, then
-  durable review-bank backfill.
+  durable review-bank backfill with a small recent-miss priority boost.
 - A read-only seen library sourced from durable learner progress plus stable canonical content.
 - A manual intake view for marking an outside encounter as seen without pretending that it is
   already learned.
@@ -58,6 +58,8 @@ What each script does:
 - The default drill is Faded recall.
 - A fresh session still aims for a 10-card batch, but newly created sessions can admit only up to 5 truly new kanji per local day from durable saved progress.
 - Newly created sessions now use one simple local orchestration rule: unfinished new-item carryover first, then today's allowed truly new kanji, then durable review-bank candidates as simple backfill.
+- Within that review-bank slice, cards with higher durable `recentReviewFailureCount` are selected
+  first, with more recent `lastReviewFailureAt` breaking ties before any remaining random choice.
 - Older carryover reduces that day's fresh-new allowance; same-day carryover does not double-count because `firstSeenAt` already consumed today's slot.
 - Kanji that have already cleared the new-item fade ladder now persist as review-bank candidates in durable progress and can fill the rest of the batch. If there is not enough review-bank material yet, the app can honestly return a smaller batch instead of implying a fuller scheduler already exists.
 - Switching drills recreates the session for the chosen mode and resets reveal state. Live cue opacity does not carry across drill switches.
@@ -68,6 +70,10 @@ What each script does:
 - Faded recall now starts each new session at `100%` cue visibility, even if durable progress already exists for that kanji.
 - Saved progress is also the durable source for whether a kanji has been seen before and whether it already consumed one of today's local new-item slots.
 - Saved progress now also carries the explicit review-bank boundary: a kanji becomes a persistent review-bank candidate the first time a `Good` finishes a faded step onto `0%`.
+- Saved progress now also carries a small repeated-miss signal for already-graduated review-bank
+  items. Because explicit grading writes progress immediately, a later session started on the same
+  local day can already pull those missed review cards earlier. The boost also survives to later
+  local days until later successful review answers reduce it.
 - Readings and meanings live in a separate details block. In recall modes they are currently hidden until reveal rather than shown as a blurred preview.
 - Seen-library and manual-intake cards now use the same white-center-over-grid cue presentation as the study card, just at a smaller preview size.
 - Explicit review grading writes local progress. Reveal-only actions, drill switching, and Learn-mode navigation do not persist anything.
@@ -90,9 +96,11 @@ What each script does:
 
 ## Not Built Yet
 
-- No due-card logic, spaced-repetition scheduling, calendar scheduling, or weighted historical review selection. Review-bank backfill is just simple available-review fill at session creation time.
+- No due-card logic, spaced-repetition scheduling, or calendar scheduling. Review-bank priority is
+  only a small recent-miss ordering rule at session creation time.
 - The only daily pacing rule landed so far is the explicit local-first cap of 5 truly new kanji per day at session creation time.
-- No weighted requeue based on repeated misses. `Again` changes cue opacity, but the queue still rotates simply.
+- No within-session weighted requeue based on repeated misses. `Again` still changes cue opacity,
+  but the queue still rotates simply once a session has started.
 - No due scheduling after a successful zero-cue pass beyond retiring the card for the rest of the current run and recording durable review-bank candidacy.
 - No backend, API, auth, sync, or cloud persistence.
 - No broader post-MVP content expansion beyond the current full Joyo plus full Jinmeiyo deck.
@@ -112,7 +120,7 @@ Start here when reopening the repo:
 - [`src/domain/progress/seenLibrary.ts`](src/domain/progress/seenLibrary.ts): pure selector that turns durable progress plus canonical entries into read-only seen-library items.
 - [`src/domain/progress/manualSeenIntake.ts`](src/domain/progress/manualSeenIntake.ts): pure selector for not-yet-seen intake candidates.
 - [`src/state/progressStore.ts`](src/state/progressStore.ts): local progress load/save boundary.
-- [`src/domain/progress/progress.ts`](src/domain/progress/progress.ts): minimal progress updates plus the durable carryover-versus-review-bank boundary.
+- [`src/domain/progress/progress.ts`](src/domain/progress/progress.ts): minimal progress updates plus the durable carryover-versus-review-bank boundary and recent-miss review priority signal.
 - [`tests/StudyPage.test.tsx`](tests/StudyPage.test.tsx): expected UI behavior for the shell.
 - [`tests/session.test.ts`](tests/session.test.ts): expected session-domain behavior.
 - [`docs/product.md`](docs/product.md): product intent to preserve.
@@ -128,8 +136,6 @@ small set of post-MVP follow-ons in [`docs/worktrees.md`](docs/worktrees.md).
 
 The remaining plan is now:
 
-- `work/review-priority-fail-history`: make near-future review frequency respond to repeated
-  misses in faded/blind recall using durable learner history.
 - `work/drill-reading-mcq`: add a local readings-to-kanji multiple-choice drill with intentionally
   confusable distractors chosen by one explicit distance metric.
 
@@ -149,6 +155,9 @@ The remaining plan is now:
   a local daily cap for truly new items without moving live session state into progress.
 - Local learner progress now also records whether a kanji has graduated out of the unfinished
   new-item path into the first durable review-bank candidate pool.
+- Local learner progress now also records a small recent failed-recall signal for already-graduated
+  review-bank items so later local sessions can choose those review cards earlier without adding
+  due dates.
 - [`docs/progress-sync-file-exchange.md`](docs/progress-sync-file-exchange.md) now records the
   post-MVP decision for portable learner state while staying local-first and account-free.
 - [`docs/api-boundary-review.md`](docs/api-boundary-review.md) now records why a backend or formal

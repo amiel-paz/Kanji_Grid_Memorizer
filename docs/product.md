@@ -38,7 +38,8 @@ and to carry started-but-not-yet-familiar new kanji forward before fresh replace
 while a separate durable review-bank signal marks when a kanji has fully left that unfinished
 new-item path. That still does not move live queue or answer ownership out of session state.
 The current local orchestration rule stays intentionally small: unfinished carryover first, then
-today's allowed truly new kanji, then simple review-bank backfill. That is not due scheduling.
+today's allowed truly new kanji, then review-bank backfill ordered by a small repeated-miss signal
+from durable progress. That is not due scheduling.
 
 ## Differentiation
 
@@ -67,6 +68,8 @@ product target for now.
 - local progress persistence after explicit reveal-first grading
 - a small local daily loop with a 5-kanji fresh-new cap, unfinished carryover, and simple
   review-bank backfill
+- a small repeated-miss review priority signal that can pull already-graduated review-bank cards
+  earlier in later local sessions
 - a learner-facing seen library sourced from durable progress plus stable content lookup
 - a manual seen-intake surface for outside encounters that updates durable learner progress only
 - small tests around the core idea
@@ -77,7 +80,7 @@ truthful local study loop rather than placeholder controls pretending a schedule
 ## Out Of Scope For Now
 
 - canonical dataset coverage beyond the explicit in-repo full Joyo import path plus the full Jinmeiyo supplemental import
-- broad long-horizon scheduling beyond the next planned post-MVP review-priority pass
+- broad long-horizon scheduling beyond the current small repeated-miss review-priority pass
 - cloud sync
 - accounts
 - mobile app
@@ -88,7 +91,6 @@ truthful local study loop rather than placeholder controls pretending a schedule
 
 Near-term planned follow-ons after the current MVP:
 
-- repeated-miss-aware review priority for future faded/blind recall sessions
 - a readings-to-kanji multiple-choice drill with intentionally close distractors
 
 ## Product Questions To Preserve

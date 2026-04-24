@@ -85,12 +85,16 @@ Progress can eventually answer questions like:
 - Is the kanji new, learning, or familiar?
 - If this kanji was already introduced, does it still belong to the unfinished new-item carryover path?
 - Has this kanji already graduated into the first review-bank candidate path?
+- Has repeated failed recall recently raised its short-horizon review priority within the local
+  review-bank slice?
 - Was this kanji first seen on today's local date?
 
 It can tell session creation whether a kanji is truly new today for the explicit daily new-item cap,
 whether it must be re-offered as unfinished carryover before replacement new items are admitted, or
 whether it already belongs to the first review-bank candidate pool after graduating out of the new
-path. It should not carry the live cue opacity for an active drill. Session state owns that.
+path. It can also carry a small recent failed-recall signal so later local sessions can choose some
+review-bank cards earlier. It should not carry the live cue opacity for an active drill. Session
+state owns that.
 
 ## DrillConfig
 
@@ -131,9 +135,13 @@ with seen durable progress that have not yet graduated into the review bank are 
 unfinished carryover and are re-offered before fresh replacement new items are admitted. Older
 carryover reduces that day's fresh-new allowance, while same-day carryover does not double-count
 because `firstSeenAt` already consumed today's slot. Graduated review-bank candidates may still
-fill the rest of the batch as simple available-review backfill. This pass still does not add due
-dates or a scheduler; if there is not enough review-bank material to fill the drill's nominal
-size, the batch may simply be smaller.
+fill the rest of the batch as simple available-review backfill, but repeated recent misses now
+order that review-bank slice by `recentReviewFailureCount` first and `lastReviewFailureAt` second
+before any remaining random tie-break. Because grading writes durable progress immediately, this
+ordering can already affect another session started later the same local day; it also carries into
+later local days until enough later successful review answers reduce the failure count. This pass
+still does not add due dates or a scheduler; if there is not enough review-bank material to fill
+the drill's nominal size, the batch may simply be smaller.
 
 The starter review loop keeps queue movement inside session state. Session creation can randomize
 which kanji enter the current run, while answering or advancing still reorders the active kanji

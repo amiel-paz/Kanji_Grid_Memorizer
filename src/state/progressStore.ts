@@ -30,6 +30,7 @@ export function applyReviewEventToProgressRecords(
   const currentProgress = progressByKanji[event.kanji] ?? createInitialProgress(event.kanji);
   const nextProgress = applyReviewOutcome(currentProgress, {
     kanji: event.kanji,
+    drillMode: event.drillMode,
     reviewGrade: event.reviewGrade,
     previousCueOpacity: event.previousCueOpacity,
     nextCueOpacity: event.nextCueOpacity,
@@ -117,6 +118,20 @@ function isUserProgress(value: unknown): value is UserProgress {
   if (
     value.reviewBankCandidate !== undefined &&
     typeof value.reviewBankCandidate !== 'boolean'
+  ) {
+    return false;
+  }
+
+  if (
+    value.recentReviewFailureCount !== undefined &&
+    !isFiniteNumber(value.recentReviewFailureCount)
+  ) {
+    return false;
+  }
+
+  if (
+    value.lastReviewFailureAt !== undefined &&
+    typeof value.lastReviewFailureAt !== 'string'
   ) {
     return false;
   }

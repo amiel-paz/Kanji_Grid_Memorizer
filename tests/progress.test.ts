@@ -102,6 +102,7 @@ describe('progress helpers', () => {
     expect(
       applyReviewOutcome(initial, {
         kanji: '力',
+        drillMode: 'faded-recall',
         reviewGrade: 'good',
         previousCueOpacity: 1,
         nextCueOpacity: 0.66,
@@ -119,6 +120,7 @@ describe('progress helpers', () => {
     expect(
       applyReviewOutcome(initial, {
         kanji: '力',
+        drillMode: 'faded-recall',
         reviewGrade: 'again',
         previousCueOpacity: 0.66,
         nextCueOpacity: 1,
@@ -147,6 +149,7 @@ describe('progress helpers', () => {
     expect(
       applyReviewOutcome(learning, {
         kanji: '力',
+        drillMode: 'faded-recall',
         reviewGrade: 'good',
         previousCueOpacity: 0.66,
         nextCueOpacity: 0.33,
@@ -172,6 +175,7 @@ describe('progress helpers', () => {
     expect(
       applyReviewOutcome(learning, {
         kanji: '力',
+        drillMode: 'faded-recall',
         reviewGrade: 'good',
         previousCueOpacity: 0.33,
         nextCueOpacity: 0,
@@ -196,6 +200,7 @@ describe('progress helpers', () => {
     expect(
       applyReviewOutcome(learning, {
         kanji: '力',
+        drillMode: 'blind-recall',
         reviewGrade: 'good',
         previousCueOpacity: 0,
         nextCueOpacity: 0,
@@ -219,6 +224,7 @@ describe('progress helpers', () => {
     expect(
       applyReviewOutcome(familiar, {
         kanji: '力',
+        drillMode: 'blind-recall',
         reviewGrade: 'good',
         previousCueOpacity: 0,
         nextCueOpacity: 0,
@@ -244,6 +250,7 @@ describe('progress helpers', () => {
     expect(
       applyReviewOutcome(familiar, {
         kanji: '力',
+        drillMode: 'blind-recall',
         reviewGrade: 'again',
         previousCueOpacity: 0,
         nextCueOpacity: 0.33,
@@ -254,13 +261,97 @@ describe('progress helpers', () => {
       goodCount: 3,
       confidence: 'learning',
       reviewBankCandidate: true,
+      recentReviewFailureCount: 1,
+      lastReviewFailureAt: '2026-04-20T00:20:00.000Z',
     });
+  });
+
+  it('raises and later reduces recent review-failure priority only for review-bank recall misses', () => {
+    const familiar = {
+      ...createInitialProgress('力'),
+      seenCount: 4,
+      goodCount: 3,
+      confidence: 'familiar' as const,
+      reviewBankCandidate: true,
+      recentReviewFailureCount: 2,
+      lastReviewFailureAt: '2026-04-19T00:20:00.000Z',
+    };
+
+    expect(
+      applyReviewOutcome(familiar, {
+        kanji: '力',
+        drillMode: 'blind-recall',
+        reviewGrade: 'again',
+        previousCueOpacity: 0,
+        nextCueOpacity: 0,
+        reviewedAt: '2026-04-20T00:25:00.000Z',
+      }),
+    ).toMatchObject({
+      recentReviewFailureCount: 3,
+      lastReviewFailureAt: '2026-04-20T00:25:00.000Z',
+    });
+
+    expect(
+      applyReviewOutcome(familiar, {
+        kanji: '力',
+        drillMode: 'faded-recall',
+        reviewGrade: 'good',
+        previousCueOpacity: 1,
+        nextCueOpacity: 0.66,
+        reviewedAt: '2026-04-20T00:30:00.000Z',
+      }),
+    ).toMatchObject({
+      recentReviewFailureCount: 1,
+      lastReviewFailureAt: '2026-04-19T00:20:00.000Z',
+    });
+  });
+
+  it('does not keep recent review-failure priority on non-review-bank items and clears it after enough later goods', () => {
+    const learning = {
+      ...createInitialProgress('力'),
+      seenCount: 2,
+      goodCount: 1,
+      confidence: 'learning' as const,
+    };
+    const reviewBank = {
+      ...createInitialProgress('月'),
+      kanji: '月',
+      seenCount: 4,
+      goodCount: 3,
+      confidence: 'familiar' as const,
+      reviewBankCandidate: true,
+      recentReviewFailureCount: 1,
+      lastReviewFailureAt: '2026-04-20T00:35:00.000Z',
+    };
+
+    expect(
+      applyReviewOutcome(learning, {
+        kanji: '力',
+        drillMode: 'blind-recall',
+        reviewGrade: 'again',
+        previousCueOpacity: 0,
+        nextCueOpacity: 0,
+        reviewedAt: '2026-04-20T00:40:00.000Z',
+      }),
+    ).not.toHaveProperty('recentReviewFailureCount');
+
+    expect(
+      applyReviewOutcome(reviewBank, {
+        kanji: '月',
+        drillMode: 'blind-recall',
+        reviewGrade: 'good',
+        previousCueOpacity: 0,
+        nextCueOpacity: 0,
+        reviewedAt: '2026-04-20T00:45:00.000Z',
+      }),
+    ).not.toHaveProperty('recentReviewFailureCount');
   });
 
   it('rejects review outcomes for a different kanji', () => {
     expect(() =>
       applyReviewOutcome(createInitialProgress('力'), {
         kanji: '月',
+        drillMode: 'faded-recall',
         reviewGrade: 'good',
         previousCueOpacity: 1,
         nextCueOpacity: 0.66,
