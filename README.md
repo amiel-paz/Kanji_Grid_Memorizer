@@ -13,7 +13,7 @@ while still being explicit about what is and is not implemented.
 - A Vite + React + TypeScript web app with Study, Seen library, and Manual intake views.
 - A Joyo-first canonical deck materialized from explicit in-repo Joyo and Jinmeiyo source inputs.
 - Mock kanji fixture data kept separately for development and tests.
-- Three drill shells: Learn, Faded recall, and Blind recall.
+- Four drill shells: Learn, Faded recall, Blind recall, and Reading MCQ.
 - Session-owned cue opacity and a simple rotating queue.
 - Local-only progress persistence after explicit review grading.
 - A small daily study loop: unfinished carryover first, then today's truly new allowance, then
@@ -66,8 +66,13 @@ What each script does:
 - Learn keeps the full cue, meanings, onyomi, and kunyomi visible and uses `Next kanji` to move through the current session without grading.
 - Faded recall uses a reveal-first review loop: try recall, reveal readings and meanings, then grade with `Again` or `Good`.
 - Blind recall uses the same reveal-first flow, but the cue stays hidden at `0%` before and after grading.
+- Reading MCQ shows the target kanji's on and kun readings and asks the learner to choose the
+  matching kanji from 4 options. A correct choice counts as `Good`; a wrong choice counts as
+  `Again` through the existing local progress path.
 - In Faded recall, cue opacity is session-owned and follows the ladder `100% -> 66% -> 33% -> 0%` on `Good`. `Again` raises it one step.
 - Faded recall now starts each new session at `100%` cue visibility, even if durable progress already exists for that kanji.
+- Reading MCQ distractors are chosen from the same local deck by the three smallest normalized
+  reading-edit distances. The repo does not claim any stroke-geometry metric here.
 - Saved progress is also the durable source for whether a kanji has been seen before and whether it already consumed one of today's local new-item slots.
 - Saved progress now also carries the explicit review-bank boundary: a kanji becomes a persistent review-bank candidate the first time a `Good` finishes a faded step onto `0%`.
 - Saved progress now also carries a small repeated-miss signal for already-graduated review-bank
@@ -129,15 +134,12 @@ Start here when reopening the repo:
 
 ## After This Audit
 
-The original local-first MVP plan is complete, but the numbered worktree plan now continues with a
-small set of post-MVP follow-ons in [`docs/worktrees.md`](docs/worktrees.md).
+The original local-first MVP plan and the numbered worktree follow-ons in
+[`docs/worktrees.md`](docs/worktrees.md) are complete.
 
 ## Remaining Numbered Worktrees
 
-The remaining plan is now:
-
-- `work/drill-reading-mcq`: add a local readings-to-kanji multiple-choice drill with intentionally
-  confusable distractors chosen by one explicit distance metric.
+The remaining numbered worktree plan is complete.
 
 ## Real Data And Saved State
 
@@ -158,6 +160,8 @@ The remaining plan is now:
 - Local learner progress now also records a small recent failed-recall signal for already-graduated
   review-bank items so later local sessions can choose those review cards earlier without adding
   due dates.
+- The app now also includes a readings-to-kanji multiple-choice drill whose distractors come from
+  normalized reading edit distance over repo-local on/kun data.
 - [`docs/progress-sync-file-exchange.md`](docs/progress-sync-file-exchange.md) now records the
   post-MVP decision for portable learner state while staying local-first and account-free.
 - [`docs/api-boundary-review.md`](docs/api-boundary-review.md) now records why a backend or formal

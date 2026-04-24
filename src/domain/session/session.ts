@@ -1,5 +1,6 @@
 import type { KanjiEntry } from '../content/types';
 import { getDrillById } from '../drills/configs';
+import { buildReadingMcqChoiceMap } from '../drills/readingMcq';
 import type { DrillConfig, ReviewGrade } from '../drills/types';
 import {
   hasSeenProgress,
@@ -25,6 +26,7 @@ export interface CreateSessionOptions {
   readonly seedProgressByKanji?: SessionProgressSeedByKanji;
   readonly createdAt?: string;
   readonly dailyNewLimit?: number;
+  readonly choicePoolEntries?: readonly KanjiEntry[];
 }
 
 export interface SelectSessionEntriesOptions {
@@ -40,13 +42,18 @@ export function createSession(
   options: CreateSessionOptions = {},
 ): SessionState {
   const seedProgressByKanji = options.seedProgressByKanji ?? {};
+  const random = options.random ?? Math.random;
   const selected = selectSessionEntries(entries, drillConfig.deckSize, {
-    random: options.random,
+    random,
     progressByKanji: seedProgressByKanji,
     createdAt: options.createdAt,
     dailyNewLimit: options.dailyNewLimit,
   });
   const active = selected[0];
+  const choiceOptionsByKanji =
+    drillConfig.mode === 'reading-mcq'
+      ? buildReadingMcqChoiceMap(selected, options.choicePoolEntries ?? entries, random)
+      : undefined;
 
   if (entries.length === 0) {
     throw new Error('Cannot create a study session without kanji entries.');
@@ -70,6 +77,7 @@ export function createSession(
         },
       ]),
     ),
+    ...(choiceOptionsByKanji ? { choiceOptionsByKanji } : {}),
   };
 }
 

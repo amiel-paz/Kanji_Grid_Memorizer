@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { canonicalKanjiDeck } from '../src/data/canonicalDeck';
 import type { KanjiEntry } from '../src/domain/content/types';
@@ -303,6 +303,45 @@ describe('StudyPage', () => {
     expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
     expect(screen.getByText('0 good / 0 attempts')).toBeInTheDocument();
     expect(screen.queryByText(getPrimaryRevealText(firstEntry))).not.toBeInTheDocument();
+  });
+
+  it('switches to reading MCQ with a readings prompt and four kanji choices', () => {
+    const { firstEntry } = getExpectedStudyPageEntries();
+
+    render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
+
+    fireEvent.click(screen.getByRole('radio', { name: /Reading MCQ/i }));
+
+    expect(screen.getByRole('heading', { name: 'Reading MCQ' })).toBeInTheDocument();
+    expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
+    expect(screen.getByText('Which kanji matches these readings?')).toBeInTheDocument();
+    expect(screen.getByText('Not used in this drill')).toBeInTheDocument();
+    expect(screen.getByText('Choices visible')).toBeInTheDocument();
+    expect(screen.getByText('Reading prompt plus 4 kanji choices')).toBeInTheDocument();
+    expect(
+      within(screen.getByRole('group', { name: 'Reading MCQ choices' })).getAllByRole('button'),
+    ).toHaveLength(4);
+  });
+
+  it('uses the existing progress flow when a reading MCQ answer is correct', () => {
+    const { firstEntry, secondEntry } = getExpectedStudyPageEntries();
+
+    render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
+
+    fireEvent.click(screen.getByRole('radio', { name: /Reading MCQ/i }));
+    fireEvent.click(screen.getByRole('button', { name: firstEntry.kanji }));
+
+    expect(screen.getByText(`Now studying ${secondEntry.kanji}`)).toBeInTheDocument();
+    expect(JSON.parse(storage.getItem('kanji-grid-progress-v0') ?? 'null')).toEqual({
+      [firstEntry.kanji]: {
+        kanji: firstEntry.kanji,
+        seenCount: 1,
+        goodCount: 1,
+        firstSeenAt: '2026-04-21T12:00:00.000Z',
+        lastSeenAt: '2026-04-21T12:00:00.000Z',
+        confidence: 'learning',
+      },
+    });
   });
 
   it('treats durable review-bank candidates as later-session backfill instead of unfinished carryover', () => {

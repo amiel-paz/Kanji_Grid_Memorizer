@@ -55,8 +55,8 @@ The current local MVP keeps review close to a lightweight Anki-style reveal-firs
 kanji card, answer from memory, reveal meanings plus all known on and kun readings, then choose
 `Again` or `Good`.
 
-The most useful drills are faded recall and blind recall. Grid-to-kanji matching drills are not a
-product target for now.
+The most useful drills are faded recall, blind recall, and a small readings-to-kanji multiple
+choice drill. Grid-to-kanji matching drills are not a product target for now.
 
 ## Version 1 Scope
 
@@ -64,6 +64,8 @@ product target for now.
 - full Joyo canonical deck plus a full explicit Jinmeiyo supplemental import path, both with in-repo provenance and source-set version metadata
 - mock kanji fixtures kept for development and tests
 - learn, faded recall, and blind recall modes represented in code
+- a readings-to-kanji multiple-choice drill that uses normalized reading edit distance to pick
+  intentionally close distractors from repo-local data
 - simple session-state-driven cue opacity
 - local progress persistence after explicit reveal-first grading
 - a small local daily loop with a 5-kanji fresh-new cap, unfinished carryover, and simple
@@ -89,9 +91,7 @@ truthful local study loop rather than placeholder controls pretending a schedule
 - generated mnemonics
 - replacing the explicit Joyo-first ownership rule with an ambiguous merged source
 
-Near-term planned follow-ons after the current MVP:
-
-- a readings-to-kanji multiple-choice drill with intentionally close distractors
+The numbered worktree plan is currently complete through the reading MCQ follow-on.
 
 ## Product Questions To Preserve
 

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { DrillModePicker } from '../components/DrillModePicker';
+import { KanjiReadings } from '../components/KanjiReadings';
 import { canonicalKanjiDeck } from '../data/canonicalDeck';
 import { KanjiCueCard } from '../components/KanjiCueCard';
 import type { KanjiEntry } from '../domain/content/types';
@@ -55,6 +56,7 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
     const session = createSession(entries, nextDrill, {
       ...sessionOptions,
       createdAt,
+      choicePoolEntries: canonicalKanjiDeck,
       random,
       seedProgressByKanji: progressByKanjiRef.current,
     });
@@ -83,15 +85,22 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
         : canonicalKanjiDeck.find((entry) => entry.kanji === session.activeKanji) ?? null,
     [session.activeKanji],
   );
+  const activeKanji = activeEntry?.kanji ?? null;
+  const activeChoiceEntries =
+    activeKanji === null
+      ? []
+      : (session.choiceOptionsByKanji?.[activeKanji] ?? [])
+          .map((kanji) => canonicalKanjiDeck.find((entry) => entry.kanji === kanji) ?? null)
+          .filter((entry): entry is KanjiEntry => entry !== null);
 
   if (!isSessionInactive && !activeEntry) {
     return <main className="p-8">No kanji data available.</main>;
   }
 
-  const activeKanji = activeEntry?.kanji ?? null;
   const opacity = activeKanji === null ? null : getCueOpacity(session, activeKanji);
-  const isReviewMode = drill.mode !== 'learn';
-  const showReadings = !isReviewMode || readingsRevealed;
+  const isReadingMcqMode = drill.mode === 'reading-mcq';
+  const isRevealReviewMode = drill.mode === 'faded-recall' || drill.mode === 'blind-recall';
+  const showReadings = drill.mode === 'learn' || readingsRevealed;
   const activeIndex = isSessionEmpty
     ? -1
     : activeKanji === null
@@ -104,19 +113,25 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
     throw new Error(`Active kanji is missing from session state: ${activeKanji}`);
   }
 
+  if (!isSessionInactive && isReadingMcqMode && activeChoiceEntries.length === 0) {
+    throw new Error(`Reading MCQ choices are missing for active kanji: ${activeKanji}`);
+  }
+
   const modePresentation = getModePresentation({
     drillMode: drill.mode,
     cueOpacity: opacity ?? 0,
   });
-  const answerStateSummary = isSessionEmpty
-    ? 'Nothing queued'
-    : isSessionComplete
-    ? 'Complete'
-    : isReviewMode
-      ? readingsRevealed
-        ? 'Answer revealed'
-        : 'Hidden until reveal'
-    : 'Always visible';
+  let answerStateSummary = 'Always visible';
+
+  if (isSessionEmpty) {
+    answerStateSummary = 'Nothing queued';
+  } else if (isSessionComplete) {
+    answerStateSummary = 'Complete';
+  } else if (isReadingMcqMode) {
+    answerStateSummary = 'Choices visible';
+  } else if (isRevealReviewMode) {
+    answerStateSummary = readingsRevealed ? 'Answer revealed' : 'Hidden until reveal';
+  }
 
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
@@ -168,6 +183,29 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
     setStudyRun((current) => ({
       ...current,
       session: advanceSessionItem(current.session, activeKanji),
+    }));
+  }
+
+  function handleReadingMcqChoice(selectedKanji: string) {
+    if (activeKanji === null) {
+      return;
+    }
+
+    const reviewGrade: ReviewGrade = selectedKanji === activeKanji ? 'good' : 'again';
+    const { session: nextSession, event } = answerSessionReview(
+      session,
+      reviewGrade,
+      activeKanji,
+      sessionRandomRef.current,
+    );
+    progressByKanjiRef.current = persistReviewEventToProgressStore(
+      progressByKanjiRef.current,
+      event,
+      new Date().toISOString(),
+    );
+    setStudyRun((current) => ({
+      ...current,
+      session: nextSession,
     }));
   }
 
@@ -228,7 +266,13 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
             <div className="study-overview-row">
               <span>Cue opacity</span>
               <strong>
-                {isSessionEmpty ? 'No active card' : opacity === null ? 'Completed' : `${Math.round(opacity * 100)}%`}
+                {isSessionEmpty
+                  ? 'No active card'
+                  : isReadingMcqMode
+                  ? 'Not used in this drill'
+                  : opacity === null
+                  ? 'Completed'
+                  : `${Math.round(opacity * 100)}%`}
               </strong>
             </div>
             <div className="study-overview-row">
@@ -284,6 +328,16 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
                   {isSessionEmpty
                     ? `This local MVP only starts cards when carryover, today's fresh-new allowance, or review-bank backfill is available.`
                     : 'Good answers at zero cue leave the recall batch for the rest of this run.'}
+                </p>
+              </div>
+            ) : isReadingMcqMode ? (
+              <div className="study-prompt-card">
+                <p className="section-kicker">Reading prompt</p>
+                <h3 className="section-title">Which kanji matches these readings?</h3>
+                <KanjiReadings onyomi={activeEntry.onyomi} kunyomi={activeEntry.kunyomi} />
+                <p className="fine-print">
+                  Distractors use the three smallest normalized reading-edit distances available in
+                  the local deck.
                 </p>
               </div>
             ) : (
@@ -353,6 +407,19 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
                   <p className="fine-print">
                     This session has no active card left in the queue.
                   </p>
+                ) : isReadingMcqMode && activeEntry ? (
+                  <div className="study-choice-grid" role="group" aria-label="Reading MCQ choices">
+                    {activeChoiceEntries.map((choiceEntry) => (
+                      <button
+                        key={choiceEntry.kanji}
+                        className="btn btn-secondary study-choice-button"
+                        type="button"
+                        onClick={() => handleReadingMcqChoice(choiceEntry.kanji)}
+                      >
+                        <span className="study-choice-kanji">{choiceEntry.kanji}</span>
+                      </button>
+                    ))}
+                  </div>
                 ) : showReadings && activeEntry ? (
                   <div className="study-answer-grid">
                     <section aria-labelledby="meaning-block-title" className="study-detail-group">
@@ -411,7 +478,9 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
                     Restart this drill
                   </button>
                 </div>
-              ) : isReviewMode ? (
+              ) : isReadingMcqMode ? (
+                <p className="fine-print">{modePresentation.preRevealActionCopy}</p>
+              ) : isRevealReviewMode ? (
                 readingsRevealed ? (
                   <>
                     <div className="study-grade-row">
@@ -525,6 +594,23 @@ function getModePresentation({
         focusLabel: 'Recall from the kanji alone with no visible cue.',
         cardLabel: (kanji: string) => `${kanji} blind recall card with hidden cue`,
       };
+    case 'reading-mcq':
+      return {
+        stageDescription:
+          'Read the on and kun prompt, then choose the matching kanji from four locally confusable options.',
+        answerPanelTitle: 'Choose the kanji',
+        answerPanelCopy:
+          'Pick the kanji whose readings match the prompt. A correct choice counts as Good; a wrong choice counts as Again.',
+        hiddenReadingsCopy: '',
+        revealActionLabel: '',
+        preRevealActionCopy:
+          'The three distractors are chosen by smallest normalized reading-edit distance from the same local deck.',
+        gradedStateCopy: '',
+        learnActionCopy: '',
+        supportSummary: 'Reading prompt plus 4 kanji choices',
+        focusLabel: 'Map the readings back to the kanji rather than recalling from the cue.',
+        cardLabel: (kanji: string) => `${kanji} reading multiple-choice prompt`,
+      };
     default:
       return {
         stageDescription: 'This drill mode is not configured yet.',
@@ -548,6 +634,8 @@ function completionDescriptionForMode(drillMode: DrillMode): string {
       return 'You cleared the current faded-recall batch. Cards that earned a clean zero-cue pass stayed out of rotation for the rest of this run.';
     case 'blind-recall':
       return 'You cleared the current blind-recall batch. Zero-cue passes are retired from the queue until you start a new session.';
+    case 'reading-mcq':
+      return 'You cleared the current reading MCQ batch. Correct choices counted as Good and wrong choices counted as Again as the queue rotated.';
     case 'learn':
       return 'You reached the end of this learn pass.';
     default:
@@ -561,6 +649,8 @@ function completionFocusLabel(drillMode: DrillMode): string {
       return 'Review complete for the current faded-cue batch.';
     case 'blind-recall':
       return 'Review complete for the current blind-recall batch.';
+    case 'reading-mcq':
+      return 'Reading MCQ batch complete.';
     case 'learn':
       return 'Learn pass complete.';
     default:
@@ -652,6 +742,8 @@ function emptyStateDescriptionForMode(drillMode: DrillMode, dailyNewLimit: numbe
       return `This drill is ready, but nothing is queued yet. The current local rules only admit carryover, up to ${dailyNewLimit} truly new kanji per day, or review-bank backfill.`;
     case 'blind-recall':
       return `There is no blind-recall batch queued right now. The current local rules only admit carryover, up to ${dailyNewLimit} truly new kanji per day, or review-bank backfill.`;
+    case 'reading-mcq':
+      return `There is no reading MCQ batch queued right now. The current local rules only admit carryover, up to ${dailyNewLimit} truly new kanji per day, or review-bank backfill.`;
     case 'faded-recall':
     default:
       return `There is no faded-recall batch queued right now. The current local rules only admit carryover, up to ${dailyNewLimit} truly new kanji per day, or review-bank backfill.`;

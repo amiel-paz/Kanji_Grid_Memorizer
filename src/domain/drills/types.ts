@@ -1,4 +1,4 @@
-export type DrillMode = 'learn' | 'faded-recall' | 'blind-recall';
+export type DrillMode = 'learn' | 'faded-recall' | 'blind-recall' | 'reading-mcq';
 
 export type CuePolicy = 'full' | 'session-dim' | 'hidden';
 

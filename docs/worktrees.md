@@ -66,11 +66,11 @@ path from honest shell to shippable local-first MVP. Rows 32 and 33 are intentio
 follow-on tracks, not implied scope to absorb into the first usable release.
 
 The local-first MVP path through row 31 is complete, and the planned post-MVP follow-ons through
-row 36 are complete too. Row 37 is the current next numbered worktree.
+row 37 are complete too.
 
 At this point the remaining numbered worktrees are:
 
-- `work/drill-reading-mcq`
+- None.
 
 Clarify the saved-state milestone boundaries:
 
@@ -101,8 +101,9 @@ Clarify the saved-state milestone boundaries:
 - Row 36 is complete. Repeated misses on already-graduated review-bank items now raise a small
   durable short-horizon selection priority for future local review-bank backfill without moving
   stable content facts into progress or turning the app into a backend-shaped scheduler.
-- Row 37 adds a new local multiple-choice drill that goes from readings to kanji and uses one
-  explicit confusability metric for distractor choice rather than random filler options.
+- Row 37 is complete. The app now includes a local readings-to-kanji multiple-choice drill whose
+  distractors come from one explicit normalized reading-edit-distance metric rather than random
+  filler options.
 
 ## Long-Term Study Loop Notes
 
@@ -142,8 +143,8 @@ Suggested post-MVP follow-on worktrees:
 - `work/progress-manual-seen-intake`: complete. It adds a local intake surface for not-yet-seen
   kanji and writes only durable learner progress so later study flows can treat those kanji as
   encountered.
-- `work/drill-reading-mcq`: planned. It should add a local readings-to-kanji choice drill with
-  three intentionally close distractors chosen by one documented distance or confusability rule.
+- `work/drill-reading-mcq`: complete. It adds a local readings-to-kanji choice drill with three
+  intentionally close distractors chosen by one documented normalized reading-distance rule.
 
 Keep the mastery rule product-specific:
 
