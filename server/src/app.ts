@@ -1,7 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import { z } from 'zod';
-import { createSchedulerPlan } from './domain/scheduler.js';
+import { createSchedulerPlan, getDueReviewKanji } from './domain/scheduler.js';
 import type { ServerConfig } from './config.js';
 import { FileSchedulerStore } from './store/fileSchedulerStore.js';
 
@@ -19,6 +19,11 @@ const applyOutcomesSchema = z.object({
 const schedulerPlanSchema = z.object({
   asOf: z.string().optional(),
   limit: z.number().int().positive().max(100).optional(),
+});
+
+const getDueReviewKanjiSchema = z.object({
+  now: z.string(),
+  limit: z.number().int().positive().max(100),
 });
 
 export function createServerApp(config: ServerConfig, store: FileSchedulerStore) {
@@ -63,6 +68,17 @@ export function createServerApp(config: ServerConfig, store: FileSchedulerStore)
       const learnerState = await store.loadLearnerState(request.params.learnerId);
       const plan = createSchedulerPlan(learnerState, payload);
       response.json(plan);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.post('/api/v1/learners/:learnerId/due-review-kanji', async (request, response, next) => {
+    try {
+      const payload = getDueReviewKanjiSchema.parse(request.body);
+      const learnerState = await store.loadLearnerState(request.params.learnerId);
+      const dueItems = getDueReviewKanji(learnerState, payload);
+      response.json(dueItems);
     } catch (error) {
       next(error);
     }

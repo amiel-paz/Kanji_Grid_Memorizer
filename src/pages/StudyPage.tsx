@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DrillModePicker } from '../components/DrillModePicker';
 import { KanjiReadings } from '../components/KanjiReadings';
 import { canonicalKanjiDeck } from '../data/canonicalDeck';
@@ -11,6 +11,16 @@ import {
   isReviewBankCandidateProgress,
   isUnfinishedNewItemProgress,
 } from '../domain/progress/progress';
+import {
+  createDisabledReviewSchedulerClient,
+  createFetchReviewSchedulerClient,
+  type ReviewSchedulerClient,
+} from '../domain/reviewScheduler/client';
+import {
+  planLocalFallbackStudyRunSelection,
+  planStudyRunSelection,
+  type ReviewSelectionSource,
+} from '../domain/reviewScheduler/studyRunPlanner';
 import {
   advanceSessionItem,
   answerSessionReview,
@@ -26,6 +36,8 @@ import type { ProgressByKanji } from '../state/progressStore';
 
 interface StudyPageProps {
   readonly sessionOptions?: CreateSessionOptions;
+  readonly learnerId?: string;
+  readonly reviewSchedulerClient?: ReviewSchedulerClient;
 }
 
 interface SessionBatchSummary {
@@ -35,6 +47,8 @@ interface SessionBatchSummary {
   readonly priorityReviewCount: number;
   readonly dailyNewLimit: number;
   readonly remainingDailyNewAllowance: number;
+  readonly reviewSelectionSource: ReviewSelectionSource;
+  readonly schedulerMessage?: string;
 }
 
 interface StudyRunState {
@@ -42,38 +56,171 @@ interface StudyRunState {
   readonly batchSummary: SessionBatchSummary;
 }
 
-export function StudyPage({ sessionOptions }: StudyPageProps) {
+const DEFAULT_LEARNER_ID = 'local-learner';
+
+export function StudyPage({
+  sessionOptions,
+  learnerId = DEFAULT_LEARNER_ID,
+  reviewSchedulerClient,
+}: StudyPageProps) {
   const sessionRandomRef = useRef<SessionRandomSource>(sessionOptions?.random ?? Math.random);
   const progressByKanjiRef = useRef(loadProgressRecords());
+  const reviewSchedulerRef = useRef<ReviewSchedulerClient>(
+    reviewSchedulerClient ??
+      (import.meta.env.VITE_REVIEW_SCHEDULER_BASE_URL
+        ? createFetchReviewSchedulerClient(import.meta.env.VITE_REVIEW_SCHEDULER_BASE_URL)
+        : createDisabledReviewSchedulerClient()),
+  );
+  const studyRunRequestRef = useRef(0);
+  const initialSchedulerLoadRef = useRef(false);
+  const loadStudyRunRef = useRef<(nextDrillId: string) => Promise<void>>(async () => {});
   const [drillId, setDrillId] = useState(STARTER_DRILLS[0]?.id ?? 'learn');
   const drill = getDrillById(drillId);
-  const createStudyRun = (
-    nextDrill = drill,
-    entries: readonly KanjiEntry[] = canonicalKanjiDeck,
-    random: SessionRandomSource = sessionRandomRef.current,
-  ): StudyRunState => {
-    const createdAt = sessionOptions?.createdAt ?? new Date().toISOString();
-    const session = createSession(entries, nextDrill, {
-      ...sessionOptions,
+  const [studyRun, setStudyRun] = useState<StudyRunState>(() =>
+    reviewSchedulerRef.current.availability === 'disabled'
+      ? (() => {
+          const plannedSelection = planLocalFallbackStudyRunSelection({
+            createdAt: sessionOptions?.createdAt ?? new Date().toISOString(),
+            dailyNewLimit: sessionOptions?.dailyNewLimit,
+            drillConfigId: drillId,
+            entries: canonicalKanjiDeck,
+            learnerId,
+            progressByKanji: progressByKanjiRef.current,
+            random: sessionRandomRef.current,
+          });
+
+          return createStudyRunFromSelection({
+            createdAt: sessionOptions?.createdAt ?? new Date().toISOString(),
+            dailyNewLimit: sessionOptions?.dailyNewLimit,
+            drillConfigId: drillId,
+            progressByKanji: progressByKanjiRef.current,
+            random: sessionRandomRef.current,
+            reviewSelectionSource: plannedSelection.reviewSelectionSource,
+            schedulerMessage: plannedSelection.schedulerMessage,
+            selectedEntries: plannedSelection.selectedEntries,
+            sessionOptions,
+          });
+        })()
+      : createStudyRunFromSelection({
+          createdAt: sessionOptions?.createdAt ?? new Date().toISOString(),
+          dailyNewLimit: sessionOptions?.dailyNewLimit,
+          drillConfigId: drillId,
+          progressByKanji: progressByKanjiRef.current,
+          selectedEntries: [],
+          random: sessionRandomRef.current,
+          reviewSelectionSource: 'not-needed',
+          sessionOptions,
+        }),
+  );
+  const [isStudyRunLoading, setIsStudyRunLoading] = useState(
+    reviewSchedulerRef.current.availability === 'configured',
+  );
+
+  useEffect(() => {
+    if (
+      reviewSchedulerRef.current.availability !== 'configured' ||
+      initialSchedulerLoadRef.current
+    ) {
+      return;
+    }
+
+    initialSchedulerLoadRef.current = true;
+    void loadStudyRunRef.current(drillId);
+  }, [drillId]);
+
+  function createStudyRunFromSelection({
+    drillConfigId,
+    selectedEntries,
+    createdAt,
+    random,
+    progressByKanji,
+    dailyNewLimit,
+    reviewSelectionSource,
+    schedulerMessage,
+    sessionOptions: nextSessionOptions,
+  }: {
+    readonly drillConfigId: string;
+    readonly selectedEntries: readonly KanjiEntry[];
+    readonly createdAt: string;
+    readonly random: SessionRandomSource;
+    readonly progressByKanji: ProgressByKanji;
+    readonly dailyNewLimit: number | undefined;
+    readonly reviewSelectionSource: ReviewSelectionSource;
+    readonly schedulerMessage?: string;
+    readonly sessionOptions: CreateSessionOptions | undefined;
+  }): StudyRunState {
+    const nextDrill = getDrillById(drillConfigId);
+    const session = createSession(canonicalKanjiDeck, nextDrill, {
+      ...nextSessionOptions,
       createdAt,
       choicePoolEntries: canonicalKanjiDeck,
       random,
-      seedProgressByKanji: progressByKanjiRef.current,
+      seedProgressByKanji: progressByKanji,
+      selectedEntries,
     });
+
     return {
       session,
       batchSummary: summarizeSessionBatch(
         session.selectedKanji,
-        progressByKanjiRef.current,
+        progressByKanji,
         createdAt,
-        sessionOptions?.dailyNewLimit,
+        dailyNewLimit,
+        reviewSelectionSource,
+        schedulerMessage,
       ),
     };
-  };
-  const [studyRun, setStudyRun] = useState(() => createStudyRun(drill));
+  }
+
+  async function loadStudyRun(nextDrillId: string): Promise<void> {
+    if (reviewSchedulerRef.current.availability !== 'configured') {
+      return;
+    }
+
+    const requestId = studyRunRequestRef.current + 1;
+    studyRunRequestRef.current = requestId;
+    const createdAt = sessionOptions?.createdAt ?? new Date().toISOString();
+
+    setIsStudyRunLoading(true);
+
+    const plannedSelection = await planStudyRunSelection({
+      createdAt,
+      dailyNewLimit: sessionOptions?.dailyNewLimit,
+      drillConfigId: nextDrillId,
+      entries: canonicalKanjiDeck,
+      learnerId,
+      progressByKanji: progressByKanjiRef.current,
+      random: sessionRandomRef.current,
+      reviewSchedulerClient: reviewSchedulerRef.current,
+    });
+
+    if (studyRunRequestRef.current !== requestId) {
+      return;
+    }
+
+    setStudyRun(
+      createStudyRunFromSelection({
+        createdAt,
+        dailyNewLimit: sessionOptions?.dailyNewLimit,
+        drillConfigId: nextDrillId,
+        progressByKanji: progressByKanjiRef.current,
+        random: sessionRandomRef.current,
+        reviewSelectionSource: plannedSelection.reviewSelectionSource,
+        schedulerMessage: plannedSelection.schedulerMessage,
+        selectedEntries: plannedSelection.selectedEntries,
+        sessionOptions,
+      }),
+    );
+    setReadingsRevealed(getDrillById(nextDrillId).mode === 'learn');
+    setIsStudyRunLoading(false);
+  }
+
+  loadStudyRunRef.current = loadStudyRun;
+
   const session = studyRun.session;
   const batchSummary = studyRun.batchSummary;
   const [readingsRevealed, setReadingsRevealed] = useState(drill.mode === 'learn');
+  const isStudyRunPending = isStudyRunLoading && reviewSchedulerRef.current.availability === 'configured';
   const isSessionEmpty = session.selectedKanji.length === 0;
   const isSessionComplete = !isSessionEmpty && (session.queue.length === 0 || session.activeKanji === null);
   const isSessionInactive = isSessionEmpty || isSessionComplete;
@@ -123,7 +270,9 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
   });
   let answerStateSummary = 'Always visible';
 
-  if (isSessionEmpty) {
+  if (isStudyRunPending) {
+    answerStateSummary = 'Loading due batch';
+  } else if (isSessionEmpty) {
     answerStateSummary = 'Nothing queued';
   } else if (isSessionComplete) {
     answerStateSummary = 'Complete';
@@ -137,18 +286,86 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
     const nextDrill = getDrillById(nextDrillId);
     const currentSessionEntries = getSelectedEntriesForSession(session.selectedKanji);
     setDrillId(nextDrillId);
+
+    if (currentSessionEntries.length > 0) {
+      setIsStudyRunLoading(false);
+      setStudyRun(
+        createStudyRunFromSelection({
+          createdAt: sessionOptions?.createdAt ?? new Date().toISOString(),
+          dailyNewLimit: sessionOptions?.dailyNewLimit,
+          drillConfigId: nextDrillId,
+          progressByKanji: progressByKanjiRef.current,
+          random: () => 0,
+          reviewSelectionSource: batchSummary.reviewSelectionSource,
+          schedulerMessage: batchSummary.schedulerMessage,
+          selectedEntries: currentSessionEntries,
+          sessionOptions,
+        }),
+      );
+      setReadingsRevealed(nextDrill.mode === 'learn');
+      return;
+    }
+
+    if (reviewSchedulerRef.current.availability === 'configured') {
+      void loadStudyRun(nextDrillId);
+      return;
+    }
+
+    const plannedSelection = planLocalFallbackStudyRunSelection({
+      createdAt: sessionOptions?.createdAt ?? new Date().toISOString(),
+      dailyNewLimit: sessionOptions?.dailyNewLimit,
+      drillConfigId: nextDrillId,
+      entries: canonicalKanjiDeck,
+      learnerId,
+      progressByKanji: progressByKanjiRef.current,
+      random: sessionRandomRef.current,
+    });
+
     setStudyRun(
-      createStudyRun(
-        nextDrill,
-        currentSessionEntries.length > 0 ? currentSessionEntries : canonicalKanjiDeck,
-        currentSessionEntries.length > 0 ? () => 0 : sessionRandomRef.current,
-      ),
+      createStudyRunFromSelection({
+        createdAt: sessionOptions?.createdAt ?? new Date().toISOString(),
+        dailyNewLimit: sessionOptions?.dailyNewLimit,
+        drillConfigId: nextDrillId,
+        progressByKanji: progressByKanjiRef.current,
+        random: sessionRandomRef.current,
+        reviewSelectionSource: plannedSelection.reviewSelectionSource,
+        schedulerMessage: plannedSelection.schedulerMessage,
+        selectedEntries: plannedSelection.selectedEntries,
+        sessionOptions,
+      }),
     );
     setReadingsRevealed(nextDrill.mode === 'learn');
   }
 
   function handleRestartDrill() {
-    setStudyRun(createStudyRun(drill));
+    if (reviewSchedulerRef.current.availability === 'configured') {
+      void loadStudyRun(drill.id);
+      return;
+    }
+
+    const plannedSelection = planLocalFallbackStudyRunSelection({
+      createdAt: sessionOptions?.createdAt ?? new Date().toISOString(),
+      dailyNewLimit: sessionOptions?.dailyNewLimit,
+      drillConfigId: drill.id,
+      entries: canonicalKanjiDeck,
+      learnerId,
+      progressByKanji: progressByKanjiRef.current,
+      random: sessionRandomRef.current,
+    });
+
+    setStudyRun(
+      createStudyRunFromSelection({
+        createdAt: sessionOptions?.createdAt ?? new Date().toISOString(),
+        dailyNewLimit: sessionOptions?.dailyNewLimit,
+        drillConfigId: drill.id,
+        progressByKanji: progressByKanjiRef.current,
+        random: sessionRandomRef.current,
+        reviewSelectionSource: plannedSelection.reviewSelectionSource,
+        schedulerMessage: plannedSelection.schedulerMessage,
+        selectedEntries: plannedSelection.selectedEntries,
+        sessionOptions,
+      }),
+    );
     setReadingsRevealed(drill.mode === 'learn');
   }
 
@@ -163,11 +380,13 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
       activeKanji,
       sessionRandomRef.current,
     );
+    const reviewedAt = new Date().toISOString();
     progressByKanjiRef.current = persistReviewEventToProgressStore(
       progressByKanjiRef.current,
       event,
-      new Date().toISOString(),
+      reviewedAt,
     );
+    maybePersistSchedulerOutcome(activeKanji, reviewGrade, reviewedAt);
     setStudyRun((current) => ({
       ...current,
       session: nextSession,
@@ -198,15 +417,43 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
       activeKanji,
       sessionRandomRef.current,
     );
+    const reviewedAt = new Date().toISOString();
     progressByKanjiRef.current = persistReviewEventToProgressStore(
       progressByKanjiRef.current,
       event,
-      new Date().toISOString(),
+      reviewedAt,
     );
+    maybePersistSchedulerOutcome(activeKanji, reviewGrade, reviewedAt);
     setStudyRun((current) => ({
       ...current,
       session: nextSession,
     }));
+  }
+
+  function maybePersistSchedulerOutcome(
+    kanji: string,
+    reviewGrade: ReviewGrade,
+    reviewedAt: string,
+  ) {
+    if (reviewSchedulerRef.current.availability !== 'configured') {
+      return;
+    }
+
+    if (!isReviewBankCandidateProgress(progressByKanjiRef.current[kanji])) {
+      return;
+    }
+
+    void reviewSchedulerRef.current.recordReviewOutcomes({
+      learnerId,
+      outcomes: [
+        {
+          kanji,
+          reviewGrade,
+          reviewedAt,
+        },
+      ],
+      updatedAt: reviewedAt,
+    });
   }
 
   return (
@@ -215,11 +462,10 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
         <p className="eyebrow">Study</p>
         <h1 className="page-title">A small local kanji loop that stays honest</h1>
         <p className="body-copy">
-          Choose a drill, work through one local batch, and reveal meanings and readings only when
-          you need them. This MVP keeps the rules explicit: unfinished carryover first, then
-          today&apos;s allowed truly new kanji, then durable review-bank backfill. Within that
-          review-bank slice, cards with more recent repeated recall misses are chosen first. This
-          is still not due scheduling.
+          Choose a drill, work through one small batch, and reveal meanings and readings only when
+          you need them. Carryover and the daily new limit still stay local. When a review
+          scheduler is configured, due review-bank picks come from the backend; otherwise the app
+          falls back to the older local review-bank heuristic.
         </p>
       </header>
 
@@ -235,7 +481,9 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
             <div className="section-heading">
               <p className="section-kicker">Session</p>
               <h2 className="section-title" id="session-overview-title">
-                {isSessionEmpty
+                {isStudyRunPending
+                  ? 'Loading review batch'
+                  : isSessionEmpty
                   ? 'Nothing queued right now'
                   : isSessionComplete
                     ? 'Session complete'
@@ -280,6 +528,10 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
               <strong>{answerStateSummary}</strong>
             </div>
             <div className="study-overview-row">
+              <span>Review source</span>
+              <strong>{formatReviewSelectionSource(batchSummary)}</strong>
+            </div>
+            <div className="study-overview-row">
               <span>Batch mix</span>
               <strong>{formatBatchMix(batchSummary)}</strong>
             </div>
@@ -295,6 +547,9 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
               <span>Source set</span>
               <strong>{activeEntry?.sourceSet ?? 'No active card'}</strong>
             </div>
+            {batchSummary.schedulerMessage ? (
+              <p className="fine-print">{batchSummary.schedulerMessage}</p>
+            ) : null}
           </section>
         </aside>
 
@@ -303,10 +558,18 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
             <div className="section-heading">
               <p className="section-kicker">Study surface</p>
               <h2 className="section-title" id="study-stage-title">
-                {isSessionEmpty ? `${drill.label} waiting` : isSessionComplete ? `${drill.label} complete` : drill.label}
+                {isStudyRunPending
+                  ? `${drill.label} loading`
+                  : isSessionEmpty
+                    ? `${drill.label} waiting`
+                    : isSessionComplete
+                      ? `${drill.label} complete`
+                      : drill.label}
               </h2>
               <p className="body-copy">
-                {isSessionEmpty
+                {isStudyRunPending
+                  ? 'Checking the backend scheduler for due review items before building this batch.'
+                  : isSessionEmpty
                   ? emptyStateDescriptionForMode(drill.mode, batchSummary.dailyNewLimit)
                   : isSessionComplete
                   ? completionDescriptionForMode(drill.mode)
@@ -314,7 +577,20 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
               </p>
             </div>
 
-            {isSessionInactive || activeEntry === null || activeKanji === null ? (
+            {isStudyRunPending ? (
+              <div
+                aria-live="polite"
+                className="study-status-card study-status-card-empty"
+                role="status"
+              >
+                <p className="section-kicker">Loading due reviews</p>
+                <p className="section-title">Fetching backend review items</p>
+                <p className="fine-print">
+                  Carryover and new-item allowance stay local, but due review backfill is loading
+                  from the scheduler.
+                </p>
+              </div>
+            ) : isSessionInactive || activeEntry === null || activeKanji === null ? (
               <div
                 aria-live="polite"
                 className={`study-status-card ${isSessionEmpty ? 'study-status-card-empty' : 'study-status-card-complete'}`}
@@ -385,7 +661,9 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
                   {isSessionInactive ? 'Session status' : modePresentation.answerPanelTitle}
                 </h3>
                 <p className="fine-print">
-                  {isSessionEmpty
+                  {isStudyRunPending
+                    ? 'This batch is still loading from the backend scheduler.'
+                    : isSessionEmpty
                     ? 'Restart the drill after you study more today, or switch modes to compare the same empty shell honestly.'
                     : isSessionComplete
                     ? 'Start the drill again if you want a fresh batch, or switch modes to compare the shell.'
@@ -394,7 +672,13 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
               </div>
 
               <div aria-live="polite" className="study-answer-panel" id={answerPanelId}>
-                {isSessionEmpty ? (
+                {isStudyRunPending ? (
+                  <div className="study-answer-empty">
+                    <p className="fine-print">
+                      Waiting for the configured review scheduler before finalizing this batch.
+                    </p>
+                  </div>
+                ) : isSessionEmpty ? (
                   <div className="study-answer-empty">
                     <p className="fine-print">
                       No active card is queued yet. Fresh-new slots left today: {formatDailyAllowanceCount(batchSummary)}.
@@ -472,7 +756,7 @@ export function StudyPage({ sessionOptions }: StudyPageProps) {
                 )}
               </div>
 
-              {isSessionInactive ? (
+              {isStudyRunPending ? null : isSessionInactive ? (
                 <div className="study-action-row">
                   <button className="btn btn-primary" type="button" onClick={handleRestartDrill}>
                     Restart this drill
@@ -663,6 +947,8 @@ function summarizeSessionBatch(
   progressByKanji: ProgressByKanji,
   createdAt: string,
   dailyNewLimit = DEFAULT_DAILY_NEW_KANJI_LIMIT,
+  reviewSelectionSource: ReviewSelectionSource,
+  schedulerMessage?: string,
 ): SessionBatchSummary {
   let carryoverCount = 0;
   let freshNewCount = 0;
@@ -705,6 +991,8 @@ function summarizeSessionBatch(
     priorityReviewCount,
     dailyNewLimit,
     remainingDailyNewAllowance: Math.max(0, dailyNewLimit - consumedTodayCount),
+    reviewSelectionSource,
+    schedulerMessage,
   };
 }
 
@@ -730,6 +1018,18 @@ function formatPriorityReviewSummary(summary: SessionBatchSummary): string {
   }
 
   return `${summary.priorityReviewCount} recent-miss review cards`;
+}
+
+function formatReviewSelectionSource(summary: SessionBatchSummary): string {
+  switch (summary.reviewSelectionSource) {
+    case 'backend-due':
+      return 'Backend due schedule';
+    case 'local-fallback':
+      return 'Local fallback';
+    case 'not-needed':
+    default:
+      return 'No due review needed';
+  }
 }
 
 function formatDailyAllowanceCount(summary: SessionBatchSummary): string {
