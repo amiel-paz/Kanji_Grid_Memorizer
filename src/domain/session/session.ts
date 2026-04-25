@@ -3,22 +3,20 @@ import { getDrillById } from '../drills/configs';
 import { buildReadingMcqChoiceMap } from '../drills/readingMcq';
 import type { DrillConfig, ReviewGrade } from '../drills/types';
 import {
-  hasSeenProgress,
-  isReviewBankCandidateProgress,
-  isUnfinishedNewItemProgress,
-} from '../progress/progress';
-import {
   CUE_OPACITY_LADDER,
-  DEFAULT_DAILY_NEW_KANJI_LIMIT,
   type CueOpacity,
   type SessionAnswerResult,
-  type SessionProgressSeed,
   type SessionProgressSeedByKanji,
   type SessionState,
 } from './types';
+import {
+  selectSessionEntries as selectLocalSessionEntries,
+  type SelectSessionEntriesOptions,
+  type SessionRandomSource,
+} from './sessionSelection';
 
 export { DEFAULT_DAILY_NEW_KANJI_LIMIT } from './types';
-export type SessionRandomSource = () => number;
+export type { SelectSessionEntriesOptions, SessionRandomSource } from './sessionSelection';
 
 export interface CreateSessionOptions {
   readonly random?: SessionRandomSource;
@@ -27,13 +25,7 @@ export interface CreateSessionOptions {
   readonly createdAt?: string;
   readonly dailyNewLimit?: number;
   readonly choicePoolEntries?: readonly KanjiEntry[];
-}
-
-export interface SelectSessionEntriesOptions {
-  readonly random?: SessionRandomSource;
-  readonly progressByKanji?: SessionProgressSeedByKanji;
-  readonly createdAt?: string;
-  readonly dailyNewLimit?: number;
+  readonly selectedEntries?: readonly KanjiEntry[];
 }
 
 export function createSession(
@@ -43,12 +35,15 @@ export function createSession(
 ): SessionState {
   const seedProgressByKanji = options.seedProgressByKanji ?? {};
   const random = options.random ?? Math.random;
-  const selected = selectSessionEntries(entries, drillConfig.deckSize, {
-    random,
-    progressByKanji: seedProgressByKanji,
-    createdAt: options.createdAt,
-    dailyNewLimit: options.dailyNewLimit,
-  });
+  const selected =
+    options.selectedEntries !== undefined
+      ? [...options.selectedEntries]
+      : selectLocalSessionEntries(entries, drillConfig.deckSize, {
+          random,
+          progressByKanji: seedProgressByKanji,
+          createdAt: options.createdAt,
+          dailyNewLimit: options.dailyNewLimit,
+        });
   const active = selected[0];
   const choiceOptionsByKanji =
     drillConfig.mode === 'reading-mcq'
@@ -86,38 +81,7 @@ export function selectSessionEntries(
   deckSize: number,
   options: SelectSessionEntriesOptions = {},
 ): readonly KanjiEntry[] {
-  const random = options.random ?? Math.random;
-  const progressByKanji = options.progressByKanji ?? {};
-  const selectionSize = Math.min(deckSize, entries.length);
-  const todayKey = toLocalDateKey(options.createdAt ?? new Date().toISOString());
-  const { carryoverEntries, reviewBankEntries, trulyNewEntries } = partitionEntriesForSessionCreation(
-    entries,
-    progressByKanji,
-  );
-  const carryoverSelection = selectRandomEntries(carryoverEntries, selectionSize, random);
-  const olderCarryoverCount = carryoverSelection.filter((entry) => {
-    const progress = progressByKanji[entry.kanji];
-    return !progress || !isFirstSeenOnLocalDate(progress, todayKey);
-  }).length;
-  const remainingDeckSlots = selectionSize - carryoverSelection.length;
-  const remainingDailyNewAllowance = Math.max(
-    0,
-    getRemainingDailyNewAllowance(progressByKanji, options.createdAt, options.dailyNewLimit) -
-      olderCarryoverCount,
-  );
-  const freshNewSelection = selectRandomEntries(
-    trulyNewEntries,
-    Math.min(remainingDeckSlots, remainingDailyNewAllowance),
-    random,
-  );
-  const reviewBankSelection = selectPriorityReviewEntries(
-    reviewBankEntries,
-    remainingDeckSlots - freshNewSelection.length,
-    progressByKanji,
-    random,
-  );
-
-  return [...carryoverSelection, ...freshNewSelection, ...reviewBankSelection];
+  return selectLocalSessionEntries(entries, deckSize, options);
 }
 
 export function initialOpacityForDrill(
@@ -350,133 +314,4 @@ function nextCueOpacity(
 
 function initialSessionDimOpacity(): CueOpacity {
   return 1;
-}
-
-// Local session creation stays intentionally small and non-due-based:
-// unfinished new-item carryover first, then today's remaining truly new allowance,
-// then durable review-bank candidates with a small recent-miss priority boost.
-function partitionEntriesForSessionCreation(
-  entries: readonly KanjiEntry[],
-  progressByKanji: SessionProgressSeedByKanji,
-): {
-  readonly carryoverEntries: readonly KanjiEntry[];
-  readonly reviewBankEntries: readonly KanjiEntry[];
-  readonly trulyNewEntries: readonly KanjiEntry[];
-} {
-  const carryoverEntries: KanjiEntry[] = [];
-  const reviewBankEntries: KanjiEntry[] = [];
-  const trulyNewEntries: KanjiEntry[] = [];
-
-  for (const entry of entries) {
-    const progress = progressByKanji[entry.kanji];
-
-    if (isUnfinishedNewItemProgress(progress)) {
-      carryoverEntries.push(entry);
-      continue;
-    }
-
-    if (isReviewBankCandidateProgress(progress)) {
-      reviewBankEntries.push(entry);
-      continue;
-    }
-
-    if (!hasSeenProgress(progress)) {
-      trulyNewEntries.push(entry);
-    }
-  }
-
-  return {
-    carryoverEntries,
-    reviewBankEntries,
-    trulyNewEntries,
-  };
-}
-
-function selectPriorityReviewEntries(
-  entries: readonly KanjiEntry[],
-  count: number,
-  progressByKanji: SessionProgressSeedByKanji,
-  random: SessionRandomSource,
-): readonly KanjiEntry[] {
-  if (count <= 0 || entries.length === 0) {
-    return [];
-  }
-
-  return [...entries]
-    .map((entry) => ({
-      entry,
-      recentReviewFailureCount: progressByKanji[entry.kanji]?.recentReviewFailureCount ?? 0,
-      lastReviewFailureAt: toSortableTimestamp(progressByKanji[entry.kanji]?.lastReviewFailureAt),
-      tieBreaker: random(),
-    }))
-    .sort(
-      (left, right) =>
-        right.recentReviewFailureCount - left.recentReviewFailureCount ||
-        right.lastReviewFailureAt - left.lastReviewFailureAt ||
-        left.tieBreaker - right.tieBreaker,
-    )
-    .slice(0, count)
-    .map(({ entry }) => entry);
-}
-
-function selectRandomEntries(
-  entries: readonly KanjiEntry[],
-  count: number,
-  random: SessionRandomSource,
-): readonly KanjiEntry[] {
-  const remainingEntries = [...entries];
-  const selected: KanjiEntry[] = [];
-
-  while (selected.length < count && remainingEntries.length > 0) {
-    const selectedIndex = Math.floor(random() * remainingEntries.length);
-    const [entry] = remainingEntries.splice(selectedIndex, 1);
-
-    if (!entry) {
-      throw new Error(`Session selection produced an invalid index: ${selectedIndex}`);
-    }
-
-    selected.push(entry);
-  }
-
-  return selected;
-}
-
-function getRemainingDailyNewAllowance(
-  progressByKanji: SessionProgressSeedByKanji,
-  createdAt: string | undefined,
-  dailyNewLimit: number | undefined,
-): number {
-  const todayKey = toLocalDateKey(createdAt ?? new Date().toISOString());
-  const consumedTodayCount = Object.values(progressByKanji).filter((progress) =>
-    isFirstSeenOnLocalDate(progress, todayKey),
-  ).length;
-
-  return Math.max(0, (dailyNewLimit ?? DEFAULT_DAILY_NEW_KANJI_LIMIT) - consumedTodayCount);
-}
-
-function isFirstSeenOnLocalDate(progress: SessionProgressSeed, localDateKey: string): boolean {
-  return hasSeenProgress(progress) && progress.firstSeenAt !== undefined && toLocalDateKey(progress.firstSeenAt) === localDateKey;
-}
-
-function toLocalDateKey(timestamp: string): string {
-  const date = new Date(timestamp);
-
-  if (Number.isNaN(date.valueOf())) {
-    return '';
-  }
-
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-
-  return `${date.getFullYear()}-${month}-${day}`;
-}
-
-function toSortableTimestamp(timestamp: string | undefined): number {
-  if (!timestamp) {
-    return Number.NEGATIVE_INFINITY;
-  }
-
-  const date = new Date(timestamp);
-
-  return Number.isNaN(date.valueOf()) ? Number.NEGATIVE_INFINITY : date.valueOf();
 }

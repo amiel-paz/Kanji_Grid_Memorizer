@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { canonicalKanjiDeck } from '../src/data/canonicalDeck';
 import type { KanjiEntry } from '../src/domain/content/types';
 import { getDrillById } from '../src/domain/drills/configs';
+import type { ReviewSchedulerClient } from '../src/domain/reviewScheduler/client';
 import { createSession } from '../src/domain/session/session';
 import { StudyPage } from '../src/pages/StudyPage';
 
@@ -50,9 +51,10 @@ describe('StudyPage', () => {
     expect(screen.getByText('1 / 5')).toBeInTheDocument();
     expect(screen.getByText('Cue visible at 100%')).toBeInTheDocument();
     expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
-    expect(screen.getByText(/unfinished carryover first, then today's allowed truly new kanji/i)).toBeInTheDocument();
-    expect(screen.getByText(/cards with more recent repeated recall misses are chosen first/i)).toBeInTheDocument();
+    expect(screen.getByText(/carryover and the daily new limit still stay local/i)).toBeInTheDocument();
+    expect(screen.getByText(/falls back to the older local review-bank heuristic/i)).toBeInTheDocument();
     expect(screen.getByText('0 carryover, 5 new, 0 review')).toBeInTheDocument();
+    expect(screen.getByText('No due review needed')).toBeInTheDocument();
     expect(screen.getByText('No recent-miss boost in this batch')).toBeInTheDocument();
     expect(screen.getByText('5 of 5 fresh slots left')).toBeInTheDocument();
     expect(screen.getAllByText('Hidden until reveal')).toHaveLength(2);
@@ -536,6 +538,137 @@ describe('StudyPage', () => {
     expect(screen.getByText('0 of 5 fresh slots left')).toBeInTheDocument();
     expect(screen.getByText(/No active card is queued yet\. Fresh-new slots left today: 0 of 5\./i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Restart this drill' })).toBeInTheDocument();
+  });
+
+  it('uses the configured backend scheduler for due review selection', async () => {
+    const [firstEntry, secondEntry] = canonicalKanjiDeck;
+
+    if (!firstEntry || !secondEntry) {
+      throw new Error('Expected canonical deck data.');
+    }
+
+    storage.setItem(
+      'kanji-grid-progress-v0',
+      JSON.stringify({
+        [firstEntry.kanji]: {
+          kanji: firstEntry.kanji,
+          seenCount: 5,
+          goodCount: 4,
+          firstSeenAt: '2026-04-18T12:00:00.000Z',
+          lastSeenAt: '2026-04-21T11:00:00.000Z',
+          confidence: 'familiar',
+          reviewBankCandidate: true,
+        },
+        [secondEntry.kanji]: {
+          kanji: secondEntry.kanji,
+          seenCount: 5,
+          goodCount: 3,
+          firstSeenAt: '2026-04-18T11:00:00.000Z',
+          lastSeenAt: '2026-04-21T10:00:00.000Z',
+          confidence: 'familiar',
+          reviewBankCandidate: true,
+        },
+      }),
+    );
+
+    const reviewSchedulerClient: ReviewSchedulerClient = {
+      availability: 'configured',
+      getDueReviewKanji: vi.fn().mockResolvedValue({
+        learnerId: 'local-learner',
+        asOf: '2026-04-21T12:00:00.000Z',
+        items: [
+          {
+            kanji: secondEntry.kanji,
+            dueAt: '2026-04-21T09:00:00.000Z',
+            status: 'review',
+            intervalDays: 7,
+          },
+        ],
+        remainingDueCount: 0,
+      }),
+      recordReviewOutcomes: vi.fn().mockResolvedValue(undefined),
+    };
+
+    await act(async () => {
+      render(
+        <StudyPage
+          reviewSchedulerClient={reviewSchedulerClient}
+          sessionOptions={{
+            id: 'backend-study-page-session',
+            dailyNewLimit: 0,
+            random: createDeterministicRandom([0, 0]),
+          }}
+        />,
+      );
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText(`Now studying ${secondEntry.kanji}`)).toBeInTheDocument();
+    expect(screen.getByText('Backend due schedule')).toBeInTheDocument();
+    expect(screen.getByText('0 carryover, 0 new, 1 review')).toBeInTheDocument();
+    expect(reviewSchedulerClient.getDueReviewKanji).toHaveBeenCalledWith({
+      learnerId: 'local-learner',
+      now: '2026-04-21T12:00:00.000Z',
+      limit: 10,
+    });
+  });
+
+  it('falls back clearly when the configured backend scheduler errors', async () => {
+    const [firstEntry, secondEntry] = canonicalKanjiDeck;
+
+    if (!firstEntry || !secondEntry) {
+      throw new Error('Expected canonical deck data.');
+    }
+
+    storage.setItem(
+      'kanji-grid-progress-v0',
+      JSON.stringify({
+        [firstEntry.kanji]: {
+          kanji: firstEntry.kanji,
+          seenCount: 5,
+          goodCount: 3,
+          firstSeenAt: '2026-04-18T12:00:00.000Z',
+          lastSeenAt: '2026-04-21T11:00:00.000Z',
+          confidence: 'familiar',
+          reviewBankCandidate: true,
+          recentReviewFailureCount: 2,
+          lastReviewFailureAt: '2026-04-21T10:30:00.000Z',
+        },
+        [secondEntry.kanji]: {
+          kanji: secondEntry.kanji,
+          seenCount: 5,
+          goodCount: 4,
+          firstSeenAt: '2026-04-18T11:00:00.000Z',
+          lastSeenAt: '2026-04-21T10:00:00.000Z',
+          confidence: 'familiar',
+          reviewBankCandidate: true,
+        },
+      }),
+    );
+
+    const reviewSchedulerClient: ReviewSchedulerClient = {
+      availability: 'configured',
+      getDueReviewKanji: vi.fn().mockRejectedValue(new Error('Scheduler offline')),
+      recordReviewOutcomes: vi.fn().mockResolvedValue(undefined),
+    };
+
+    await act(async () => {
+      render(
+        <StudyPage
+          reviewSchedulerClient={reviewSchedulerClient}
+          sessionOptions={{
+            id: 'backend-fallback-study-page-session',
+            dailyNewLimit: 0,
+            random: createDeterministicRandom([0.9, 0.1]),
+          }}
+        />,
+      );
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
+    expect(screen.getByText('Local fallback')).toBeInTheDocument();
+    expect(screen.getByText('Scheduler offline')).toBeInTheDocument();
   });
 });
 

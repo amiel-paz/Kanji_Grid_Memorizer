@@ -137,13 +137,12 @@ with seen durable progress that have not yet graduated into the review bank are 
 unfinished carryover and are re-offered before fresh replacement new items are admitted. Older
 carryover reduces that day's fresh-new allowance, while same-day carryover does not double-count
 because `firstSeenAt` already consumed today's slot. Graduated review-bank candidates may still
-fill the rest of the batch as simple available-review backfill, but repeated recent misses now
-order that review-bank slice by `recentReviewFailureCount` first and `lastReviewFailureAt` second
-before any remaining random tie-break. Because grading writes durable progress immediately, this
-ordering can already affect another session started later the same local day; it also carries into
-later local days until enough later successful review answers reduce the failure count. This pass
-still does not add due dates or a scheduler; if there is not enough review-bank material to fill
-the drill's nominal size, the batch may simply be smaller.
+fill the rest of the batch as available review backfill, but that slice now has two honest paths.
+If the backend scheduler is configured, the app requests due review kanji there and maps the
+returned kanji ids back onto local `KanjiEntry` records. If the backend is unavailable, the app
+falls back to the older local ordering by `recentReviewFailureCount` first and
+`lastReviewFailureAt` second before any remaining random tie-break. If there is not enough due
+review material to fill the drill's nominal size, the batch may simply be smaller.
 
 The starter review loop keeps queue movement inside session state. Session creation can randomize
 which kanji enter the current run, while answering or advancing still reorders the active kanji
