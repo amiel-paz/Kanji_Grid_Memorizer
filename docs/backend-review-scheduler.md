@@ -10,7 +10,8 @@ This server pass adds:
 - a standalone Node/TypeScript API in `server/src`
 - file-backed learner scheduler storage
 - hosted review-record updates from explicit review outcomes
-- hosted due-plan generation for future sessions
+- an explicit `getDueReviewKanji({ learnerId, now, limit })` contract
+- Study-page integration for the review-bank slice only
 
 This pass does not add:
 
@@ -18,7 +19,7 @@ This pass does not add:
 - canonical content hosting
 - hosted live session queue ownership
 - a production database
-- frontend integration to replace the current local session creation path
+- hosted ownership of carryover or daily-new admission
 
 ## Ownership Boundary
 
@@ -37,7 +38,21 @@ The backend does not own:
 - session cue opacity
 - Reading MCQ option sets
 
-Those still belong to stable content or client session state.
+Those still belong to stable content, durable local learner progress, or client session state.
+
+Local progress still owns:
+
+- seen counts
+- confidence
+- review-bank candidacy
+- the small recent-miss fallback signal
+
+Session state still owns:
+
+- which cards are currently selected for this run
+- queue rotation after the run starts
+- reveal state
+- per-run attempts and cue opacity
 
 ## Routes
 
@@ -47,14 +62,27 @@ The server currently exposes:
 - `GET /api/v1/learners/:learnerId/scheduler`
 - `POST /api/v1/learners/:learnerId/scheduler/review-outcomes`
 - `POST /api/v1/learners/:learnerId/scheduler/plan`
+- `POST /api/v1/learners/:learnerId/due-review-kanji`
 
 `review-outcomes` accepts explicit review results and advances hosted due records.
 
-`plan` returns a due-first plan with:
+`due-review-kanji` is the frontend-facing selection contract. It accepts:
 
-- `dueKanji`
-- `upcomingKanji`
+- `learnerId`
+- `now`
+- `limit`
+
+It returns:
+
+- `items`
+  - `kanji`
+  - `dueAt`
+  - `status`
+  - `intervalDays`
 - `remainingDueCount`
+
+The app uses that response only for the review-bank slice after local carryover and daily-new
+selection have already happened.
 
 ## Scheduling Rule
 
@@ -63,10 +91,23 @@ The current backend rule is intentionally small and explicit:
 - `good` starts at `1` day
 - later `good` intervals move `1 -> 3 -> 7`, then double up to a `120` day cap
 - `again` resets the item to `learning` with a `1` day interval
-- due plans sort earlier `dueAt` first, then break ties by kanji
+- due items sort earlier `dueAt` first, then break ties by kanji
 
 This is a first hosted due scheduler, not a finished SM-2 clone or production spaced-repetition
 system.
+
+## Client Integration
+
+The frontend now uses one honest backend path:
+
+1. keep carryover and daily new-item admission local
+2. ask the backend for due review items up to the remaining batch limit
+3. map returned kanji ids back onto local `KanjiEntry` records
+4. build the active session locally
+
+If the scheduler is unavailable or not configured, the app falls back to the older local
+review-bank heuristic and labels that state in the Study UI instead of pretending the backend
+decision succeeded.
 
 ## Storage
 
@@ -88,8 +129,8 @@ Override with:
 
 ## Next Likely Follow-Ons
 
-- connect the client session-creation path to `plan`
 - decide whether learner progress should be mirrored, migrated, or split across local and hosted
   stores
+- surface scheduler write failures more explicitly in the UI
 - replace file-backed storage with a real database only if this server boundary proves worth
   keeping

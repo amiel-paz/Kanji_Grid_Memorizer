@@ -1,4 +1,5 @@
 import type {
+  GetDueReviewKanjiResponse,
   LearnerReviewRecord,
   LearnerSchedulerState,
   SchedulerPlan,
@@ -75,6 +76,34 @@ export function createSchedulerPlan(
     asOf,
     dueKanji: dueRecords.slice(0, limit).map((record) => record.kanji),
     upcomingKanji: upcomingRecords.slice(0, limit).map((record) => record.kanji),
+    remainingDueCount: Math.max(0, dueRecords.length - limit),
+  };
+}
+
+export function getDueReviewKanji(
+  state: LearnerSchedulerState,
+  {
+    now,
+    limit,
+  }: {
+    readonly now: string;
+    readonly limit: number;
+  },
+): GetDueReviewKanjiResponse {
+  const asOfTimestamp = parseTimestamp(now);
+  const dueRecords = Object.values(state.recordsByKanji)
+    .filter((record) => parseTimestamp(record.dueAt) <= asOfTimestamp)
+    .sort(compareReviewRecordsByDueDate);
+
+  return {
+    learnerId: state.learnerId,
+    asOf: now,
+    items: dueRecords.slice(0, limit).map((record) => ({
+      kanji: record.kanji,
+      dueAt: record.dueAt,
+      status: record.status,
+      intervalDays: record.intervalDays,
+    })),
     remainingDueCount: Math.max(0, dueRecords.length - limit),
   };
 }
