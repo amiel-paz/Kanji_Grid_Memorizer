@@ -28,15 +28,14 @@ success" session can lower cue opacity after a correct answer without mutating t
 Session code can be simple at first. It should still make the ownership boundary obvious: a drill
 may decide what happens next, but it does not rewrite the deck.
 
-The current local-MVP queue is intentionally simple rotation within one selected session batch. A review
-answer moves the active item to the back; it does not shape a due queue or add broader scheduling.
-New session creation may use saved progress to shape which kanji enter a selected batch and may
-also cap how many truly new kanji can enter that day's batch while carrying unfinished new-path
-items forward before fresh replacements. It may also backfill from the durable review-bank
-candidate pool once an item has graduated out of the unfinished new path. The current local rule
-is explicit and non-due-based: carryover first, fresh new second, review-bank backfill last, with
-that review-bank slice ordered by a small durable recent-miss signal before ties fall back to
-random choice. Queue position, reveal state, attempts, answer flow, and post-start opacity changes
+The current queue is intentionally simple rotation within one selected session batch. A review
+answer moves the active item to the back; it does not hand live queue ownership to the server.
+New session creation may still use saved progress to shape which kanji enter a selected batch and
+cap how many truly new kanji can enter that day's batch while carrying unfinished new-path items
+forward before fresh replacements. The review-bank slice is now narrower: carryover and fresh-new
+selection stay local, but due review-bank picks can come from the backend scheduler. If that
+backend is unavailable, the app falls back to the older local recent-miss heuristic and labels it
+explicitly. Queue position, reveal state, attempts, answer flow, and post-start opacity changes
 stay session-owned.
 
 Session types live in `src/domain/session/types.ts`.
@@ -47,12 +46,22 @@ Session types live in `src/domain/session/types.ts`.
 sessions, but it should stay smaller than a scheduler until the app has a real learning loop.
 
 In the current MVP, progress shapes only the session-creation boundary for truly new, unfinished
-carryover, first review-bank-path kanji, and a small recent-miss priority signal for already
-graduated review-bank items.
+carryover, review-bank candidacy, and a small recent-miss fallback signal for already graduated
+review-bank items.
 That same durable boundary can also drive learner-library views and explicit manual-intake writes.
 It still does not store live session opacity, queue position, reveal state, or active attempts.
 
 Progress types live in `src/domain/progress/types.ts`.
+
+## Hosted Scheduler
+
+The repo now also has a separate backend scheduler pass under `server/src`. That server owns only
+durable hosted due records and scheduling intervals for a learner. It should not take over stable
+content ownership from `KanjiEntry`, and it should not take over live queue/reveal/cue behavior
+from session state.
+
+That means the backend may decide when a kanji is due again, but the client session still decides
+what happens inside an active run.
 
 ## Rendering
 
@@ -84,6 +93,7 @@ choices are currently attached to a prompt.
 - `domain/drills`: drill mode configuration and placeholders for queues
 - `domain/session`: ephemeral per-run state and cue opacity behavior
 - `domain/progress`: persistent learner progress types
+- `server`: hosted scheduling API, file-backed learner review records, and due-plan generation
 - `components`: presentational React components
 - `pages`: screen composition
 - `lib`: infrastructure helpers

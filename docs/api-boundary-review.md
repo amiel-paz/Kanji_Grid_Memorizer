@@ -1,5 +1,10 @@
 # API Boundary Review
 
+Historical note: this document captured the repo's posture before the later
+`work/backend-review-scheduler` pass. That newer pass adds a narrow hosted scheduling boundary
+only after the local-first loop and follow-on drills made the ownership split clearer. The cautions
+below still matter for everything the server should not own.
+
 This document revisits whether Kanji Grid Memorizer needs a backend or formal API boundary after
 the first local-first MVP has become real.
 
@@ -121,10 +126,10 @@ If the product does need more than the current local-first MVP, the next order s
 
 That sequence keeps the app honest about what the backend would be for.
 
-## Decision
+## Historical Decision
 
-Do not build a backend or API boundary now.
+At the time this document was written, the right answer was to avoid broad backend work.
 
-Keep the current local-first architecture, finish the planned learner-library work, and use the
-file-exchange spec as the first serious multi-device experiment. Reopen the API question only after
-real usage shows that local-first plus portable files is no longer enough.
+That caution still applies beyond the current narrow scheduler pass: do not let the server absorb
+stable content ownership, live session state, auth, sync, or broad learner-progress hosting unless
+real usage later proves those costs are necessary.
