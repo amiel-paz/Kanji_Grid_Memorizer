@@ -154,7 +154,8 @@ Start here when reopening the repo:
 ## After This Audit
 
 The original local-first MVP plan and the numbered worktree follow-ons in
-[`docs/worktrees.md`](docs/worktrees.md) are complete.
+[`docs/worktrees.md`](docs/worktrees.md) are complete, including the later backend scheduler
+follow-on.
 
 ## Remaining Numbered Worktrees
 

@@ -60,13 +60,14 @@ Avoid broad names such as `work/drills-v1`, `work/app-complete`, or `work/progre
 | 35 | `work/progress-manual-seen-intake` | Let the learner mark a not-yet-seen kanji as encountered outside the app. | A local unlearned-kanji browser with an explicit action to create or update durable learner progress so those kanji can enter future study flows, without mutating stable `KanjiEntry` ownership. |
 | 36 | `work/review-priority-fail-history` | Make next-day review pressure respond honestly to repeated misses. | Local-first repetition weighting or short-horizon due selection shaped by durable failure history from faded/blind recall, with explicit tests and docs. Preserve stable content ownership with `KanjiEntry`, durable scheduling signals with `UserProgress`, and live run behavior with session state. |
 | 37 | `work/drill-reading-mcq` | Add a readings-to-kanji multiple-choice game with intentionally confusable distractors. | A local drill that shows On/Kun readings, offers 4 kanji choices, and chooses the 3 distractors from one explicit documented confusability metric or distance rule, plus focused tests and honest docs. Keep it local-first and reviewable rather than building a large quiz framework. |
+| 38 | `work/backend-review-scheduler` | Build a separate backend-backed review scheduler after the local-first loop proves where local heuristics stop being enough. | A first hosted scheduling boundary for due-review computation and persistence, with explicit learner-state resources, API contracts, and app integration for scheduled review selection. Preserve stable content ownership with `KanjiEntry`, keep durable learner records and due logic on the backend side of the boundary, and keep live per-run reveal/queue/answer flow in session state. |
 
 Treat row 22 as the stopping point for the original v1 shell. Rows 23 through 31 are the planned
 path from honest shell to shippable local-first MVP. Rows 32 and 33 are intentionally post-MVP
 follow-on tracks, not implied scope to absorb into the first usable release.
 
 The local-first MVP path through row 31 is complete, and the planned post-MVP follow-ons through
-row 37 are complete too.
+row 38 are complete too.
 
 At this point the remaining numbered worktrees are:
 
@@ -104,6 +105,9 @@ Clarify the saved-state milestone boundaries:
 - Row 37 is complete. The app now includes a local readings-to-kanji multiple-choice drill whose
   distractors come from one explicit normalized reading-edit-distance metric rather than random
   filler options.
+- Row 38 is complete. The repo now includes a narrow backend-backed due-review scheduler boundary
+  with explicit request/response contracts, file-backed persistence, frontend integration for the
+  review-bank slice, and a documented local fallback when the backend is unavailable.
 
 ## Long-Term Study Loop Notes
 
@@ -145,6 +149,9 @@ Suggested post-MVP follow-on worktrees:
   encountered.
 - `work/drill-reading-mcq`: complete. It adds a local readings-to-kanji choice drill with three
   intentionally close distractors chosen by one documented normalized reading-distance rule.
+- `work/backend-review-scheduler`: complete. It adds the first separate backend-backed due
+  scheduler boundary without moving stable content facts into the server or live session behavior
+  out of session state.
 
 Keep the mastery rule product-specific:
 
