@@ -299,7 +299,47 @@ describe('App', () => {
       expect(screen.queryByRole('heading', { name: 'Loadfile 2' })).not.toBeInTheDocument();
     });
     expect(screen.getByRole('heading', { name: 'Loadfile 1' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete Loadfile 1' })).toBeInTheDocument();
     expect(storage.getItem('kanji-grid-progress-v0')).toContain(`"${firstEntry.kanji}"`);
+  });
+
+  it('can delete the final loadfile and create a new one from the empty picker', async () => {
+    vi.useRealTimers();
+
+    const resetLearnerState = vi.fn(async () => undefined);
+
+    window.history.replaceState({}, '', '/?loadfile=1');
+
+    render(
+      <App
+        loadfileSchedulerBaseUrl="http://127.0.0.1:8787"
+        reviewSchedulerClient={createStubReviewSchedulerClient({ resetLearnerState })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Loadfile 1' }));
+
+    expect(window.confirm).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(resetLearnerState).toHaveBeenCalledWith('local-learner');
+      expect(screen.queryByRole('heading', { name: 'Loadfile 1' })).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByRole('heading', { name: 'New loadfile' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Loadfile 1 deleted. No loadfiles remain.');
+
+    const newLoadfileCard = screen
+      .getByRole('heading', { name: 'New loadfile' })
+      .closest('article')
+      ?.querySelector('button.loadfile-bar') as HTMLElement | null;
+    expect(newLoadfileCard).not.toBeNull();
+
+    fireEvent.click(newLoadfileCard!);
+
+    expect(
+      await screen.findByRole('heading', { name: 'A small local kanji loop that stays honest' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Loadfiles' })).toBeInTheDocument();
   });
 });
 
