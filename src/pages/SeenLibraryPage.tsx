@@ -5,7 +5,12 @@ import { PaginationControls } from '../components/PaginationControls';
 import { canonicalKanjiDeck } from '../data/canonicalDeck';
 import { getSeenLibraryItems } from '../domain/progress/seenLibrary';
 import type { ProgressConfidence } from '../domain/progress/types';
-import { createProgressStore, loadProgressRecords } from '../state/progressStore';
+import {
+  createProgressStore,
+  loadProgressRecords,
+  subscribeToProgressStoreChanges,
+  type ProgressByKanji,
+} from '../state/progressStore';
 
 const SEEN_LIBRARY_PAGE_SIZE = 120;
 
@@ -16,9 +21,12 @@ interface SeenLibraryPageProps {
 export function SeenLibraryPage({ progressStorageKey }: SeenLibraryPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const progressStore = useMemo(() => createProgressStore(progressStorageKey), [progressStorageKey]);
+  const [progressByKanji, setProgressByKanji] = useState<ProgressByKanji>(() =>
+    loadProgressRecords(progressStore),
+  );
   const libraryItems = useMemo(
-    () => getSeenLibraryItems(canonicalKanjiDeck, loadProgressRecords(progressStore)),
-    [progressStore],
+    () => getSeenLibraryItems(canonicalKanjiDeck, progressByKanji),
+    [progressByKanji],
   );
   const totalPages = Math.max(1, Math.ceil(libraryItems.length / SEEN_LIBRARY_PAGE_SIZE));
   const pageStartIndex = (currentPage - 1) * SEEN_LIBRARY_PAGE_SIZE;
@@ -30,6 +38,15 @@ export function SeenLibraryPage({ progressStorageKey }: SeenLibraryPageProps) {
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
+
+  useEffect(() => {
+    setProgressByKanji(loadProgressRecords(progressStore));
+
+    return subscribeToProgressStoreChanges(
+      () => setProgressByKanji(loadProgressRecords(progressStore)),
+      progressStore.storageKey,
+    );
+  }, [progressStore]);
 
   return (
     <main className="app-page">
