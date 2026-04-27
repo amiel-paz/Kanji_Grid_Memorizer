@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { canonicalKanjiDeck } from '../src/data/canonicalDeck';
+import type { ReviewSchedulerClient } from '../src/domain/reviewScheduler/client';
 import { App } from '../src/app/App';
 
 describe('App', () => {
@@ -12,12 +13,17 @@ describe('App', () => {
       configurable: true,
       value: storage,
     });
+    Object.defineProperty(window, 'confirm', {
+      configurable: true,
+      value: vi.fn(() => true),
+    });
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-04-21T12:00:00.000Z'));
   });
 
   afterEach(() => {
     vi.useRealTimers();
+    window.history.replaceState({}, '', '/');
   });
 
   it('defaults to the study view and can switch to the seen library', () => {
@@ -180,6 +186,121 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: pageOneEntry.kanji })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: pageTwoEntry.kanji })).not.toBeInTheDocument();
   });
+
+  it('shows the runner loadfile screen with current seen and unseen counts before study starts', () => {
+    const [firstEntry, secondEntry] = canonicalKanjiDeck;
+
+    if (!firstEntry || !secondEntry) {
+      throw new Error('Expected canonical deck data.');
+    }
+
+    storage.setItem(
+      'kanji-grid-progress-v0',
+      JSON.stringify({
+        [firstEntry.kanji]: {
+          kanji: firstEntry.kanji,
+          seenCount: 1,
+          goodCount: 0,
+          firstSeenAt: '2026-04-20T10:00:00.000Z',
+          lastSeenAt: '2026-04-20T10:00:00.000Z',
+          confidence: 'learning',
+        },
+        [secondEntry.kanji]: {
+          kanji: secondEntry.kanji,
+          seenCount: 0,
+          goodCount: 1,
+          confidence: 'familiar',
+        },
+      }),
+    );
+    window.history.replaceState({}, '', '/?loadfile=1');
+
+    render(
+      <App
+        loadfileSchedulerBaseUrl="http://127.0.0.1:8787"
+        reviewSchedulerClient={createStubReviewSchedulerClient()}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Loadfile ready' })).toBeInTheDocument();
+    const loadfileCard = screen
+      .getByRole('heading', { name: 'Loadfile 1' })
+      .closest('article')
+      ?.querySelector('button.loadfile-bar') as HTMLElement | null;
+    expect(loadfileCard).not.toBeNull();
+    expect(within(loadfileCard!).getByText('127.0.0.1:8787')).toBeInTheDocument();
+    expect(within(loadfileCard!).getByText('local-learner')).toBeInTheDocument();
+    expect(within(loadfileCard!).getByText('2')).toBeInTheDocument();
+    expect(within(loadfileCard!).getByText(String(canonicalKanjiDeck.length - 2))).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'New loadfile' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'A small local kanji loop that stays honest' })).not.toBeInTheDocument();
+  });
+
+  it('can add a new loadfile and delete it with confirmation without wiping the first slot', async () => {
+    vi.useRealTimers();
+
+    const [firstEntry, secondEntry] = canonicalKanjiDeck;
+
+    if (!firstEntry || !secondEntry) {
+      throw new Error('Expected canonical deck data.');
+    }
+
+    const resetLearnerState = vi.fn(async () => undefined);
+
+    storage.setItem(
+      'kanji-grid-progress-v0',
+      JSON.stringify({
+        [firstEntry.kanji]: {
+          kanji: firstEntry.kanji,
+          seenCount: 1,
+          goodCount: 0,
+          firstSeenAt: '2026-04-20T10:00:00.000Z',
+          lastSeenAt: '2026-04-20T10:00:00.000Z',
+          confidence: 'learning',
+        },
+      }),
+    );
+    window.history.replaceState({}, '', '/?loadfile=1');
+
+    render(
+      <App
+        loadfileSchedulerBaseUrl="http://127.0.0.1:8787"
+        reviewSchedulerClient={createStubReviewSchedulerClient({ resetLearnerState })}
+      />,
+    );
+
+    const newLoadfileCard = screen
+      .getByRole('heading', { name: 'New loadfile' })
+      .closest('article')
+      ?.querySelector('button.loadfile-bar') as HTMLElement | null;
+    expect(newLoadfileCard).not.toBeNull();
+    fireEvent.click(newLoadfileCard!);
+
+    expect(screen.getByRole('heading', { name: 'A small local kanji loop that stays honest' })).toBeInTheDocument();
+    expect(storage.getItem('kanji-grid-progress-v0')).toContain(`"${firstEntry.kanji}"`);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manual intake' }));
+    fireEvent.change(screen.getByRole('searchbox'), {
+      target: { value: secondEntry.kanji },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Mark encountered' }));
+
+    expect(storage.getItem('kanji-grid-progress-v0:loadfile-2')).toContain(`"${secondEntry.kanji}"`);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Loadfiles' }));
+
+    const secondLoadfileDelete = screen.getByRole('button', { name: 'Delete Loadfile 2' });
+    fireEvent.click(secondLoadfileDelete);
+
+    expect(window.confirm).toHaveBeenCalled();
+    await waitFor(() => {
+      expect(resetLearnerState).toHaveBeenCalledWith('local-learner-2');
+      expect(storage.getItem('kanji-grid-progress-v0:loadfile-2')).toBeNull();
+      expect(screen.queryByRole('heading', { name: 'Loadfile 2' })).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole('heading', { name: 'Loadfile 1' })).toBeInTheDocument();
+    expect(storage.getItem('kanji-grid-progress-v0')).toContain(`"${firstEntry.kanji}"`);
+  });
 });
 
 function createMemoryStorage(): Storage {
@@ -204,5 +325,24 @@ function createMemoryStorage(): Storage {
     setItem(key, value) {
       values.set(key, value);
     },
+  };
+}
+
+function createStubReviewSchedulerClient(
+  overrides: Partial<ReviewSchedulerClient> = {},
+): ReviewSchedulerClient {
+  return {
+    availability: 'configured',
+    async getDueReviewKanji() {
+      return {
+        learnerId: 'local-learner',
+        asOf: '2026-04-21T12:00:00.000Z',
+        items: [],
+        remainingDueCount: 0,
+      };
+    },
+    async recordReviewOutcomes() {},
+    async resetLearnerState() {},
+    ...overrides,
   };
 }

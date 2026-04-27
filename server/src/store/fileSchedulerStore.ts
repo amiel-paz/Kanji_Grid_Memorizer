@@ -57,6 +57,21 @@ export class FileSchedulerStore {
     return nextState;
   }
 
+  async resetLearnerState(learnerId: string): Promise<void> {
+    const database = await this.readDatabase();
+
+    if (!(learnerId in database.learners)) {
+      return;
+    }
+
+    const nextLearners = { ...database.learners };
+    delete nextLearners[learnerId];
+
+    await this.writeDatabase({
+      learners: nextLearners,
+    });
+  }
+
   private async readDatabase(): Promise<SchedulerDatabase> {
     try {
       const raw = await readFile(this.filePath, 'utf8');

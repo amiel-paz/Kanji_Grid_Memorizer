@@ -5,15 +5,20 @@ import { PaginationControls } from '../components/PaginationControls';
 import { canonicalKanjiDeck } from '../data/canonicalDeck';
 import { getSeenLibraryItems } from '../domain/progress/seenLibrary';
 import type { ProgressConfidence } from '../domain/progress/types';
-import { loadProgressRecords } from '../state/progressStore';
+import { createProgressStore, loadProgressRecords } from '../state/progressStore';
 
 const SEEN_LIBRARY_PAGE_SIZE = 120;
 
-export function SeenLibraryPage() {
+interface SeenLibraryPageProps {
+  readonly progressStorageKey?: string;
+}
+
+export function SeenLibraryPage({ progressStorageKey }: SeenLibraryPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const progressStore = useMemo(() => createProgressStore(progressStorageKey), [progressStorageKey]);
   const libraryItems = useMemo(
-    () => getSeenLibraryItems(canonicalKanjiDeck, loadProgressRecords()),
-    [],
+    () => getSeenLibraryItems(canonicalKanjiDeck, loadProgressRecords(progressStore)),
+    [progressStore],
   );
   const totalPages = Math.max(1, Math.ceil(libraryItems.length / SEEN_LIBRARY_PAGE_SIZE));
   const pageStartIndex = (currentPage - 1) * SEEN_LIBRARY_PAGE_SIZE;

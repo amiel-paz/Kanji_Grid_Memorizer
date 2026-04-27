@@ -40,6 +40,18 @@ Run the app locally:
 npm run dev
 ```
 
+Run the one-command local loadfile runner:
+
+```bash
+npm run loadfile
+```
+
+Start a fresh local journey through that runner:
+
+```bash
+npm run loadfile -- --new-loadfile
+```
+
 Run the optional local review scheduler:
 
 ```bash
@@ -57,12 +69,62 @@ npm run lint
 What each script does:
 
 - `npm run dev`: starts the Vite dev server.
+- `npm run loadfile`: starts the local scheduler plus the Vite app, opens a runner-only loadfile
+  startup screen, and keeps raw child-process boot logs out of the terminal.
 - `npm run server:start`: starts the local review scheduler server on `http://localhost:8787`.
 - `npm run server:dev`: runs the scheduler server in watch mode for local development.
 - `npm run server:build`: type-checks and builds the scheduler server.
 - `npm test`: runs the Vitest test suite.
 - `npm run build`: runs TypeScript project build plus Vite production build.
 - `npm run lint`: runs ESLint across the repo.
+
+## Loadfile Runner
+
+`npm run loadfile` is the new small local runner path. It:
+
+- starts the existing backend scheduler on `127.0.0.1:8787`
+- starts the existing Vite app on `127.0.0.1:5173`
+- opens the app at a runner-only startup URL so the first thing you see is a loadfile-style screen
+
+That loadfile screen shows:
+
+- scheduler host and port
+- seen kanji count
+- unseen kanji count
+
+Those counts are honest repo-local counts, not a broader learner account view. They are computed
+from:
+
+- the canonical deck in [`src/data/canonicalDeck.ts`](src/data/canonicalDeck.ts)
+- this browser profile's durable learner progress in localStorage under
+  `kanji-grid-progress-v0`
+
+The screen also offers `New loadfile`.
+
+`npm run loadfile -- --new-loadfile` does the same launch, but also requests a fresh start:
+
+- before startup, the runner removes the local scheduler data file at
+  `server/data/learner-scheduler.json` unless you override `KANJI_GRID_SERVER_DATA_PATH`
+- on app launch, the browser removes this profile's `kanji-grid-progress-v0` record before React
+  renders
+- the app then calls the scheduler reset route for the configured learner id so the backend state
+  matches the browser reset
+
+What `new loadfile` resets:
+
+- backend scheduler state for the local learner record in the configured scheduler file
+- browser durable learner progress for the current browser profile
+
+What `new loadfile` does not reset automatically:
+
+- other browser profiles or devices
+- other localStorage snapshots outside this browser profile
+- alternate scheduler files or alternate learner ids
+- any exported/imported progress files described in later docs
+
+So in this repo, an honest `0 seen kanji` means: this browser profile no longer has durable seen
+progress for the learner, and the configured local scheduler learner record was cleared. It does
+not claim a global account reset across every possible copy of learner state.
 
 ## Current Behavior
 

@@ -77,6 +77,90 @@ select {
     @apply rounded-2xl border border-gray-200 bg-white p-5 sm:p-6;
   }
 
+  .loadfile-shell {
+    @apply min-h-screen bg-[radial-gradient(circle_at_top,_rgba(253,230,138,0.3),_transparent_45%),linear-gradient(180deg,_#0f172a_0%,_#172554_100%)] px-5 py-10 text-white sm:px-6 sm:py-12 lg:px-8;
+  }
+
+  .loadfile-panel {
+    @apply mx-auto flex min-h-[calc(100vh-5rem)] max-w-4xl flex-col justify-center gap-8 rounded-[2rem] border border-white/15 bg-slate-950/70 p-6 shadow-2xl shadow-slate-950/40 backdrop-blur sm:p-8 lg:p-10;
+  }
+
+  .loadfile-heading {
+    @apply flex flex-col gap-3;
+  }
+
+  .loadfile-title {
+    @apply text-4xl font-bold leading-tight text-amber-50 sm:text-5xl;
+  }
+
+  .loadfile-panel .eyebrow {
+    @apply text-amber-200;
+  }
+
+  .loadfile-panel .body-copy {
+    @apply max-w-2xl text-slate-200;
+  }
+
+  .loadfile-list {
+    @apply grid gap-6;
+  }
+
+  .loadfile-card {
+    @apply rounded-[2rem] border border-white/10 bg-white/5 p-6;
+  }
+
+  .loadfile-card-new {
+    @apply border-dashed border-amber-300/35 bg-amber-100/10;
+  }
+
+  .loadfile-card-top {
+    @apply mb-5 flex items-start justify-between gap-4;
+  }
+
+  .loadfile-card-title {
+    @apply text-4xl font-bold leading-tight text-amber-50;
+  }
+
+  .loadfile-delete-button {
+    @apply rounded-full border border-white/15 bg-white/5 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10;
+  }
+
+  .loadfile-bar {
+    @apply w-full rounded-[1.6rem] border border-white/10 bg-slate-950/25 px-7 py-6 text-left transition-colors hover:border-amber-200/40 hover:bg-white/10;
+  }
+
+  .loadfile-bar-metrics {
+    @apply grid gap-5 lg:grid-cols-2;
+  }
+
+  .loadfile-bar-metric {
+    @apply rounded-[1.4rem] border border-white/10 bg-slate-900/35 px-6 py-5;
+  }
+
+  .loadfile-bar-metric strong {
+    @apply block text-xs font-semibold uppercase tracking-[0.28em] text-slate-300;
+  }
+
+  .loadfile-bar-metric span {
+    @apply mt-4 block text-2xl font-semibold text-white sm:text-3xl;
+  }
+
+  .loadfile-shell .btn-primary {
+    @apply bg-amber-300 text-slate-950 hover:bg-amber-200;
+  }
+
+  .loadfile-shell .btn-secondary {
+    @apply border-white/20 bg-white/5 text-white hover:bg-white/10;
+  }
+
+  .loadfile-shell .fine-print {
+    @apply max-w-3xl text-slate-300;
+  }
+
+  .loadfile-status {
+    @apply rounded-2xl border border-amber-300/30 bg-amber-100/10 px-4 py-3 text-sm leading-6 text-amber-100;
+  }
+
   .btn {
     @apply rounded-xl px-4 py-2 text-sm font-semibold transition-colors;
   }

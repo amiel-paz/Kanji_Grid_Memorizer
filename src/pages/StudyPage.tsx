@@ -16,6 +16,7 @@ import {
   createFetchReviewSchedulerClient,
   type ReviewSchedulerClient,
 } from '../domain/reviewScheduler/client';
+import { DEFAULT_LEARNER_ID } from '../domain/reviewScheduler/defaults';
 import {
   planLocalFallbackStudyRunSelection,
   planStudyRunSelection,
@@ -31,12 +32,17 @@ import {
   type SessionRandomSource,
 } from '../domain/session/session';
 import type { SessionState } from '../domain/session/types';
-import { loadProgressRecords, persistReviewEventToProgressStore } from '../state/progressStore';
+import {
+  createProgressStore,
+  loadProgressRecords,
+  persistReviewEventToProgressStore,
+} from '../state/progressStore';
 import type { ProgressByKanji } from '../state/progressStore';
 
 interface StudyPageProps {
   readonly sessionOptions?: CreateSessionOptions;
   readonly learnerId?: string;
+  readonly progressStorageKey?: string;
   readonly reviewSchedulerClient?: ReviewSchedulerClient;
 }
 
@@ -56,15 +62,15 @@ interface StudyRunState {
   readonly batchSummary: SessionBatchSummary;
 }
 
-const DEFAULT_LEARNER_ID = 'local-learner';
-
 export function StudyPage({
   sessionOptions,
   learnerId = DEFAULT_LEARNER_ID,
+  progressStorageKey,
   reviewSchedulerClient,
 }: StudyPageProps) {
   const sessionRandomRef = useRef<SessionRandomSource>(sessionOptions?.random ?? Math.random);
-  const progressByKanjiRef = useRef(loadProgressRecords());
+  const progressStoreRef = useRef(createProgressStore(progressStorageKey));
+  const progressByKanjiRef = useRef(loadProgressRecords(progressStoreRef.current));
   const reviewSchedulerRef = useRef<ReviewSchedulerClient>(
     reviewSchedulerClient ??
       (import.meta.env.VITE_REVIEW_SCHEDULER_BASE_URL
@@ -385,6 +391,7 @@ export function StudyPage({
       progressByKanjiRef.current,
       event,
       reviewedAt,
+      progressStoreRef.current,
     );
     maybePersistSchedulerOutcome(activeKanji, reviewGrade, reviewedAt);
     setStudyRun((current) => ({
@@ -422,6 +429,7 @@ export function StudyPage({
       progressByKanjiRef.current,
       event,
       reviewedAt,
+      progressStoreRef.current,
     );
     maybePersistSchedulerOutcome(activeKanji, reviewGrade, reviewedAt);
     setStudyRun((current) => ({

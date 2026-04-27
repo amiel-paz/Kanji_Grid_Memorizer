@@ -587,6 +587,7 @@ describe('StudyPage', () => {
         remainingDueCount: 0,
       }),
       recordReviewOutcomes: vi.fn().mockResolvedValue(undefined),
+      resetLearnerState: vi.fn().mockResolvedValue(undefined),
     };
 
     await act(async () => {
@@ -650,6 +651,7 @@ describe('StudyPage', () => {
       availability: 'configured',
       getDueReviewKanji: vi.fn().mockRejectedValue(new Error('Scheduler offline')),
       recordReviewOutcomes: vi.fn().mockResolvedValue(undefined),
+      resetLearnerState: vi.fn().mockResolvedValue(undefined),
     };
 
     await act(async () => {

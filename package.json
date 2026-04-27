@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "loadfile": "tsx scripts/runLoadfile.ts",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "server:dev": "tsx watch server/src/index.ts",

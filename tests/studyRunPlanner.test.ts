@@ -24,6 +24,7 @@ describe('study run planner', () => {
         remainingDueCount: 0,
       }),
       recordReviewOutcomes: vi.fn().mockResolvedValue(undefined),
+      resetLearnerState: vi.fn().mockResolvedValue(undefined),
     };
 
     const plan = await planStudyRunSelection({
@@ -87,6 +88,7 @@ describe('study run planner', () => {
       availability: 'configured',
       getDueReviewKanji: vi.fn().mockRejectedValue(new Error('Scheduler offline')),
       recordReviewOutcomes: vi.fn().mockResolvedValue(undefined),
+      resetLearnerState: vi.fn().mockResolvedValue(undefined),
     };
 
     const plan = await planStudyRunSelection({
