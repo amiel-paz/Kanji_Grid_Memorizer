@@ -7,6 +7,7 @@ const DEFAULT_LOADFILE_ID = 'loadfile-1';
 
 export interface LoadfileSlot {
   readonly id: string;
+  readonly slotNumber: number;
   readonly label: string;
   readonly learnerId: string;
   readonly progressStorageKey: string;
@@ -81,13 +82,14 @@ export function createNewLoadfileSlot(
   readonly registry: LoadfileRegistry;
   readonly slot: LoadfileSlot;
 } {
-  const slotNumber = Math.max(1, registry.nextLoadfileNumber);
-  const slotId = `loadfile-${slotNumber}`;
+  const slotNumber = findNextAvailableSlotNumber(registry.slots);
+  const slotId = getLoadfileId(slotNumber);
   const slot: LoadfileSlot = {
     id: slotId,
+    slotNumber,
     label: `Loadfile ${slotNumber}`,
-    learnerId: `local-learner-${slotNumber}`,
-    progressStorageKey: `${DEFAULT_PROGRESS_STORAGE_KEY}:${slotId}`,
+    learnerId: getLoadfileLearnerId(slotNumber),
+    progressStorageKey: getLoadfileProgressStorageKey(slotNumber),
     createdAt,
     lastOpenedAt: createdAt,
   };
@@ -97,9 +99,43 @@ export function createNewLoadfileSlot(
     registry: {
       ...registry,
       activeLoadfileId: slot.id,
-      nextLoadfileNumber: slotNumber + 1,
+      nextLoadfileNumber: findNextAvailableSlotNumber([...registry.slots, slot]),
       slots: [...registry.slots, slot],
     },
+  };
+}
+
+export function renameLoadfileSlot(
+  registry: LoadfileRegistry,
+  slotId: string,
+  label: string,
+): LoadfileRegistry | null {
+  const trimmedLabel = label.trim();
+
+  if (trimmedLabel.length === 0) {
+    return null;
+  }
+
+  let didRename = false;
+  const nextSlots = registry.slots.map((slot) => {
+    if (slot.id !== slotId) {
+      return slot;
+    }
+
+    didRename = true;
+    return {
+      ...slot,
+      label: trimmedLabel,
+    };
+  });
+
+  if (!didRename) {
+    return null;
+  }
+
+  return {
+    ...registry,
+    slots: nextSlots,
   };
 }
 
@@ -142,6 +178,7 @@ function createDefaultLoadfileRegistry(now: string): LoadfileRegistry {
 function createDefaultLoadfileSlot(now: string): LoadfileSlot {
   return {
     id: DEFAULT_LOADFILE_ID,
+    slotNumber: 1,
     label: 'Loadfile 1',
     learnerId: DEFAULT_LEARNER_ID,
     progressStorageKey: DEFAULT_PROGRESS_STORAGE_KEY,
@@ -151,15 +188,20 @@ function createDefaultLoadfileSlot(now: string): LoadfileSlot {
 }
 
 function normalizeLoadfileRegistry(registry: LoadfileRegistry): LoadfileRegistry {
+  const normalizedSlots = normalizeLoadfileSlots(registry.slots);
+
   return {
     ...registry,
     activeLoadfileId:
-      findLoadfileSlot(registry, registry.activeLoadfileId)?.id ?? registry.slots[0]?.id ?? '',
+      findLoadfileSlot({ ...registry, slots: normalizedSlots }, registry.activeLoadfileId)?.id ??
+      normalizedSlots[0]?.id ??
+      '',
     nextLoadfileNumber: Math.max(
       registry.nextLoadfileNumber,
-      registry.slots.length > 0 ? registry.slots.length + 1 : 1,
+      findNextAvailableSlotNumber(normalizedSlots),
       2,
     ),
+    slots: normalizedSlots,
   };
 }
 
@@ -190,6 +232,7 @@ function isLoadfileSlot(value: unknown): value is LoadfileSlot {
 
   return (
     typeof value.id === 'string' &&
+    (value.slotNumber === undefined || isPositiveInteger(value.slotNumber)) &&
     typeof value.label === 'string' &&
     typeof value.learnerId === 'string' &&
     typeof value.progressStorageKey === 'string' &&
@@ -198,6 +241,82 @@ function isLoadfileSlot(value: unknown): value is LoadfileSlot {
   );
 }
 
+function normalizeLoadfileSlots(slots: readonly LoadfileSlot[]): LoadfileSlot[] {
+  const usedSlotNumbers = new Set<number>();
+
+  return slots.map((slot) => {
+    const preferredSlotNumber = getPreferredSlotNumber(slot);
+    const slotNumber = claimSlotNumber(usedSlotNumbers, preferredSlotNumber);
+
+    return {
+      ...slot,
+      slotNumber,
+    };
+  });
+}
+
+function getPreferredSlotNumber(slot: LoadfileSlot): number {
+  if (isPositiveInteger(slot.slotNumber)) {
+    return slot.slotNumber;
+  }
+
+  return (
+    parseTrailingNumber(slot.id, /^loadfile-(\d+)$/) ??
+    parseTrailingNumber(slot.learnerId, /^local-learner-(\d+)$/) ??
+    (slot.learnerId === DEFAULT_LEARNER_ID ? 1 : undefined) ??
+    parseTrailingNumber(slot.label, /^Loadfile (\d+)$/) ??
+    1
+  );
+}
+
+function findNextAvailableSlotNumber(slots: readonly LoadfileSlot[]): number {
+  const usedSlotNumbers = new Set(
+    normalizeLoadfileSlots(slots).map((slot) => slot.slotNumber),
+  );
+
+  return claimSlotNumber(usedSlotNumbers, 1);
+}
+
+function claimSlotNumber(usedSlotNumbers: Set<number>, preferredSlotNumber: number): number {
+  let slotNumber = Math.max(1, preferredSlotNumber);
+
+  while (usedSlotNumbers.has(slotNumber)) {
+    slotNumber += 1;
+  }
+
+  usedSlotNumbers.add(slotNumber);
+  return slotNumber;
+}
+
+function getLoadfileId(slotNumber: number): string {
+  return `loadfile-${slotNumber}`;
+}
+
+function getLoadfileLearnerId(slotNumber: number): string {
+  return slotNumber === 1 ? DEFAULT_LEARNER_ID : `local-learner-${slotNumber}`;
+}
+
+function getLoadfileProgressStorageKey(slotNumber: number): string {
+  return slotNumber === 1
+    ? DEFAULT_PROGRESS_STORAGE_KEY
+    : `${DEFAULT_PROGRESS_STORAGE_KEY}:${getLoadfileId(slotNumber)}`;
+}
+
+function parseTrailingNumber(value: string, pattern: RegExp): number | undefined {
+  const match = value.match(pattern);
+
+  if (!match) {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(match[1] ?? '', 10);
+  return isPositiveInteger(parsed) ? parsed : undefined;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function isPositiveInteger(value: unknown): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= 1;
 }

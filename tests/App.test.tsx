@@ -301,6 +301,26 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: 'Loadfile 1' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Delete Loadfile 1' })).toBeInTheDocument();
     expect(storage.getItem('kanji-grid-progress-v0')).toContain(`"${firstEntry.kanji}"`);
+
+    const replacementLoadfileCard = screen
+      .getByRole('heading', { name: 'New loadfile' })
+      .closest('article')
+      ?.querySelector('button.loadfile-bar') as HTMLElement | null;
+    expect(replacementLoadfileCard).not.toBeNull();
+
+    fireEvent.click(replacementLoadfileCard!);
+
+    const replacementRegistry = JSON.parse(storage.getItem('kanji-grid-loadfiles-v1') ?? '{}');
+    expect(replacementRegistry.slots).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'loadfile-2',
+          label: 'Loadfile 2',
+          learnerId: 'local-learner-2',
+          slotNumber: 2,
+        }),
+      ]),
+    );
   });
 
   it('can delete the final loadfile and create a new one from the empty picker', async () => {
@@ -340,6 +360,42 @@ describe('App', () => {
       await screen.findByRole('heading', { name: 'A small local kanji loop that stays honest' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Loadfiles' })).toBeInTheDocument();
+
+    const recreatedRegistry = JSON.parse(storage.getItem('kanji-grid-loadfiles-v1') ?? '{}');
+    expect(recreatedRegistry.slots).toEqual([
+      expect.objectContaining({
+        id: 'loadfile-1',
+        label: 'Loadfile 1',
+        learnerId: 'local-learner',
+        slotNumber: 1,
+      }),
+    ]);
+  });
+
+  it('lets the learner rename a loadfile by double-clicking its title', () => {
+    window.history.replaceState({}, '', '/?loadfile=1');
+
+    render(<App reviewSchedulerClient={createStubReviewSchedulerClient()} />);
+
+    fireEvent.doubleClick(screen.getByRole('heading', { name: 'Loadfile 1' }));
+
+    const renameInput = screen.getByRole('textbox', { name: 'Rename Loadfile 1' });
+    fireEvent.change(renameInput, { target: { value: 'Evening Grind' } });
+    fireEvent.keyDown(renameInput, { key: 'Enter' });
+
+    expect(screen.getByRole('heading', { name: 'Evening Grind' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete Evening Grind' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Loadfile 1 renamed to Evening Grind.');
+
+    const renamedRegistry = JSON.parse(storage.getItem('kanji-grid-loadfiles-v1') ?? '{}');
+    expect(renamedRegistry.slots).toEqual([
+      expect.objectContaining({
+        id: 'loadfile-1',
+        label: 'Evening Grind',
+        learnerId: 'local-learner',
+        slotNumber: 1,
+      }),
+    ]);
   });
 });
 

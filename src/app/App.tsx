@@ -19,6 +19,7 @@ import {
   getActiveLoadfileSlot,
   loadLoadfileRegistry,
   markLoadfileOpened,
+  renameLoadfileSlot,
   saveLoadfileRegistry,
   type LoadfileRegistry,
   type LoadfileSlot,
@@ -128,6 +129,27 @@ export function App({
     replaceSearch(getSlotSearch(slot.id));
   }
 
+  function handleRenameLoadfile(loadfileId: string, label: string): void {
+    const slot = findLoadfileSlot(loadfileRegistry, loadfileId);
+
+    if (!slot) {
+      return;
+    }
+
+    const nextRegistry = renameLoadfileSlot(loadfileRegistry, loadfileId, label);
+
+    if (!nextRegistry) {
+      return;
+    }
+
+    persistRegistry(nextRegistry);
+
+    const nextLabel = findLoadfileSlot(nextRegistry, loadfileId)?.label ?? label.trim();
+    if (nextLabel !== slot.label) {
+      setLoadfileStatusMessage(`${slot.label} renamed to ${nextLabel}.`);
+    }
+  }
+
   async function handleDeleteLoadfile(loadfileId: string): Promise<void> {
     const slot = findLoadfileSlot(loadfileRegistry, loadfileId);
 
@@ -194,6 +216,7 @@ export function App({
         onCreateLoadfile={handleCreateLoadfile}
         onDeleteLoadfile={(loadfileId) => void handleDeleteLoadfile(loadfileId)}
         onOpenLoadfile={handleOpenLoadfile}
+        onRenameLoadfile={handleRenameLoadfile}
       />
     );
   }
