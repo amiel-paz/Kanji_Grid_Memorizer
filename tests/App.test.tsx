@@ -1,8 +1,13 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { canonicalKanjiDeck } from '../src/data/canonicalDeck';
 import type { ReviewSchedulerClient } from '../src/domain/reviewScheduler/client';
 import { App } from '../src/app/App';
+import {
+  createProgressStore,
+  loadProgressRecords,
+  persistSeenToProgressStore,
+} from '../src/state/progressStore';
 
 describe('App', () => {
   let storage: Storage;
@@ -77,6 +82,37 @@ describe('App', () => {
     expect(screen.getByText(/you can also use manual intake for outside encounters/i)).toBeInTheDocument();
   });
 
+  it('refreshes the seen library live when durable progress changes in the same tab', async () => {
+    const firstEntry = canonicalKanjiDeck[0];
+
+    if (!firstEntry) {
+      throw new Error('Expected canonical deck data.');
+    }
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Seen library' }));
+    expect(screen.getByRole('heading', { name: 'Your learner library is still empty' })).toBeInTheDocument();
+
+    const progressStore = createProgressStore();
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      persistSeenToProgressStore(
+        loadProgressRecords(progressStore),
+        firstEntry.kanji,
+        '2026-04-21T12:00:00.000Z',
+        progressStore,
+      );
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('heading', { name: '1 seen kanji' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: firstEntry.kanji })).toBeInTheDocument();
+  });
+
   it('lets the learner mark an outside encounter and then see it in the library', () => {
     const firstEntry = canonicalKanjiDeck[0];
 
@@ -110,6 +146,56 @@ describe('App', () => {
     expect(seenCard).not.toBeNull();
     expect(within(seenCard!).getByText(firstEntry.onyomi.join('、'))).toBeInTheDocument();
     expect(within(seenCard!).getByText(firstEntry.kunyomi.join('、'))).toBeInTheDocument();
+  });
+
+  it('moves a learn-mode encounter out of manual intake and into the seen library', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('radio', { name: /Learn/i }));
+
+    const currentStudyHeading = screen.getByRole('heading', { level: 2, name: /^Now studying / });
+    const activeKanji = currentStudyHeading.textContent?.replace('Now studying ', '');
+
+    if (!activeKanji) {
+      throw new Error('Expected an active learn-mode kanji.');
+    }
+
+    expect(storage.getItem('kanji-grid-progress-v0')).toContain(`"${activeKanji}"`);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Manual intake' }));
+    fireEvent.change(screen.getByRole('searchbox'), {
+      target: { value: activeKanji },
+    });
+
+    expect(screen.getByRole('heading', { name: '0 matching unseen kanji' })).toBeInTheDocument();
+    expect(screen.getByText('No unseen matches for this filter')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: activeKanji })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Seen library' }));
+
+    expect(screen.getByRole('heading', { name: activeKanji })).toBeInTheDocument();
+    expect(screen.getByText('1 review')).toBeInTheDocument();
+  });
+
+  it('keeps the current study drill mode and in-progress state when switching away and back', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('radio', { name: /Learn/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next kanji' }));
+
+    expect(screen.getByRole('heading', { name: 'Learn' })).toBeInTheDocument();
+    expect(screen.getByText('2 / 5')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next kanji' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Seen library' }));
+    expect(screen.getByRole('heading', { name: "Kanji you've already encountered" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Study' }));
+
+    expect(screen.getByRole('heading', { name: 'Learn' })).toBeInTheDocument();
+    expect(screen.getByText('2 / 5')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next kanji' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Reveal readings and meanings' })).not.toBeInTheDocument();
   });
 
   it('paginates the seen library at 120 cards per page', () => {

@@ -11,7 +11,12 @@ import {
 import { ManualSeenIntakePage } from '../pages/ManualSeenIntakePage';
 import { SeenLibraryPage } from '../pages/SeenLibraryPage';
 import { StudyPage } from '../pages/StudyPage';
-import { createProgressStore, loadProgressRecords } from '../state/progressStore';
+import {
+  createProgressStore,
+  emitProgressStoreChanged,
+  loadProgressRecords,
+  subscribeToProgressStoreChanges,
+} from '../state/progressStore';
 import {
   createNewLoadfileSlot,
   deleteLoadfileSlot,
@@ -67,6 +72,7 @@ export function App({
   );
   const [isLoadfileBusy, setIsLoadfileBusy] = useState(false);
   const [loadfileStatusMessage, setLoadfileStatusMessage] = useState<string | undefined>();
+  const [, setProgressRefreshVersion] = useState(0);
 
   const loadfileBars: readonly LoadfileBarItem[] = loadfileRegistry.slots.map((slot) => {
     const summary = summarizeLoadfileProgress(
@@ -95,6 +101,14 @@ export function App({
     // The runner should auto-create at most once on startup.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [launchOptions.createLoadfile]);
+
+  useEffect(
+    () =>
+      subscribeToProgressStoreChanges(() => {
+        setProgressRefreshVersion((version) => version + 1);
+      }),
+    [],
+  );
 
   function persistRegistry(nextRegistry: LoadfileRegistry): void {
     saveLoadfileRegistry(nextRegistry);
@@ -171,6 +185,10 @@ export function App({
       const slotProgressStore = createProgressStore(slot.progressStorageKey);
       const browserProgressCleared = slotProgressStore.clear();
 
+      if (browserProgressCleared) {
+        emitProgressStoreChanged(slot.progressStorageKey);
+      }
+
       if (schedulerClient.availability === 'configured') {
         await schedulerClient.resetLearnerState(slot.learnerId);
       }
@@ -206,7 +224,7 @@ export function App({
     }
   }
 
-  if (showLoadfile || !activeLoadfile) {
+  if (!activeLoadfile) {
     return (
       <LoadfileScreen
         isBusy={isLoadfileBusy}
@@ -223,57 +241,76 @@ export function App({
 
   return (
     <>
-      <nav aria-label="App sections" className="app-nav">
-        <div className="app-nav-inner">
-          <button
-            aria-pressed={showLoadfile}
-            className={`app-nav-button ${showLoadfile ? 'app-nav-button-active' : ''}`}
-            type="button"
-            onClick={() => {
-              setShowLoadfile(true);
-              replaceSearch(getLoadfileSearch(activeLoadfile.id));
-            }}
-          >
-            Loadfiles
-          </button>
-          <button
-            aria-pressed={view === 'study'}
-            className={`app-nav-button ${view === 'study' ? 'app-nav-button-active' : ''}`}
-            type="button"
-            onClick={() => setView('study')}
-          >
-            Study
-          </button>
-          <button
-            aria-pressed={view === 'seen-library'}
-            className={`app-nav-button ${view === 'seen-library' ? 'app-nav-button-active' : ''}`}
-            type="button"
-            onClick={() => setView('seen-library')}
-          >
-            Seen library
-          </button>
-          <button
-            aria-pressed={view === 'manual-intake'}
-            className={`app-nav-button ${view === 'manual-intake' ? 'app-nav-button-active' : ''}`}
-            type="button"
-            onClick={() => setView('manual-intake')}
-          >
-            Manual intake
-          </button>
-        </div>
-      </nav>
-
-      {view === 'study' ? (
-        <StudyPage
-          learnerId={activeLoadfile.learnerId}
-          progressStorageKey={activeLoadfile.progressStorageKey}
-          reviewSchedulerClient={schedulerClient}
+      {showLoadfile ? (
+        <LoadfileScreen
+          isBusy={isLoadfileBusy}
+          loadfiles={loadfileBars}
+          newLoadfileUnseenCount={canonicalKanjiDeck.length}
+          statusMessage={loadfileStatusMessage}
+          onCreateLoadfile={handleCreateLoadfile}
+          onDeleteLoadfile={(loadfileId) => void handleDeleteLoadfile(loadfileId)}
+          onOpenLoadfile={handleOpenLoadfile}
+          onRenameLoadfile={handleRenameLoadfile}
         />
-      ) : view === 'seen-library' ? (
-        <SeenLibraryPage progressStorageKey={activeLoadfile.progressStorageKey} />
-      ) : (
-        <ManualSeenIntakePage progressStorageKey={activeLoadfile.progressStorageKey} />
-      )}
+      ) : null}
+
+      <div hidden={showLoadfile}>
+        <nav aria-label="App sections" className="app-nav">
+          <div className="app-nav-inner">
+            <button
+              aria-pressed={showLoadfile}
+              className={`app-nav-button ${showLoadfile ? 'app-nav-button-active' : ''}`}
+              type="button"
+              onClick={() => {
+                setShowLoadfile(true);
+                replaceSearch(getLoadfileSearch(activeLoadfile.id));
+              }}
+            >
+              Loadfiles
+            </button>
+            <button
+              aria-pressed={view === 'study'}
+              className={`app-nav-button ${view === 'study' ? 'app-nav-button-active' : ''}`}
+              type="button"
+              onClick={() => setView('study')}
+            >
+              Study
+            </button>
+            <button
+              aria-pressed={view === 'seen-library'}
+              className={`app-nav-button ${view === 'seen-library' ? 'app-nav-button-active' : ''}`}
+              type="button"
+              onClick={() => setView('seen-library')}
+            >
+              Seen library
+            </button>
+            <button
+              aria-pressed={view === 'manual-intake'}
+              className={`app-nav-button ${view === 'manual-intake' ? 'app-nav-button-active' : ''}`}
+              type="button"
+              onClick={() => setView('manual-intake')}
+            >
+              Manual intake
+            </button>
+          </div>
+        </nav>
+
+        <section hidden={view !== 'study'}>
+          <StudyPage
+            key={activeLoadfile.id}
+            learnerId={activeLoadfile.learnerId}
+            progressStorageKey={activeLoadfile.progressStorageKey}
+            reviewSchedulerClient={schedulerClient}
+          />
+        </section>
+
+        {view === 'seen-library' ? (
+          <SeenLibraryPage progressStorageKey={activeLoadfile.progressStorageKey} />
+        ) : null}
+        {view === 'manual-intake' ? (
+          <ManualSeenIntakePage progressStorageKey={activeLoadfile.progressStorageKey} />
+        ) : null}
+      </div>
     </>
   );
 }

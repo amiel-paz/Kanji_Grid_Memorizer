@@ -4,7 +4,7 @@ import { canonicalKanjiDeck } from '../src/data/canonicalDeck';
 import type { KanjiEntry } from '../src/domain/content/types';
 import { getDrillById } from '../src/domain/drills/configs';
 import type { ReviewSchedulerClient } from '../src/domain/reviewScheduler/client';
-import { createSession } from '../src/domain/session/session';
+import { answerSessionReview, createSession } from '../src/domain/session/session';
 import { StudyPage } from '../src/pages/StudyPage';
 
 const STUDY_PAGE_RANDOM_VALUES = [0.9, 0.1, 0.5, 0.2, 0.7, 0.3, 0.8, 0.4, 0.6, 0.05] as const;
@@ -242,13 +242,44 @@ describe('StudyPage', () => {
     expect(screen.getByRole('heading', { level: 2, name: /^Now studying / }).textContent).not.toBe(learnHeadingText);
   });
 
-  it('does not persist progress while navigating the learn-mode shell', () => {
+  it('marks newly encountered learn-mode kanji as seen in durable progress', () => {
+    const { firstEntry, secondEntry } = getExpectedStudyPageEntries();
+
     render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
 
     fireEvent.click(screen.getByRole('radio', { name: /Learn/i }));
+
+    expect(JSON.parse(storage.getItem('kanji-grid-progress-v0') ?? 'null')).toEqual({
+      [firstEntry.kanji]: {
+        kanji: firstEntry.kanji,
+        seenCount: 1,
+        goodCount: 0,
+        firstSeenAt: '2026-04-21T12:00:00.000Z',
+        lastSeenAt: '2026-04-21T12:00:00.000Z',
+        confidence: 'learning',
+      },
+    });
+
     fireEvent.click(screen.getByRole('button', { name: 'Next kanji' }));
 
-    expect(storage.getItem('kanji-grid-progress-v0')).toBeNull();
+    expect(JSON.parse(storage.getItem('kanji-grid-progress-v0') ?? 'null')).toEqual({
+      [firstEntry.kanji]: {
+        kanji: firstEntry.kanji,
+        seenCount: 1,
+        goodCount: 0,
+        firstSeenAt: '2026-04-21T12:00:00.000Z',
+        lastSeenAt: '2026-04-21T12:00:00.000Z',
+        confidence: 'learning',
+      },
+      [secondEntry.kanji]: {
+        kanji: secondEntry.kanji,
+        seenCount: 1,
+        goodCount: 0,
+        firstSeenAt: '2026-04-21T12:00:00.000Z',
+        lastSeenAt: '2026-04-21T12:00:00.000Z',
+        confidence: 'learning',
+      },
+    });
   });
 
   it('resets reveal state and session position when switching drills', () => {
@@ -333,20 +364,91 @@ describe('StudyPage', () => {
     ).toHaveClass('kanji-cue-card-sm');
   });
 
-  it('uses the existing progress flow when a reading MCQ answer is correct', () => {
-    const { firstEntry, secondEntry } = getExpectedStudyPageEntries();
+  it('shows correct reading MCQ feedback and waits for continue before advancing', () => {
+    const expectedReadingMcqState = getExpectedReadingMcqState('good');
+    const { firstEntry } = expectedReadingMcqState;
 
     render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
 
     fireEvent.click(screen.getByRole('radio', { name: /Reading MCQ/i }));
     fireEvent.click(screen.getByRole('button', { name: firstEntry.kanji }));
 
-    expect(screen.getByText(`Now studying ${secondEntry.kanji}`)).toBeInTheDocument();
+    expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
+    expect(screen.getByText('Correct')).toBeInTheDocument();
+    expect(screen.getByText(`${firstEntry.kanji} matches these readings.`)).toBeInTheDocument();
+    expect(screen.getByText('Feedback shown')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
+    expect(storage.getItem('kanji-grid-progress-v0')).toBeNull();
+
+    const choiceButtons = within(
+      screen.getByRole('group', { name: 'Reading MCQ choices' }),
+    ).getAllByRole('button');
+    choiceButtons.forEach((button) => expect(button).toBeDisabled());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(screen.getByText(`Now studying ${expectedReadingMcqState.nextActiveKanji}`)).toBeInTheDocument();
     expect(JSON.parse(storage.getItem('kanji-grid-progress-v0') ?? 'null')).toEqual({
       [firstEntry.kanji]: {
         kanji: firstEntry.kanji,
         seenCount: 1,
         goodCount: 1,
+        firstSeenAt: '2026-04-21T12:00:00.000Z',
+        lastSeenAt: '2026-04-21T12:00:00.000Z',
+        confidence: 'learning',
+      },
+    });
+  });
+
+  it('shows wrong reading MCQ feedback, reveals the correct kanji, and waits for continue', () => {
+    const expectedReadingMcqState = getExpectedReadingMcqState('again');
+    const { firstEntry } = expectedReadingMcqState;
+
+    render(<StudyPage sessionOptions={createStudyPageSessionOptions()} />);
+
+    fireEvent.click(screen.getByRole('radio', { name: /Reading MCQ/i }));
+
+    const choiceButtons = within(
+      screen.getByRole('group', { name: 'Reading MCQ choices' }),
+    ).getAllByRole('button');
+    const wrongChoiceButton = choiceButtons.find(
+      (button) => button.getAttribute('aria-label') !== firstEntry.kanji,
+    );
+
+    if (!wrongChoiceButton) {
+      throw new Error('Expected a wrong reading MCQ choice.');
+    }
+
+    const wrongKanji = wrongChoiceButton.getAttribute('aria-label');
+
+    if (!wrongKanji) {
+      throw new Error('Expected the wrong reading MCQ choice to expose its kanji.');
+    }
+
+    fireEvent.click(wrongChoiceButton);
+
+    expect(screen.getByText(`Now studying ${firstEntry.kanji}`)).toBeInTheDocument();
+    expect(screen.getByText('Incorrect')).toBeInTheDocument();
+    expect(
+      screen.getByText(`You chose ${wrongKanji}. Correct answer: ${firstEntry.kanji}.`),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeInTheDocument();
+    expect(storage.getItem('kanji-grid-progress-v0')).toBeNull();
+
+    within(screen.getByRole('group', { name: 'Reading MCQ choices' }))
+      .getAllByRole('button')
+      .forEach((button) => expect(button).toBeDisabled());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
+
+    expect(screen.getByRole('heading', { level: 2, name: /^Now studying / }).textContent).not.toBe(
+      `Now studying ${firstEntry.kanji}`,
+    );
+    expect(JSON.parse(storage.getItem('kanji-grid-progress-v0') ?? 'null')).toEqual({
+      [firstEntry.kanji]: {
+        kanji: firstEntry.kanji,
+        seenCount: 1,
+        goodCount: 0,
         firstSeenAt: '2026-04-21T12:00:00.000Z',
         lastSeenAt: '2026-04-21T12:00:00.000Z',
         confidence: 'learning',
@@ -719,6 +821,36 @@ function getPrimaryRevealText(entry: KanjiEntry): string {
   return entry.onyomi[0] !== undefined && entry.onyomi.length > 0
     ? entry.onyomi.join(', ')
     : entry.meanings.join(', ');
+}
+
+function getExpectedReadingMcqState(reviewGrade: 'good' | 'again'): {
+  readonly firstEntry: KanjiEntry;
+  readonly nextActiveKanji: string;
+} {
+  const { selectedEntries } = getExpectedStudyPageEntries();
+  const readingMcqSession = createSession(canonicalKanjiDeck, getDrillById('reading-mcq'), {
+    id: 'study-page-reading-mcq-session',
+    selectedEntries,
+    choicePoolEntries: canonicalKanjiDeck,
+    random: () => 0,
+  });
+  const firstKanji = readingMcqSession.activeKanji;
+
+  if (!firstKanji) {
+    throw new Error('Expected a reading MCQ prompt.');
+  }
+
+  const firstEntry = selectedEntries.find((entry) => entry.kanji === firstKanji);
+
+  if (!firstEntry) {
+    throw new Error(`Expected selected entry for reading MCQ prompt ${firstKanji}.`);
+  }
+
+  return {
+    firstEntry,
+    nextActiveKanji: answerSessionReview(readingMcqSession, reviewGrade, firstKanji, () => 0)
+      .session.activeKanji ?? firstKanji,
+  };
 }
 
 function createMemoryStorage(): Storage {

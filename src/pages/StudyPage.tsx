@@ -36,6 +36,7 @@ import {
   createProgressStore,
   loadProgressRecords,
   persistReviewEventToProgressStore,
+  persistSeenToProgressStore,
 } from '../state/progressStore';
 import type { ProgressByKanji } from '../state/progressStore';
 
@@ -60,6 +61,11 @@ interface SessionBatchSummary {
 interface StudyRunState {
   readonly session: SessionState;
   readonly batchSummary: SessionBatchSummary;
+}
+
+interface ReadingMcqFeedbackState {
+  readonly selectedKanji: string;
+  readonly reviewGrade: ReviewGrade;
 }
 
 export function StudyPage({
@@ -226,6 +232,9 @@ export function StudyPage({
   const session = studyRun.session;
   const batchSummary = studyRun.batchSummary;
   const [readingsRevealed, setReadingsRevealed] = useState(drill.mode === 'learn');
+  const [readingMcqFeedback, setReadingMcqFeedback] = useState<ReadingMcqFeedbackState | null>(
+    null,
+  );
   const isStudyRunPending = isStudyRunLoading && reviewSchedulerRef.current.availability === 'configured';
   const isSessionEmpty = session.selectedKanji.length === 0;
   const isSessionComplete = !isSessionEmpty && (session.queue.length === 0 || session.activeKanji === null);
@@ -252,6 +261,7 @@ export function StudyPage({
 
   const opacity = activeKanji === null ? null : getCueOpacity(session, activeKanji);
   const isReadingMcqMode = drill.mode === 'reading-mcq';
+  const hasReadingMcqFeedback = readingMcqFeedback !== null;
   const isRevealReviewMode = drill.mode === 'faded-recall' || drill.mode === 'blind-recall';
   const showReadings = drill.mode === 'learn' || readingsRevealed;
   const activeIndex = isSessionEmpty
@@ -283,15 +293,33 @@ export function StudyPage({
   } else if (isSessionComplete) {
     answerStateSummary = 'Complete';
   } else if (isReadingMcqMode) {
-    answerStateSummary = 'Choices visible';
+    answerStateSummary = hasReadingMcqFeedback ? 'Feedback shown' : 'Choices visible';
   } else if (isRevealReviewMode) {
     answerStateSummary = readingsRevealed ? 'Answer revealed' : 'Hidden until reveal';
   }
+
+  useEffect(() => {
+    if (drill.mode !== 'learn' || isSessionInactive || activeKanji === null) {
+      return;
+    }
+
+    if (hasSeenProgress(progressByKanjiRef.current[activeKanji])) {
+      return;
+    }
+
+    progressByKanjiRef.current = persistSeenToProgressStore(
+      progressByKanjiRef.current,
+      activeKanji,
+      new Date().toISOString(),
+      progressStoreRef.current,
+    );
+  }, [activeKanji, drill.mode, isSessionInactive]);
 
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
     const currentSessionEntries = getSelectedEntriesForSession(session.selectedKanji);
     setDrillId(nextDrillId);
+    setReadingMcqFeedback(null);
 
     if (currentSessionEntries.length > 0) {
       setIsStudyRunLoading(false);
@@ -344,6 +372,8 @@ export function StudyPage({
   }
 
   function handleRestartDrill() {
+    setReadingMcqFeedback(null);
+
     if (reviewSchedulerRef.current.availability === 'configured') {
       void loadStudyRun(drill.id);
       return;
@@ -399,6 +429,7 @@ export function StudyPage({
       session: nextSession,
     }));
     setReadingsRevealed(false);
+    setReadingMcqFeedback(null);
   }
 
   function handleAdvanceLearnItem() {
@@ -413,14 +444,24 @@ export function StudyPage({
   }
 
   function handleReadingMcqChoice(selectedKanji: string) {
-    if (activeKanji === null) {
+    if (activeKanji === null || hasReadingMcqFeedback) {
       return;
     }
 
-    const reviewGrade: ReviewGrade = selectedKanji === activeKanji ? 'good' : 'again';
+    setReadingMcqFeedback({
+      selectedKanji,
+      reviewGrade: selectedKanji === activeKanji ? 'good' : 'again',
+    });
+  }
+
+  function handleContinueReadingMcq() {
+    if (activeKanji === null || readingMcqFeedback === null) {
+      return;
+    }
+
     const { session: nextSession, event } = answerSessionReview(
       session,
-      reviewGrade,
+      readingMcqFeedback.reviewGrade,
       activeKanji,
       sessionRandomRef.current,
     );
@@ -431,11 +472,12 @@ export function StudyPage({
       reviewedAt,
       progressStoreRef.current,
     );
-    maybePersistSchedulerOutcome(activeKanji, reviewGrade, reviewedAt);
+    maybePersistSchedulerOutcome(activeKanji, readingMcqFeedback.reviewGrade, reviewedAt);
     setStudyRun((current) => ({
       ...current,
       session: nextSession,
     }));
+    setReadingMcqFeedback(null);
   }
 
   function maybePersistSchedulerOutcome(
@@ -700,25 +742,41 @@ export function StudyPage({
                     This session has no active card left in the queue.
                   </p>
                 ) : isReadingMcqMode && activeEntry ? (
-                  <div className="study-choice-grid" role="group" aria-label="Reading MCQ choices">
-                    {activeChoiceEntries.map((choiceEntry) => (
-                      <button
-                        key={choiceEntry.kanji}
-                        aria-label={choiceEntry.kanji}
-                        className="study-choice-button"
-                        type="button"
-                        onClick={() => handleReadingMcqChoice(choiceEntry.kanji)}
-                      >
-                        <KanjiCueCard
-                          kanji={choiceEntry.kanji}
-                          code={choiceEntry.code}
-                          label={`${choiceEntry.kanji} reading MCQ choice card`}
-                          opacity={1}
-                          size="sm"
-                        />
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <div className="study-choice-grid" role="group" aria-label="Reading MCQ choices">
+                      {activeChoiceEntries.map((choiceEntry) => (
+                        <button
+                          key={choiceEntry.kanji}
+                          aria-label={choiceEntry.kanji}
+                          className="study-choice-button"
+                          disabled={hasReadingMcqFeedback}
+                          type="button"
+                          onClick={() => handleReadingMcqChoice(choiceEntry.kanji)}
+                        >
+                          <KanjiCueCard
+                            kanji={choiceEntry.kanji}
+                            code={choiceEntry.code}
+                            label={`${choiceEntry.kanji} reading MCQ choice card`}
+                            opacity={1}
+                            size="sm"
+                          />
+                        </button>
+                      ))}
+                    </div>
+
+                    {readingMcqFeedback ? (
+                      <div className="study-answer-empty">
+                        <p className="section-title">
+                          {readingMcqFeedback.reviewGrade === 'good' ? 'Correct' : 'Incorrect'}
+                        </p>
+                        <p className="fine-print">
+                          {readingMcqFeedback.reviewGrade === 'good'
+                            ? `${activeKanji} matches these readings.`
+                            : `You chose ${readingMcqFeedback.selectedKanji}. Correct answer: ${activeKanji}.`}
+                        </p>
+                      </div>
+                    ) : null}
+                  </>
                 ) : showReadings && activeEntry ? (
                   <div className="study-answer-grid">
                     <section aria-labelledby="meaning-block-title" className="study-detail-group">
@@ -778,7 +836,24 @@ export function StudyPage({
                   </button>
                 </div>
               ) : isReadingMcqMode ? (
-                <p className="fine-print">{modePresentation.preRevealActionCopy}</p>
+                hasReadingMcqFeedback ? (
+                  <>
+                    <div className="study-action-row">
+                      <button
+                        className="btn btn-primary"
+                        type="button"
+                        onClick={handleContinueReadingMcq}
+                      >
+                        Continue
+                      </button>
+                    </div>
+                    <p className="fine-print">
+                      Continue to record this answer and move to the next reading prompt.
+                    </p>
+                  </>
+                ) : (
+                  <p className="fine-print">{modePresentation.preRevealActionCopy}</p>
+                )
               ) : isRevealReviewMode ? (
                 readingsRevealed ? (
                   <>
@@ -857,7 +932,7 @@ function getModePresentation({
         revealActionLabel: '',
         preRevealActionCopy: '',
         gradedStateCopy: '',
-        learnActionCopy: 'Move through the current session without review grading or saved progress updates.',
+        learnActionCopy: 'Move through the current session without review grading. Newly encountered kanji still enter durable seen progress.',
         supportSummary: 'Full cue plus readings',
         focusLabel: 'Associate the kanji with its cue, readings, and meanings.',
         cardLabel: (kanji: string) => `${kanji} learn card with full cue support`,

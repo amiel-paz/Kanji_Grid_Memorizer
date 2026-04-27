@@ -8,6 +8,7 @@ import {
   createProgressStore,
   loadProgressRecords,
   persistManualSeenToProgressStore,
+  subscribeToProgressStoreChanges,
   type ProgressByKanji,
 } from '../state/progressStore';
 
@@ -66,6 +67,15 @@ export function ManualSeenIntakePage({ progressStorageKey }: ManualSeenIntakePag
   useEffect(() => {
     setCurrentPage((page) => Math.min(page, totalPages));
   }, [totalPages]);
+
+  useEffect(() => {
+    setProgressByKanji(loadProgressRecords(progressStore));
+
+    return subscribeToProgressStoreChanges(
+      () => setProgressByKanji(loadProgressRecords(progressStore)),
+      progressStore.storageKey,
+    );
+  }, [progressStore]);
 
   return (
     <main className="app-page">
