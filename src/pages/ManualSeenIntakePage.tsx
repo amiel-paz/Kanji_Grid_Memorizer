@@ -5,6 +5,7 @@ import { PaginationControls } from '../components/PaginationControls';
 import { canonicalKanjiDeck } from '../data/canonicalDeck';
 import { getManualSeenIntakeEntries } from '../domain/progress/manualSeenIntake';
 import {
+  createProgressStore,
   loadProgressRecords,
   persistManualSeenToProgressStore,
   type ProgressByKanji,
@@ -12,9 +13,14 @@ import {
 
 const MANUAL_INTAKE_VISIBLE_LIMIT = 120;
 
-export function ManualSeenIntakePage() {
+interface ManualSeenIntakePageProps {
+  readonly progressStorageKey?: string;
+}
+
+export function ManualSeenIntakePage({ progressStorageKey }: ManualSeenIntakePageProps) {
+  const progressStore = useMemo(() => createProgressStore(progressStorageKey), [progressStorageKey]);
   const [progressByKanji, setProgressByKanji] = useState<ProgressByKanji>(() =>
-    loadProgressRecords(),
+    loadProgressRecords(progressStore),
   );
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,6 +51,7 @@ export function ManualSeenIntakePage() {
       progressByKanji,
       kanji,
       new Date().toISOString(),
+      progressStore,
     );
     setProgressByKanji(nextProgressByKanji);
     setStatusMessage(

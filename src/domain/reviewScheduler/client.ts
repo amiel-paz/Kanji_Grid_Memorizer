@@ -8,6 +8,7 @@ export interface ReviewSchedulerClient {
   readonly availability: 'configured' | 'disabled';
   getDueReviewKanji(request: GetDueReviewKanjiRequest): Promise<GetDueReviewKanjiResponse>;
   recordReviewOutcomes(request: RecordReviewSchedulerOutcomesRequest): Promise<void>;
+  resetLearnerState(learnerId: string): Promise<void>;
 }
 
 export class ReviewSchedulerClientError extends Error {
@@ -26,6 +27,9 @@ export function createDisabledReviewSchedulerClient(
       throw new ReviewSchedulerClientError(reason);
     },
     async recordReviewOutcomes() {
+      throw new ReviewSchedulerClientError(reason);
+    },
+    async resetLearnerState() {
       throw new ReviewSchedulerClientError(reason);
     },
   };
@@ -81,6 +85,21 @@ export function createFetchReviewSchedulerClient(
       if (!response.ok) {
         throw new ReviewSchedulerClientError(
           `Review outcome request failed with ${response.status}.`,
+        );
+      }
+    },
+
+    async resetLearnerState(learnerId) {
+      const response = await fetchImpl(
+        `${normalizedBaseUrl}/api/v1/learners/${encodeURIComponent(learnerId)}/scheduler`,
+        {
+          method: 'DELETE',
+        },
+      );
+
+      if (!response.ok) {
+        throw new ReviewSchedulerClientError(
+          `Scheduler reset request failed with ${response.status}.`,
         );
       }
     },

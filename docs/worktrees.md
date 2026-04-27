@@ -73,6 +73,14 @@ At this point the remaining numbered worktrees are:
 
 - None.
 
+Small unnumbered follow-on after row 38:
+
+- `work/runner-loadfile-screen`: adds one local runner command that starts the existing Vite app
+  plus the existing backend scheduler, opens a runner-only loadfile startup screen, reports
+  seen/unseen counts from durable learner progress plus the canonical deck, and adds one honest
+  `new loadfile` path that clears this browser progress plus the configured local scheduler learner
+  record without pretending to reset every possible persistence boundary.
+
 Clarify the saved-state milestone boundaries:
 
 - Row 17 already introduced local progress persistence after explicit review grading.

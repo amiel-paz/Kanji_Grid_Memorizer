@@ -48,6 +48,15 @@ export function createServerApp(config: ServerConfig, store: FileSchedulerStore)
     }
   });
 
+  app.delete('/api/v1/learners/:learnerId/scheduler', async (request, response, next) => {
+    try {
+      await store.resetLearnerState(request.params.learnerId);
+      response.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  });
+
   app.post('/api/v1/learners/:learnerId/scheduler/review-outcomes', async (request, response, next) => {
     try {
       const payload = applyOutcomesSchema.parse(request.body);

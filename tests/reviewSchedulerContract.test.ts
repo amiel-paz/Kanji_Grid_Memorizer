@@ -81,6 +81,80 @@ describe('review scheduler HTTP contract', () => {
       remainingDueCount: 1,
     });
   });
+
+  it('can clear one learner scheduler state without pretending to reset other learners', async () => {
+    const server = await startTestServer();
+    openServers.push(server);
+
+    await fetch(`${server.baseUrl}/api/v1/learners/local-learner/scheduler/review-outcomes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        outcomes: [
+          {
+            kanji: '力',
+            reviewGrade: 'good',
+            reviewedAt: '2026-04-20T10:00:00.000Z',
+          },
+        ],
+      }),
+    });
+    await fetch(`${server.baseUrl}/api/v1/learners/other-learner/scheduler/review-outcomes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        outcomes: [
+          {
+            kanji: '水',
+            reviewGrade: 'good',
+            reviewedAt: '2026-04-20T10:00:00.000Z',
+          },
+        ],
+      }),
+    });
+
+    const resetResponse = await fetch(
+      `${server.baseUrl}/api/v1/learners/local-learner/scheduler`,
+      {
+        method: 'DELETE',
+      },
+    );
+
+    expect(resetResponse.status).toBe(204);
+
+    const clearedLearnerState = await fetch(
+      `${server.baseUrl}/api/v1/learners/local-learner/scheduler`,
+    );
+    const otherLearnerState = await fetch(
+      `${server.baseUrl}/api/v1/learners/other-learner/scheduler`,
+    );
+
+    expect(await clearedLearnerState.json()).toEqual({
+      learnerId: 'local-learner',
+      recordsByKanji: {},
+      updatedAt: expect.any(String),
+    });
+    expect(await otherLearnerState.json()).toEqual({
+      learnerId: 'other-learner',
+      recordsByKanji: {
+        水: {
+          kanji: '水',
+          status: 'learning',
+          successCount: 1,
+          lapseCount: 0,
+          intervalDays: 1,
+          dueAt: '2026-04-21T10:00:00.000Z',
+          lastReviewedAt: '2026-04-20T10:00:00.000Z',
+          lastGrade: 'good',
+        },
+      },
+      updatedAt: expect.any(String),
+    });
+  });
 });
 
 async function startTestServer(): Promise<TestServerHandle> {
@@ -123,4 +197,3 @@ async function startTestServer(): Promise<TestServerHandle> {
     },
   };
 }
-

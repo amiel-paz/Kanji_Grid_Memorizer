@@ -5,21 +5,28 @@ import {
 } from '../domain/progress/progress';
 import type { UserProgress } from '../domain/progress/types';
 import type { SessionAnswerEvent } from '../domain/session/types';
-import { createLocalStore } from '../lib/localStore';
+import { createLocalStore, type LocalStore } from '../lib/localStore';
 
-export const progressStore = createLocalStore<Record<string, UserProgress>>(
-  'kanji-grid-progress-v0',
-  {
+export const DEFAULT_PROGRESS_STORAGE_KEY = 'kanji-grid-progress-v0';
+
+export function createProgressStore(
+  storageKey: string = DEFAULT_PROGRESS_STORAGE_KEY,
+): LocalStore<Record<string, UserProgress>> {
+  return createLocalStore<Record<string, UserProgress>>(storageKey, {
     validate: isUserProgressRecord,
-  },
-);
+  });
+}
+
+export const progressStore = createProgressStore();
 
 // If progress editing grows beyond page-local state later, a small React context may help.
 
 export type ProgressByKanji = Readonly<Record<string, UserProgress>>;
 
-export function loadProgressRecords(): ProgressByKanji {
-  return progressStore.load() ?? {};
+export function loadProgressRecords(
+  store: LocalStore<Record<string, UserProgress>> = progressStore,
+): ProgressByKanji {
+  return store.load() ?? {};
 }
 
 export function applyReviewEventToProgressRecords(
@@ -47,9 +54,10 @@ export function persistReviewEventToProgressStore(
   progressByKanji: ProgressByKanji,
   event: SessionAnswerEvent,
   reviewedAt?: string,
+  store: LocalStore<Record<string, UserProgress>> = progressStore,
 ): Record<string, UserProgress> {
   const nextProgressByKanji = applyReviewEventToProgressRecords(progressByKanji, event, reviewedAt);
-  progressStore.save(nextProgressByKanji);
+  store.save(nextProgressByKanji);
   return nextProgressByKanji;
 }
 
@@ -70,13 +78,14 @@ export function persistManualSeenToProgressStore(
   progressByKanji: ProgressByKanji,
   kanji: string,
   seenAt?: string,
+  store: LocalStore<Record<string, UserProgress>> = progressStore,
 ): Record<string, UserProgress> {
   const nextProgressByKanji = applyManualSeenToProgressRecords(
     progressByKanji,
     kanji,
     seenAt,
   );
-  progressStore.save(nextProgressByKanji);
+  store.save(nextProgressByKanji);
   return nextProgressByKanji;
 }
 
