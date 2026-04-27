@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 export interface LoadfileBarItem {
   readonly id: string;
   readonly label: string;
@@ -16,6 +18,7 @@ interface LoadfileScreenProps {
   readonly onOpenLoadfile: (loadfileId: string) => void;
   readonly onCreateLoadfile: () => void;
   readonly onDeleteLoadfile: (loadfileId: string) => void;
+  readonly onRenameLoadfile: (loadfileId: string, label: string) => void;
 }
 
 export function LoadfileScreen({
@@ -26,7 +29,38 @@ export function LoadfileScreen({
   onOpenLoadfile,
   onCreateLoadfile,
   onDeleteLoadfile,
+  onRenameLoadfile,
 }: LoadfileScreenProps) {
+  const [editingLoadfileId, setEditingLoadfileId] = useState<string | undefined>();
+  const [draftLabel, setDraftLabel] = useState('');
+
+  function startRename(loadfileId: string, label: string): void {
+    if (isBusy) {
+      return;
+    }
+
+    setEditingLoadfileId(loadfileId);
+    setDraftLabel(label);
+  }
+
+  function finishRename(loadfile: LoadfileBarItem): void {
+    const trimmedLabel = draftLabel.trim();
+    setEditingLoadfileId(undefined);
+
+    if (trimmedLabel.length === 0 || trimmedLabel === loadfile.label) {
+      setDraftLabel('');
+      return;
+    }
+
+    setDraftLabel('');
+    onRenameLoadfile(loadfile.id, trimmedLabel);
+  }
+
+  function cancelRename(): void {
+    setEditingLoadfileId(undefined);
+    setDraftLabel('');
+  }
+
   return (
     <main className="loadfile-shell">
       <section className="loadfile-panel">
@@ -43,7 +77,37 @@ export function LoadfileScreen({
           {loadfiles.map((loadfile) => (
             <article className="loadfile-card" key={loadfile.id}>
               <div className="loadfile-card-top">
-                <h2 className="loadfile-card-title">{loadfile.label}</h2>
+                {editingLoadfileId === loadfile.id ? (
+                  <input
+                    aria-label={`Rename ${loadfile.label}`}
+                    className="loadfile-card-title-input"
+                    type="text"
+                    value={draftLabel}
+                    autoFocus
+                    disabled={isBusy}
+                    onBlur={() => finishRename(loadfile)}
+                    onChange={(event) => setDraftLabel(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        event.currentTarget.blur();
+                      }
+
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        cancelRename();
+                      }
+                    }}
+                  />
+                ) : (
+                  <h2
+                    className="loadfile-card-title"
+                    title="Double-click to rename"
+                    onDoubleClick={() => startRename(loadfile.id, loadfile.label)}
+                  >
+                    {loadfile.label}
+                  </h2>
+                )}
                 {loadfile.canDelete ? (
                   <button
                     aria-label={`Delete ${loadfile.label}`}
