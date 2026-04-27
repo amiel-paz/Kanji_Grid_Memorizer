@@ -33,7 +33,7 @@ export function loadLoadfileRegistry(now: string = new Date().toISOString()): Lo
     return createDefaultLoadfileRegistry(now);
   }
 
-  return normalizeLoadfileRegistry(savedRegistry, now);
+  return normalizeLoadfileRegistry(savedRegistry);
 }
 
 export function saveLoadfileRegistry(registry: LoadfileRegistry): boolean {
@@ -51,12 +51,8 @@ export function findLoadfileSlot(
   return registry.slots.find((slot) => slot.id === slotId);
 }
 
-export function getActiveLoadfileSlot(registry: LoadfileRegistry): LoadfileSlot {
-  return (
-    findLoadfileSlot(registry, registry.activeLoadfileId) ??
-    registry.slots[0] ??
-    createDefaultLoadfileSlot(new Date().toISOString())
-  );
+export function getActiveLoadfileSlot(registry: LoadfileRegistry): LoadfileSlot | undefined {
+  return findLoadfileSlot(registry, registry.activeLoadfileId) ?? registry.slots[0];
 }
 
 export function markLoadfileOpened(
@@ -112,28 +108,24 @@ export function deleteLoadfileSlot(
   slotId: string,
 ): {
   readonly registry: LoadfileRegistry;
-  readonly nextActiveSlot: LoadfileSlot;
+  readonly nextActiveSlot?: LoadfileSlot;
 } | null {
-  if (registry.slots.length <= 1) {
-    return null;
-  }
-
   const remainingSlots = registry.slots.filter((slot) => slot.id !== slotId);
 
-  if (remainingSlots.length === registry.slots.length || remainingSlots.length === 0) {
+  if (remainingSlots.length === registry.slots.length) {
     return null;
   }
 
   const nextActiveSlot =
     findLoadfileSlot({ ...registry, slots: remainingSlots }, registry.activeLoadfileId) ??
-    remainingSlots[0]!;
+    remainingSlots[0];
 
   return {
     nextActiveSlot,
     registry: {
       ...registry,
       slots: remainingSlots,
-      activeLoadfileId: nextActiveSlot.id,
+      activeLoadfileId: nextActiveSlot?.id ?? '',
     },
   };
 }
@@ -158,16 +150,16 @@ function createDefaultLoadfileSlot(now: string): LoadfileSlot {
   };
 }
 
-function normalizeLoadfileRegistry(registry: LoadfileRegistry, now: string): LoadfileRegistry {
-  if (registry.slots.length === 0) {
-    return createDefaultLoadfileRegistry(now);
-  }
-
+function normalizeLoadfileRegistry(registry: LoadfileRegistry): LoadfileRegistry {
   return {
     ...registry,
     activeLoadfileId:
-      findLoadfileSlot(registry, registry.activeLoadfileId)?.id ?? registry.slots[0]!.id,
-    nextLoadfileNumber: Math.max(registry.nextLoadfileNumber, registry.slots.length + 1, 2),
+      findLoadfileSlot(registry, registry.activeLoadfileId)?.id ?? registry.slots[0]?.id ?? '',
+    nextLoadfileNumber: Math.max(
+      registry.nextLoadfileNumber,
+      registry.slots.length > 0 ? registry.slots.length + 1 : 1,
+      2,
+    ),
   };
 }
 

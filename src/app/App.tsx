@@ -43,6 +43,7 @@ export function App({
 }: AppProps) {
   const initialSearch = useRef(typeof window === 'undefined' ? '' : window.location.search);
   const launchOptions = useMemo(() => getLoadfileLaunchOptions(initialSearch.current), []);
+  const initialRegistry = useMemo(() => loadLoadfileRegistry(), []);
   const schedulerBaseUrl =
     loadfileSchedulerBaseUrl ?? import.meta.env.VITE_REVIEW_SCHEDULER_BASE_URL;
   const schedulerClient = useMemo(
@@ -53,18 +54,16 @@ export function App({
         : createDisabledReviewSchedulerClient()),
     [reviewSchedulerClient, schedulerBaseUrl],
   );
-  const [loadfileRegistry, setLoadfileRegistry] = useState<LoadfileRegistry>(() =>
-    loadLoadfileRegistry(),
-  );
-  const [activeLoadfile, setActiveLoadfile] = useState<LoadfileSlot>(() => {
-    const initialRegistry = loadLoadfileRegistry();
-    return (
+  const [loadfileRegistry, setLoadfileRegistry] = useState<LoadfileRegistry>(initialRegistry);
+  const [activeLoadfile, setActiveLoadfile] = useState<LoadfileSlot | undefined>(
+    () =>
       findLoadfileSlot(initialRegistry, launchOptions.slotId) ??
-      getActiveLoadfileSlot(initialRegistry)
-    );
-  });
+      getActiveLoadfileSlot(initialRegistry),
+  );
   const [view, setView] = useState<AppView>('study');
-  const [showLoadfile, setShowLoadfile] = useState(launchOptions.showLoadfile);
+  const [showLoadfile, setShowLoadfile] = useState(
+    launchOptions.showLoadfile || initialRegistry.slots.length === 0,
+  );
   const [isLoadfileBusy, setIsLoadfileBusy] = useState(false);
   const [loadfileStatusMessage, setLoadfileStatusMessage] = useState<string | undefined>();
 
@@ -81,7 +80,7 @@ export function App({
       serverAddressLabel: formatSchedulerAddressLabel(schedulerBaseUrl),
       seenKanjiCount: summary.seenKanjiCount,
       unseenKanjiCount: summary.unseenKanjiCount,
-      canDelete: loadfileRegistry.slots.length > 1,
+      canDelete: true,
     };
   });
 
@@ -157,7 +156,7 @@ export function App({
       const deletion = deleteLoadfileSlot(loadfileRegistry, slot.id);
 
       if (!deletion) {
-        setLoadfileStatusMessage('At least one loadfile must remain.');
+        setLoadfileStatusMessage(`${slot.label} could not be deleted.`);
         return;
       }
 
@@ -166,10 +165,14 @@ export function App({
       setShowLoadfile(true);
       setLoadfileStatusMessage(
         browserProgressCleared
-          ? `${slot.label} deleted.`
-          : `${slot.label} was removed from the registry, but its browser progress could not be cleared automatically.`,
+          ? deletion.nextActiveSlot
+            ? `${slot.label} deleted.`
+            : `${slot.label} deleted. No loadfiles remain.`
+          : deletion.nextActiveSlot
+            ? `${slot.label} was removed from the registry, but its browser progress could not be cleared automatically.`
+            : `${slot.label} was removed from the registry, but its browser progress could not be cleared automatically. No loadfiles remain.`,
       );
-      replaceSearch(getLoadfileSearch(deletion.nextActiveSlot.id));
+      replaceSearch(getLoadfileSearch(deletion.nextActiveSlot?.id));
     } catch (error) {
       setLoadfileStatusMessage(
         error instanceof ReviewSchedulerClientError
@@ -181,7 +184,7 @@ export function App({
     }
   }
 
-  if (showLoadfile) {
+  if (showLoadfile || !activeLoadfile) {
     return (
       <LoadfileScreen
         isBusy={isLoadfileBusy}
