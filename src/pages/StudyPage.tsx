@@ -5,6 +5,7 @@ import { canonicalKanjiDeck } from '../data/canonicalDeck';
 import { KanjiCueCard } from '../components/KanjiCueCard';
 import type { KanjiEntry } from '../domain/content/types';
 import { getDrillById, STARTER_DRILLS } from '../domain/drills/configs';
+import { getReadingMcqPromptReadings } from '../domain/drills/readingMcq';
 import type { DrillMode, ReviewGrade } from '../domain/drills/types';
 import {
   hasSeenProgress,
@@ -254,10 +255,13 @@ export function StudyPage({
       : (session.choiceOptionsByKanji?.[activeKanji] ?? [])
           .map((kanji) => canonicalKanjiDeck.find((entry) => entry.kanji === kanji) ?? null)
           .filter((entry): entry is KanjiEntry => entry !== null);
-
-  if (!isSessionInactive && !activeEntry) {
-    return <main className="p-8">No kanji data available.</main>;
-  }
+  const activeReadingMcqPromptReadings = useMemo(
+    () =>
+      activeEntry === null
+        ? { onyomi: [], kunyomi: [] }
+        : getReadingMcqPromptReadings(activeEntry, canonicalKanjiDeck),
+    [activeEntry],
+  );
 
   const opacity = activeKanji === null ? null : getCueOpacity(session, activeKanji);
   const isReadingMcqMode = drill.mode === 'reading-mcq';
@@ -314,6 +318,10 @@ export function StudyPage({
       progressStoreRef.current,
     );
   }, [activeKanji, drill.mode, isSessionInactive]);
+
+  if (!isSessionInactive && !activeEntry) {
+    return <main className="p-8">No kanji data available.</main>;
+  }
 
   function handleDrillChange(nextDrillId: string) {
     const nextDrill = getDrillById(nextDrillId);
@@ -660,10 +668,13 @@ export function StudyPage({
               <div className="study-prompt-card">
                 <p className="section-kicker">Reading prompt</p>
                 <h3 className="section-title">Which kanji matches these readings?</h3>
-                <KanjiReadings onyomi={activeEntry.onyomi} kunyomi={activeEntry.kunyomi} />
+                <KanjiReadings
+                  onyomi={activeReadingMcqPromptReadings.onyomi}
+                  kunyomi={activeReadingMcqPromptReadings.kunyomi}
+                />
                 <p className="fine-print">
-                  Distractors use the three smallest normalized reading-edit distances available in
-                  the local deck.
+                  Distractors use a visual-first local confusability ranking when glyph signatures
+                  are available, with reading, variant, meaning, and metadata fallbacks.
                 </p>
               </div>
             ) : (
@@ -978,7 +989,7 @@ function getModePresentation({
         hiddenReadingsCopy: '',
         revealActionLabel: '',
         preRevealActionCopy:
-          'The three distractors are chosen by smallest normalized reading-edit distance from the same local deck.',
+          'The three distractors are chosen by local visual confusability first when glyph signatures are available, then by reading and other local fallbacks.',
         gradedStateCopy: '',
         learnActionCopy: '',
         supportSummary: 'Reading prompt plus 4 kanji choices',
