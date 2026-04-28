@@ -1,0 +1,63 @@
+<svg width="1200" height="640" viewBox="0 0 1200 640" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Kanji Grid Memorizer key visual</title>
+  <desc id="desc">Two large cue cards showing the kanji characters for kanji with the same 2 by 2 grid treatment used in the app.</desc>
+  <defs>
+    <linearGradient id="bg" x1="168" y1="72" x2="1034" y2="602" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF7ED"/>
+      <stop offset="0.55" stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <radialGradient id="glowLeft" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(318 210) rotate(90) scale(276 340)">
+      <stop stop-color="#FDE68A" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#FDE68A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowRight" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(878 202) rotate(90) scale(286 348)">
+      <stop stop-color="#93C5FD" stop-opacity="0.32"/>
+      <stop offset="1" stop-color="#93C5FD" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow" x="110" y="86" width="980" height="514" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="24"/>
+      <feGaussianBlur stdDeviation="24"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.0588235 0 0 0 0 0.0941176 0 0 0 0 0.172549 0 0 0 0.12 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_14"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_14" result="shape"/>
+    </filter>
+    <style>
+      .kanji {
+        fill: #030712;
+        font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif CJK JP", serif;
+        font-size: 146px;
+        font-weight: 600;
+      }
+    </style>
+  </defs>
+  <rect width="1200" height="640" rx="36" fill="url(#bg)"/>
+  <circle cx="278" cy="198" r="248" fill="url(#glowLeft)"/>
+  <circle cx="918" cy="206" r="262" fill="url(#glowRight)"/>
+  <g opacity="0.42">
+    <path d="M70 530C180 466.667 280 445.333 370 466C460 486.667 561.333 547.667 674 549C786.667 550.333 929.333 494 1102 380" stroke="#CBD5E1" stroke-width="2"/>
+    <path d="M130 570C262 512 371.333 494.667 458 518C544.667 541.333 646.333 594.667 763 588C879.667 581.333 990 530.667 1094 436" stroke="#E2E8F0" stroke-width="2"/>
+  </g>
+  <g filter="url(#shadow)">
+    <g transform="translate(170 128)">
+      <rect x="0" y="0" width="360" height="360" rx="28" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="2"/>
+      <rect x="0" y="0" width="180" height="180" fill="#D9B414"/>
+      <rect x="180" y="0" width="180" height="180" fill="#D64545"/>
+      <rect x="0" y="180" width="180" height="180" fill="#E67E22"/>
+      <rect x="180" y="180" width="180" height="180" fill="#D9B414"/>
+      <rect x="88" y="88" width="184" height="184" rx="22" fill="#FFFFFF"/>
+      <text x="180" y="218" text-anchor="middle" class="kanji">漢</text>
+    </g>
+    <g transform="translate(610 128)">
+      <rect x="0" y="0" width="360" height="360" rx="28" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="2"/>
+      <rect x="0" y="0" width="180" height="180" fill="#E67E22"/>
+      <rect x="180" y="0" width="180" height="180" fill="#222222"/>
+      <rect x="0" y="180" width="180" height="180" fill="#3B6FD6"/>
+      <rect x="180" y="180" width="180" height="180" fill="#222222"/>
+      <rect x="88" y="88" width="184" height="184" rx="22" fill="#FFFFFF"/>
+      <text x="180" y="218" text-anchor="middle" class="kanji">字</text>
+    </g>
+  </g>
+</svg>

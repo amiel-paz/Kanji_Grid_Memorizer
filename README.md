@@ -1,5 +1,7 @@
 # Kanji Grid Memorizer
 
+![Kanji Grid Memorizer key visual](docs/assets/readme-key-visual.svg)
+
 Kanji Grid Memorizer is a local-first React/TypeScript study MVP for one product idea:
 each kanji owns a stable 2x2 base-8 color cue, and the active drill decides how much of
 that cue to show.
