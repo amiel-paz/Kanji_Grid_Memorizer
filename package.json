@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "launch": "zsh scripts/launch.sh",
     "loadfile": "tsx scripts/runLoadfile.ts",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
