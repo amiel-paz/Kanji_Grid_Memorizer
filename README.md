@@ -48,6 +48,14 @@ Run the one-command local loadfile runner:
 npm run loadfile
 ```
 
+Launch the full local app from the command line:
+
+```bash
+npm run launch
+```
+
+Or double-click `Launch Kanji Grid.command` in Finder.
+
 Start a fresh local journey through that runner:
 
 ```bash
@@ -71,6 +79,8 @@ npm run lint
 What each script does:
 
 - `npm run dev`: starts the Vite dev server.
+- `npm run launch`: runs the clickable launcher path from the command line. It installs dependencies
+  if `node_modules` is missing, then starts the same local loadfile environment.
 - `npm run loadfile`: starts the local scheduler plus the Vite app, opens a runner-only loadfile
   startup screen, and keeps raw child-process boot logs out of the terminal.
 - `npm run server:start`: starts the local review scheduler server on `http://localhost:8787`.
