@@ -413,6 +413,10 @@ select {
     @apply flex flex-col gap-5;
   }
 
+  .seen-library-toolbar {
+    @apply flex flex-col gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 sm:flex-row sm:items-center sm:justify-between;
+  }
+
   .seen-library-empty {
     @apply flex flex-col gap-4 border-dashed;
   }

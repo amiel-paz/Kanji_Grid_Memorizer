@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { canonicalKanjiDeck } from '../src/data/canonicalDeck';
 import type { KanjiEntry } from '../src/domain/content/types';
 import { getDrillById } from '../src/domain/drills/configs';
+import { formatReadingsWithRomaji } from '../src/domain/readings/romaji';
 import type { ReviewSchedulerClient } from '../src/domain/reviewScheduler/client';
 import { answerSessionReview, createSession } from '../src/domain/session/session';
 import { StudyPage } from '../src/pages/StudyPage';
@@ -58,6 +59,7 @@ describe('StudyPage', () => {
     expect(screen.getByText('No recent-miss boost in this batch')).toBeInTheDocument();
     expect(screen.getByText('5 of 5 fresh slots left')).toBeInTheDocument();
     expect(screen.getAllByText('Hidden until reveal')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Export Anki batch' })).toBeInTheDocument();
   });
 
   it('carries unfinished new kanji forward before admitting replacement new kanji', () => {
@@ -129,10 +131,8 @@ describe('StudyPage', () => {
     expect(screen.getByRole('heading', { name: 'Meanings', level: 4 })).toBeInTheDocument();
     expect(screen.getByText(getPrimaryRevealText(firstEntry))).toBeInTheDocument();
     expect(screen.getByText('Answer revealed')).toBeInTheDocument();
-    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
-      'Again',
-      'Good',
-    ]);
+    expect(screen.getByRole('button', { name: 'Again' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Good' })).toBeInTheDocument();
     expect(screen.getByText(/Choose Good if you recalled it cleanly/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Good' }));
@@ -819,7 +819,7 @@ function getExpectedStudyPageEntries(sessionOptions = createStudyPageSessionOpti
 
 function getPrimaryRevealText(entry: KanjiEntry): string {
   return entry.onyomi[0] !== undefined && entry.onyomi.length > 0
-    ? entry.onyomi.join(', ')
+    ? formatReadingsWithRomaji(entry.onyomi, ', ')
     : entry.meanings.join(', ');
 }
 
