@@ -3,15 +3,18 @@ import { DrillModePicker } from '../components/DrillModePicker';
 import { KanjiReadings } from '../components/KanjiReadings';
 import { canonicalKanjiDeck } from '../data/canonicalDeck';
 import { KanjiCueCard } from '../components/KanjiCueCard';
+import { buildAnkiTextExport, getAnkiExportFileName } from '../domain/anki/ankiExport';
 import type { KanjiEntry } from '../domain/content/types';
 import { getDrillById, STARTER_DRILLS } from '../domain/drills/configs';
 import { getReadingMcqPromptReadings } from '../domain/drills/readingMcq';
 import type { DrillMode, ReviewGrade } from '../domain/drills/types';
+import { formatReadingsWithRomaji } from '../domain/readings/romaji';
 import {
   hasSeenProgress,
   isReviewBankCandidateProgress,
   isUnfinishedNewItemProgress,
 } from '../domain/progress/progress';
+import { downloadTextFile } from '../lib/download';
 import {
   createDisabledReviewSchedulerClient,
   createFetchReviewSchedulerClient,
@@ -128,6 +131,7 @@ export function StudyPage({
   const [isStudyRunLoading, setIsStudyRunLoading] = useState(
     reviewSchedulerRef.current.availability === 'configured',
   );
+  const [ankiExportStatus, setAnkiExportStatus] = useState<string | undefined>();
 
   useEffect(() => {
     if (
@@ -488,6 +492,26 @@ export function StudyPage({
     setReadingMcqFeedback(null);
   }
 
+  function handleExportSessionToAnki() {
+    const entries = getSelectedEntriesForSession(session.selectedKanji);
+
+    if (entries.length === 0) {
+      setAnkiExportStatus('No active batch is ready for Anki export.');
+      return;
+    }
+
+    const didDownload = downloadTextFile({
+      contents: buildAnkiTextExport(entries),
+      filename: getAnkiExportFileName('study-batch'),
+    });
+
+    setAnkiExportStatus(
+      didDownload
+        ? `${entries.length} ${entries.length === 1 ? 'Anki card' : 'Anki cards'} exported.`
+        : 'Anki export is unavailable in this environment.',
+    );
+  }
+
   function maybePersistSchedulerOutcome(
     kanji: string,
     reviewGrade: ReviewGrade,
@@ -607,6 +631,31 @@ export function StudyPage({
             </div>
             {batchSummary.schedulerMessage ? (
               <p className="fine-print">{batchSummary.schedulerMessage}</p>
+            ) : null}
+          </section>
+
+          <section aria-labelledby="anki-export-title" className="surface-panel study-overview">
+            <div className="section-heading">
+              <p className="section-kicker">Anki</p>
+              <h2 className="section-title" id="anki-export-title">
+                Export current batch
+              </h2>
+              <p className="fine-print">{formatAnkiCardCount(session.selectedKanji.length)} ready.</p>
+            </div>
+            <div className="study-action-row">
+              <button
+                className="btn btn-secondary"
+                disabled={session.selectedKanji.length === 0}
+                type="button"
+                onClick={handleExportSessionToAnki}
+              >
+                Export Anki batch
+              </button>
+            </div>
+            {ankiExportStatus ? (
+              <p aria-live="polite" className="fine-print" role="status">
+                {ankiExportStatus}
+              </p>
             ) : null}
           </section>
         </aside>
@@ -804,11 +853,11 @@ export function StudyPage({
                       <dl className="study-detail-list">
                         <div>
                           <dt>Onyomi</dt>
-                          <dd>{activeEntry.onyomi.join(', ')}</dd>
+                          <dd>{formatReadingsWithRomaji(activeEntry.onyomi, ', ')}</dd>
                         </div>
                         <div>
                           <dt>Kunyomi</dt>
-                          <dd>{activeEntry.kunyomi.join(', ')}</dd>
+                          <dd>{formatReadingsWithRomaji(activeEntry.kunyomi, ', ')}</dd>
                         </div>
                       </dl>
                     </section>
@@ -924,6 +973,10 @@ function getSelectedEntriesForSession(selectedKanji: readonly string[]): readonl
   return selectedKanji
     .map((kanji) => canonicalKanjiDeck.find((entry) => entry.kanji === kanji))
     .filter((entry): entry is KanjiEntry => entry !== undefined);
+}
+
+function formatAnkiCardCount(count: number): string {
+  return `${count} ${count === 1 ? 'card' : 'cards'}`;
 }
 
 function getModePresentation({

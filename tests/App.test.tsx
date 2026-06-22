@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { canonicalKanjiDeck } from '../src/data/canonicalDeck';
+import { formatReadingsWithRomaji } from '../src/domain/readings/romaji';
 import type { ReviewSchedulerClient } from '../src/domain/reviewScheduler/client';
 import { App } from '../src/app/App';
 import {
@@ -68,9 +69,10 @@ describe('App', () => {
     const seenCard = screen.getByRole('heading', { name: firstEntry.kanji }).closest('article');
     expect(seenCard).not.toBeNull();
     expect(within(seenCard!).getByText('On readings')).toBeInTheDocument();
-    expect(within(seenCard!).getByText(firstEntry.onyomi.join('、'))).toBeInTheDocument();
+    expect(within(seenCard!).getByText(formatReadingsWithRomaji(firstEntry.onyomi))).toBeInTheDocument();
     expect(within(seenCard!).getByText('Kun readings')).toBeInTheDocument();
-    expect(within(seenCard!).getByText(firstEntry.kunyomi.join('、'))).toBeInTheDocument();
+    expect(within(seenCard!).getByText(formatReadingsWithRomaji(firstEntry.kunyomi))).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Export seen for Anki' })).toBeInTheDocument();
   });
 
   it('shows an honest empty state when durable progress has not seen any kanji yet', () => {
@@ -129,9 +131,9 @@ describe('App', () => {
     const intakeCard = screen.getByRole('heading', { name: firstEntry.kanji }).closest('article');
     expect(intakeCard).not.toBeNull();
     expect(within(intakeCard!).getByText('On readings')).toBeInTheDocument();
-    expect(within(intakeCard!).getByText(firstEntry.onyomi.join('、'))).toBeInTheDocument();
+    expect(within(intakeCard!).getByText(formatReadingsWithRomaji(firstEntry.onyomi))).toBeInTheDocument();
     expect(within(intakeCard!).getByText('Kun readings')).toBeInTheDocument();
-    expect(within(intakeCard!).getByText(firstEntry.kunyomi.join('、'))).toBeInTheDocument();
+    expect(within(intakeCard!).getByText(formatReadingsWithRomaji(firstEntry.kunyomi))).toBeInTheDocument();
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Mark encountered' })[0]!);
 
@@ -144,8 +146,8 @@ describe('App', () => {
     expect(screen.getByText('1 review')).toBeInTheDocument();
     const seenCard = screen.getByRole('heading', { name: firstEntry.kanji }).closest('article');
     expect(seenCard).not.toBeNull();
-    expect(within(seenCard!).getByText(firstEntry.onyomi.join('、'))).toBeInTheDocument();
-    expect(within(seenCard!).getByText(firstEntry.kunyomi.join('、'))).toBeInTheDocument();
+    expect(within(seenCard!).getByText(formatReadingsWithRomaji(firstEntry.onyomi))).toBeInTheDocument();
+    expect(within(seenCard!).getByText(formatReadingsWithRomaji(firstEntry.kunyomi))).toBeInTheDocument();
   });
 
   it('moves a learn-mode encounter out of manual intake and into the seen library', () => {

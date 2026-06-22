@@ -1,3 +1,5 @@
+import { formatReadingsWithRomaji } from '../domain/readings/romaji';
+
 interface KanjiReadingsProps {
   readonly onyomi: readonly string[];
   readonly kunyomi: readonly string[];
@@ -8,16 +10,12 @@ export function KanjiReadings({ onyomi, kunyomi }: KanjiReadingsProps) {
     <div className="kanji-readings" aria-label="Kanji readings">
       <section className="kanji-reading-block">
         <h4 className="kanji-reading-title">On readings</h4>
-        <p className="kanji-reading-copy">{formatReadings(onyomi)}</p>
+        <p className="kanji-reading-copy">{formatReadingsWithRomaji(onyomi)}</p>
       </section>
       <section className="kanji-reading-block">
         <h4 className="kanji-reading-title">Kun readings</h4>
-        <p className="kanji-reading-copy">{formatReadings(kunyomi)}</p>
+        <p className="kanji-reading-copy">{formatReadingsWithRomaji(kunyomi)}</p>
       </section>
     </div>
   );
-}
-
-function formatReadings(readings: readonly string[]): string {
-  return readings.length === 0 ? 'None listed' : readings.join('、');
 }

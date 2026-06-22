@@ -3,8 +3,10 @@ import { KanjiCueCard } from '../components/KanjiCueCard';
 import { KanjiReadings } from '../components/KanjiReadings';
 import { PaginationControls } from '../components/PaginationControls';
 import { canonicalKanjiDeck } from '../data/canonicalDeck';
+import { buildAnkiTextExport, getAnkiExportFileName } from '../domain/anki/ankiExport';
 import { getSeenLibraryItems } from '../domain/progress/seenLibrary';
 import type { ProgressConfidence } from '../domain/progress/types';
+import { downloadTextFile } from '../lib/download';
 import {
   createProgressStore,
   loadProgressRecords,
@@ -20,6 +22,7 @@ interface SeenLibraryPageProps {
 
 export function SeenLibraryPage({ progressStorageKey }: SeenLibraryPageProps) {
   const [currentPage, setCurrentPage] = useState(1);
+  const [ankiExportStatus, setAnkiExportStatus] = useState<string | undefined>();
   const progressStore = useMemo(() => createProgressStore(progressStorageKey), [progressStorageKey]);
   const [progressByKanji, setProgressByKanji] = useState<ProgressByKanji>(() =>
     loadProgressRecords(progressStore),
@@ -47,6 +50,26 @@ export function SeenLibraryPage({ progressStorageKey }: SeenLibraryPageProps) {
       progressStore.storageKey,
     );
   }, [progressStore]);
+
+  function handleExportSeenToAnki() {
+    const entries = libraryItems.map((item) => item.entry);
+
+    if (entries.length === 0) {
+      setAnkiExportStatus('No seen kanji are ready for Anki export.');
+      return;
+    }
+
+    const didDownload = downloadTextFile({
+      contents: buildAnkiTextExport(entries),
+      filename: getAnkiExportFileName('seen-library'),
+    });
+
+    setAnkiExportStatus(
+      didDownload
+        ? `${entries.length} ${entries.length === 1 ? 'Anki card' : 'Anki cards'} exported.`
+        : 'Anki export is unavailable in this environment.',
+    );
+  }
 
   return (
     <main className="app-page">
@@ -83,6 +106,16 @@ export function SeenLibraryPage({ progressStorageKey }: SeenLibraryPageProps) {
               Sorted by most recently seen first, then by earlier first-seen history. Pages show
               at most {SEEN_LIBRARY_PAGE_SIZE} cards at a time.
             </p>
+          </div>
+          <div className="seen-library-toolbar">
+            <button className="btn btn-secondary" type="button" onClick={handleExportSeenToAnki}>
+              Export seen for Anki
+            </button>
+            {ankiExportStatus ? (
+              <p aria-live="polite" className="fine-print" role="status">
+                {ankiExportStatus}
+              </p>
+            ) : null}
           </div>
 
           <PaginationControls

@@ -25,6 +25,8 @@ while still being explicit about what is and is not implemented.
 - A read-only seen library sourced from durable learner progress plus stable canonical content.
 - A manual intake view for marking an outside encounter as seen without pretending that it is
   already learned.
+- Anki text export for the current study batch and seen library, with the full kanji grid cue on
+  the front and meanings plus Kun/On readings with romaji on the back.
 - Honest empty and completion states when a new local batch cannot or does not need to queue cards.
 - Tests around the current study shell, session rules, progress helpers, and local store behavior.
 
